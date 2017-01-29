@@ -125,6 +125,17 @@ namespace Box{
 		return distsq(bx, pt) == 0;
 	}
 
+	template<size_t dim>
+	Box<dim> bounding_box(const Box<dim> & bx1, const Box<dim> & bx2){
+		Point<dim> lo;
+		Point<dim> hi;
+		for (auto i=0; i<dim; i++){
+			lo.x[i] = std::min(bx1.lo.x[i], bx2.lo.x[i]);
+			hi.x[i] = std::max(bx1.hi.x[i], bx2.hi.x[i]);
+		}
+		return Box<dim>(lo,hi);
+	}
+
 }
 
 
