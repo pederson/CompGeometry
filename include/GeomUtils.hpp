@@ -70,6 +70,13 @@ namespace Point{
 		return dsq;
 	}
 
+	template<size_t dim>
+	double dot(const Point<dim> & p1, const Point<dim> & p2){
+		double dt = 0.0;
+		for (auto i=0; i<dim; i++) dt += p1.x[i]*p2.x[i];
+		return dt;
+	}
+
 }
 
 
@@ -127,16 +134,38 @@ struct Plane{
 
 	// empty constructor
 	Plane()
-	: origin(Point<3> (0,0,0)), normal(Point<3> (0,0,1)) {};
+	: origin(Point<3> (0,0,0)), normal(Point<3> (0,0,1), posx(Point<3> (1,0,0))) {};
 
 	// constructor
-	Plane(const Point<3> & p, const Point<3> & n)
-	: origin(p), normal(n) {};
+	Plane(const Point<3> & p, const Point<3> & n, const Point<3> & px)
+	: origin(p), normal(n), posx(px) {};
+
+	// project a point onto the plane
+	Point<2> project(const Point<3> & pt) const{
+		Point<3> ptvec(pt.x[0]-origin.x[0], pt.x[1]-origin.x[1], pt.x[2]-origin.x[2]);
+		double px = Point::dot(ptvec, posx);
+
+		// the y direction is Z x X
+		Point<3> posy(normal.x[1]*posx.x[2] - normal.x[2]*posx.x[1],
+					  normal.x[2]*posx.x[0] - normal.x[0]*posx.x[2],
+					  normal.x[0]*posx.x[1] - normal.x[1]*posx.x[0]);
+
+		double py = Point::dot(ptvec, posy);
+		return Point<2>(px, py);
+	}
 
 	// data
-	Point<dim> origin, normal;
+	Point<dim> origin, normal, posx;
 
 };
+
+
+typedef Plane(Point<3>(0,0,0),Point<3>(0,0,1),Point<3>(1,0,0)) XYPLANE;
+typedef Plane(Point<3>(0,0,0),Point<3>(0,0,-1),Point<3>(0,1,0)) YXPLANE;
+typedef Plane(Point<3>(0,0,0),Point<3>(1,0,0),Point<3>(0,1,0)) YZPLANE;
+typedef Plane(Point<3>(0,0,0),Point<3>(-1,0,0),Point<3>(0,0,1)) ZYPLANE;
+typedef Plane(Point<3>(0,0,0),Point<3>(0,1,0),Point<3>(0,0,1)) ZXPLANE;
+typedef Plane(Point<3>(0,0,0),Point<3>(0,-1,0),Point<3>(1,0,0)) XZPLANE;
 
 
 
