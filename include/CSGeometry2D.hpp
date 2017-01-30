@@ -1,8 +1,11 @@
 #ifndef _CSGEOMETRY2D_H
 #define _CSGEOMETRY2D_H
 
+#include <memory>
 #include "GeomUtils.hpp"
 #include "Primitive2D.hpp"
+
+class CSGeometry2D;
 
 // 2D Constructive Solid Geometry model
 enum Operation {UNION, INTERSECT, DIFFERENCE, XOR};
@@ -13,20 +16,24 @@ public:
 
 	CSGeometry2D() {};
 
-	CSGeometry2D(const Primitive2D * leaf)
+	CSGeometry2D(std::shared_ptr<Primitive2D> leaf)
 	: m_isleaf(true), m_leaf(leaf), m_flavor(-1) {};
 
-	CSGeometry2D(CSGeometry2D left, CSGeometry2D right, Operation op)
+	CSGeometry2D(std::shared_ptr<CSGeometry2D> left, std::shared_ptr<CSGeometry2D> right, Operation op)
 	: m_isleaf(false), m_leaf(nullptr), m_flavor(-1)
 	, m_ldaughter(left), m_rdaughter(right), m_op(op) {};
 
-	CSGeometry2D(const Primitive2D * left, CSGeometry2D right, Operation op)
+	CSGeometry2D(std::shared_ptr<Primitive2D> left, std::shared_ptr<CSGeometry2D> right, Operation op)
 	: m_isleaf(false), m_leaf(nullptr), m_flavor(-1)
-	, m_ldaughter(CSGeometry2D(left)), m_rdaughter(right), m_op(op) {};
+	, m_ldaughter(std::shared_ptr<CSGeometry2D>(new CSGeometry2D(left))), m_rdaughter(right), m_op(op) {};
 
-	CSGeometry2D(CSGeometry2D left, const Primitive2D * right, Operation op)
+	CSGeometry2D(std::shared_ptr<CSGeometry2D> left, std::shared_ptr<Primitive2D> right, Operation op)
 	: m_isleaf(false), m_leaf(nullptr), m_flavor(-1)
-	, m_ldaughter(left), m_rdaughter(CSGeometry2D(right)), m_op(op) {};
+	, m_ldaughter(left), m_rdaughter(std::shared_ptr<CSGeometry2D>(new CSGeometry2D(right))), m_op(op) {};
+
+	CSGeometry2D(std::shared_ptr<Primitive2D> left, std::shared_ptr<Primitive2D> right, Operation op)
+	: m_isleaf(false), m_leaf(nullptr), m_flavor(-1)
+	, m_ldaughter(std::shared_ptr<CSGeometry2D>(new CSGeometry2D(left))), m_rdaughter(std::shared_ptr<CSGeometry2D>(new CSGeometry2D(right))), m_op(op) {};
 
 	void set_flavor(unsigned int flavor) {m_flavor = flavor;};
 
@@ -35,14 +42,14 @@ public:
 	Box<2> get_bounding_box() const{
 		if (m_isleaf) return m_leaf->get_bounding_box();
 
-		return Box::bounding_box(m_ldaughter.get_bounding_box(), m_rdaughter.get_bounding_box());
+		return Box<2>::bounding_box(m_ldaughter->get_bounding_box(), m_rdaughter->get_bounding_box());
 	}
 
 	void translate(const Point<2> & pt){
 		if (m_isleaf) return m_leaf->translate(pt);
 
-		bool lc = m_ldaughter.translate(pt);
-		bool rc = m_rdaughter.translate(pt);
+		m_ldaughter->translate(pt);
+		m_rdaughter->translate(pt);
 	}
 
 	// void rotate(const Point<2> & anchor, double degrees) = 0;
@@ -51,10 +58,10 @@ public:
 	bool contains_point(const Point<2> & pt) const{
 		if (m_isleaf) return m_leaf->contains_point(pt);
 
-		bool lc = m_ldaughter.contains_point(pt);
-		bool rc = m_rdaughter.contains_point(pt);
+		bool lc = m_ldaughter->contains_point(pt);
+		bool rc = m_rdaughter->contains_point(pt);
 
-		switch (op){
+		switch (m_op){
 			case UNION:
 				return lc || rc;
 				break;
@@ -73,11 +80,12 @@ public:
 	bool contains_box(const Box<2> & bx) const{
 		if (m_isleaf) return m_leaf->contains_box(bx);
 
-		bool lc = m_ldaughter.contains_box(bx);
-		bool rc = m_rdaughter.contains_box(bx);
+		bool lc = m_ldaughter->contains_box(bx);
+		bool rc = m_rdaughter->contains_box(bx);
+		bool rcoll, lcoll;
 		
 
-		switch (op){
+		switch (m_op){
 			case UNION:
 				return lc || rc;
 				break;
@@ -85,12 +93,12 @@ public:
 				return lc && rc;
 				break;
 			case DIFFERENCE:
-				bool rcoll = m_rdaughter.collides_box(bx);
+				rcoll = m_rdaughter->collides_box(bx);
 				return lc && ~rc && ~rcoll;
 				break;
 			case XOR:
-				bool lcoll = m_ldaughter.collides_box(bx);
-				bool rcoll = m_rdaughter.collides_box(bx);
+				lcoll = m_ldaughter->collides_box(bx);
+				rcoll = m_rdaughter->collides_box(bx);
 				return (lc || rc) && ~(lc && rc) && ~lcoll && ~rcoll;
 				break;
 		}
@@ -99,11 +107,11 @@ public:
 	bool collides_box(const Box<2> & bx) const{
 		if (m_isleaf) return m_leaf->collides_box(bx);
 
-		bool lc = m_ldaughter.collides_box(bx);
-		bool rc = m_rdaughter.collides_box(bx);
-		
+		bool lc = m_ldaughter->collides_box(bx);
+		bool rc = m_rdaughter->collides_box(bx);
+		bool lcont, rcont;
 
-		switch (op){
+		switch (m_op){
 			case UNION:
 				return lc || rc;
 				break;
@@ -111,34 +119,51 @@ public:
 				return lc && rc;
 				break;
 			case DIFFERENCE:
-				bool rcont = m_rdaughter.contains_box(bx);
+				rcont = m_rdaughter->contains_box(bx);
 				return lc && ~rc && ~rcont;
 				break;
 			case XOR:
-				bool lcont = m_ldaughter.contains_box(bx);
-				bool rcont = m_rdaughter.contains_box(bx);
+				lcont = m_ldaughter->contains_box(bx);
+				rcont = m_rdaughter->contains_box(bx);
 				return (lc || rc) && ~(lcont && rcont);
 				break;
 		}
 	}
 
-	void print_summary(std::ostream & os) const{
+	void print_summary(std::ostream & os = std::cout) const{
 		if (m_isleaf){
 			m_leaf->print_summary(os);
 			return;
 		}
 
-		os << "\tCSGeometry2D: " << std::endl;
-		os << "L: " << m_ldaughter.print_summary(os);
-		os << "R: " << m_rdaughter.print_summary(os);
+		os << "CSGeometry2D: " << std::endl;
+		switch (m_op){
+			case UNION:
+				os << "\tUNION" ;
+				break;
+			case INTERSECT:
+				os << "\tINTERSECTION" ;
+				break;
+			case DIFFERENCE:
+				os << "\tDIFFERENCE" ;
+				break;
+			case XOR:
+				os << "\tXOR" ;
+				break;
+		}
+		os << "\n\tL: " ; m_ldaughter->print_summary(os);
+		os << "\n\tR: " ; m_rdaughter->print_summary(os);
+		os << std::endl;
 	}
 
 private:
 	bool m_isleaf;
-	const Primitive2D * m_leaf;
+	// const Primitive2D * m_leaf;
+	std::shared_ptr<Primitive2D> m_leaf;
 	unsigned int m_flavor;
 
-	CSGeometry2D m_ldaughter, m_rdaughter;
+	// CSGeometry2D m_ldaughter, m_rdaughter;
+	std::shared_ptr<CSGeometry2D> m_ldaughter, m_rdaughter;
 	Operation m_op;
 };
 
