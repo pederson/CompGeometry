@@ -13,9 +13,19 @@ public:
 	// virtual void rescale(const Point<2> & scalefactor) = 0;
 
 	virtual bool contains_point(const Point<2> & pt) const = 0;
-	virtual bool contains_box(const Box<2> & bx) const = 0;
-	virtual bool collides_box(const Box<2> & bx) const = 0;
 
+	bool contains_box(const Box<2> & bx) const{
+		return contains_point(bx.lo) && contains_point(bx.hi) &&
+			   contains_point(Point<2>(bx.lo.x[0], bx.hi.x[1])) &&
+			   contains_point(Point<2>(bx.hi.x[0], bx.lo.x[1]));
+	}
+
+	bool collides_box(const Box<2> & bx) const{
+		return contains_point(bx.lo) || contains_point(bx.hi) ||
+			   contains_point(Point<2>(bx.lo.x[0], bx.hi.x[1])) ||
+			   contains_point(Point<2>(bx.hi.x[0], bx.lo.x[1]));
+	}
+	
 	virtual void print_summary(std::ostream & os = std::cout) const = 0;
 };
 
@@ -45,18 +55,6 @@ public:
 	bool contains_point(const Point<2> & pt) const{
 		return (pt.x[0]-m_center.x[0])*(pt.x[0]-m_center.x[0]) + 
 			   (pt.x[1]-m_center.x[1])*(pt.x[1]-m_center.x[1]) <= m_radius*m_radius; 
-	}
-
-	bool contains_box(const Box<2> & bx) const{
-		return contains_point(bx.lo) && contains_point(bx.hi) &&
-			   contains_point(Point<2>(bx.lo.x[0], bx.hi.x[1])) &&
-			   contains_point(Point<2>(bx.hi.x[0], bx.lo.x[1]));
-	}
-
-	bool collides_box(const Box<2> & bx) const{
-		return contains_point(bx.lo) || contains_point(bx.hi) ||
-			   contains_point(Point<2>(bx.lo.x[0], bx.hi.x[1])) ||
-			   contains_point(Point<2>(bx.hi.x[0], bx.lo.x[1]));
 	}
 
 	void print_summary(std::ostream & os = std::cout) const{
@@ -110,18 +108,6 @@ public:
 		Box<2> bx(Point<2>(-m_lx/2, -m_ly/2), Point<2>(m_lx/2, m_ly/2));
 		// std::cout << "box dist: " << Box<2>::dist(bx,rotx) << std::endl;
 		return Box<2>::distsq(bx, rotx) < 1.0e-16; 
-	}
-
-	bool contains_box(const Box<2> & bx) const{
-		return contains_point(bx.lo) && contains_point(bx.hi) &&
-			   contains_point(Point<2>(bx.lo.x[0], bx.hi.x[1])) &&
-			   contains_point(Point<2>(bx.hi.x[0], bx.lo.x[1]));
-	}
-
-	bool collides_box(const Box<2> & bx) const{
-		return contains_point(bx.lo) || contains_point(bx.hi) ||
-			   contains_point(Point<2>(bx.lo.x[0], bx.hi.x[1])) ||
-			   contains_point(Point<2>(bx.hi.x[0], bx.lo.x[1]));
 	}
 
 	void print_summary(std::ostream & os = std::cout) const{
@@ -179,18 +165,6 @@ public:
 		Point<2> x = pt - cen;
 		return (x.x[0]*cos(m_rotation)-x.x[1]*sin(m_rotation))*(x.x[0]*cos(m_rotation)-x.x[1]*sin(m_rotation))/asq + 
 			   (x.x[0]*sin(m_rotation)+x.x[1]*cos(m_rotation))*(x.x[0]*sin(m_rotation)+x.x[1]*cos(m_rotation))/bsq <= 1; 
-	}
-
-	bool contains_box(const Box<2> & bx) const{
-		return contains_point(bx.lo) && contains_point(bx.hi) &&
-			   contains_point(Point<2>(bx.lo.x[0], bx.hi.x[1])) &&
-			   contains_point(Point<2>(bx.hi.x[0], bx.lo.x[1]));
-	}
-
-	bool collides_box(const Box<2> & bx) const{
-		return contains_point(bx.lo) || contains_point(bx.hi) ||
-			   contains_point(Point<2>(bx.lo.x[0], bx.hi.x[1])) ||
-			   contains_point(Point<2>(bx.hi.x[0], bx.lo.x[1]));
 	}
 
 	void print_summary(std::ostream & os = std::cout) const{
@@ -285,18 +259,6 @@ public:
 		return (wn==0)? false : true;
 	}
 
-	bool contains_box(const Box<2> & bx) const{
-		return contains_point(bx.lo) && contains_point(bx.hi) &&
-			   contains_point(Point<2>(bx.lo.x[0], bx.hi.x[1])) &&
-			   contains_point(Point<2>(bx.hi.x[0], bx.lo.x[1]));
-	}
-
-	bool collides_box(const Box<2> & bx) const{
-		return contains_point(bx.lo) || contains_point(bx.hi) ||
-			   contains_point(Point<2>(bx.lo.x[0], bx.hi.x[1])) ||
-			   contains_point(Point<2>(bx.hi.x[0], bx.lo.x[1]));
-	}
-
 	void print_summary(std::ostream & os = std::cout) const{
 		os << "Triangle: " << m_p1 << "-->" << m_p2 << "-->" << m_p3 ;
 	}
@@ -376,18 +338,6 @@ public:
 		}
 
 		return (wn==0)? false : true;
-	}
-
-	bool contains_box(const Box<2> & bx) const{
-		return contains_point(bx.lo) && contains_point(bx.hi) &&
-			   contains_point(Point<2>(bx.lo.x[0], bx.hi.x[1])) &&
-			   contains_point(Point<2>(bx.hi.x[0], bx.lo.x[1]));
-	}
-
-	bool collides_box(const Box<2> & bx) const{
-		return contains_point(bx.lo) || contains_point(bx.hi) ||
-			   contains_point(Point<2>(bx.lo.x[0], bx.hi.x[1])) ||
-			   contains_point(Point<2>(bx.hi.x[0], bx.lo.x[1]));
 	}
 
 	virtual void print_summary(std::ostream & os = std::cout) const{

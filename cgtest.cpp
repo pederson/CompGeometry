@@ -10,7 +10,7 @@ int main(int argc, char * argv[])
 	
 	// test 2D primitives
 	// circle
-	cout << "******* Circle *******" << endl;
+	cout << "\n******* Circle *******" << endl;
 	Circle c0 (Point<2>(0.5, 0.5), 1.0);
 	c0.print_summary(); cout << endl;
 	cout << "BoundingBox: " << c0.get_bounding_box() << endl;
@@ -19,7 +19,7 @@ int main(int argc, char * argv[])
 	cout << "Contains Point " << Point<2>(1.5, 1.5) << "? " << int(c0.contains_point(Point<2>(1.5,1.5))) << endl;
 
 	// rectangle
-	cout << "******* Rectangle *******" << endl;
+	cout << "\n******* Rectangle *******" << endl;
 	Rectangle r0(Point<2>(0.5, 0.5), Point<2>(0.3, 0.4));
 	r0.print_summary();
 	cout << endl;
@@ -30,7 +30,7 @@ int main(int argc, char * argv[])
 
 
 	// ellipse
-	cout << "******* Ellipse *******" << endl;
+	cout << "\n******* Ellipse *******" << endl;
 	Ellipse e0(Point<2>(0.5, 0.5), Point<2>(1, 1.5));
 	e0.print_summary();
 	cout << endl;
@@ -41,7 +41,7 @@ int main(int argc, char * argv[])
 
 
 	// triangle
-	cout << "******* Triangle *******" << endl;
+	cout << "\n******* Triangle *******" << endl;
 	Triangle t0(Point<2>(0,0), Point<2>(1,0), Point<2>(0,1));
 	t0.print_summary();
 	cout << endl;
@@ -52,7 +52,7 @@ int main(int argc, char * argv[])
 
 
 	// polycurve
-	cout << "******* Polycurve *******" << endl;
+	cout << "\n******* Polycurve *******" << endl;
 	vector<shared_ptr<Segment<2>>> seg;
 	seg.push_back(shared_ptr<Segment<2>>(new LineSegment(Point<2>(0,0),Point<2>(-1,1))));
 	seg.push_back(shared_ptr<Segment<2>>(new LineSegment(Point<2>(-1,1),Point<2>(0,2))));
@@ -67,7 +67,7 @@ int main(int argc, char * argv[])
 
 
 	// polygon
-	cout << "******* Polygon *******" << endl;
+	cout << "\n******* Polygon *******" << endl;
 	vector<LineSegment> seg2;
 	seg2.push_back(LineSegment(Point<2>(0,0),Point<2>(-1,1)));
 	seg2.push_back(LineSegment(Point<2>(-1,1),Point<2>(0,2)));
@@ -84,7 +84,7 @@ int main(int argc, char * argv[])
 
 
 	// regular polygon
-	cout << "******* Regular Polygon *******" << endl;
+	cout << "\n******* Regular Polygon *******" << endl;
 	RegularPolygon rpg0(5, Point<2>(0,-2), 1);
 	rpg0.print_summary();
 	cout << endl;
@@ -96,6 +96,7 @@ int main(int argc, char * argv[])
 
 
 	// build a 2D geometry model
+	cout << "\n******* CSGeometry2D *******" << endl;
 	shared_ptr<CSGeometry2D> obj1(new CSGeometry2D(shared_ptr<Primitive2D>(new Rectangle(Point<2>(0,0),Point<2>(2,2))), shared_ptr<Primitive2D>(new Circle(Point<2>(0,0), 0.6)), DIFFERENCE));
 	obj1->print_summary();
 	shared_ptr<CSGeometry2D> obj2(new CSGeometry2D(shared_ptr<Primitive2D>(new Rectangle(Point<2>(0,0),Point<2>(0.3,2))), shared_ptr<Primitive2D>(new Rectangle(Point<2>(0,0),Point<2>(2,0.3))), UNION));
@@ -104,6 +105,10 @@ int main(int argc, char * argv[])
 	shared_ptr<CSGeometry2D> window(new CSGeometry2D(obj1, obj2, UNION));
 	window->print_summary();
 	cout << "BoundingBox: " << window->get_bounding_box() << endl;
+	cout << "Contains Point " << Point<2>(0.4,0) << "? " << int(window->contains_point(Point<2>(0.4,0))) << endl;
+	cout << "Contains Point " << Point<2>(0.4,0.15) << "? " << int(window->contains_point(Point<2>(0.4,0.15))) << endl;
+	cout << "Contains Point " << Point<2>(0.4,0.16) << "? " << int(window->contains_point(Point<2>(0.4,0.16))) << endl;
+
 	// CSGeometry2D()
 
 

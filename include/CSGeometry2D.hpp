@@ -69,10 +69,10 @@ public:
 				return lc && rc;
 				break;
 			case DIFFERENCE:
-				return lc && ~rc;
+				return lc && !rc;
 				break;
 			case XOR:
-				return (lc || rc) && ~(lc && rc);
+				return (lc || rc) && !(lc && rc);
 				break;
 		}
 	}
@@ -94,12 +94,12 @@ public:
 				break;
 			case DIFFERENCE:
 				rcoll = m_rdaughter->collides_box(bx);
-				return lc && ~rc && ~rcoll;
+				return lc && !rc && !rcoll;
 				break;
 			case XOR:
 				lcoll = m_ldaughter->collides_box(bx);
 				rcoll = m_rdaughter->collides_box(bx);
-				return (lc || rc) && ~(lc && rc) && ~lcoll && ~rcoll;
+				return (lc || rc) && !(lc && rc) && !lcoll && !rcoll;
 				break;
 		}
 	}
@@ -120,12 +120,12 @@ public:
 				break;
 			case DIFFERENCE:
 				rcont = m_rdaughter->contains_box(bx);
-				return lc && ~rc && ~rcont;
+				return lc && !rc && !rcont;
 				break;
 			case XOR:
 				lcont = m_ldaughter->contains_box(bx);
 				rcont = m_rdaughter->contains_box(bx);
-				return (lc || rc) && ~(lcont && rcont);
+				return (lc || rc) && !(lcont && rcont);
 				break;
 		}
 	}
