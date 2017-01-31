@@ -171,8 +171,17 @@ struct Box{
 		return Box(lo,hi);
 	}
 
+	// print to std::out
+	template<std::size_t d>
+	friend std::ostream & operator<<(std::ostream & os, const Box<d> & bx);
 
 };
+
+template<std::size_t dim>
+std::ostream & operator<<(std::ostream & os, const Box<dim> & bx){
+	os << "lo:" << bx.lo << " hi:" << bx.hi ;
+	return os;
+}
 
 /*
 namespace Box{
@@ -286,10 +295,13 @@ struct Segment{
 	Segment(const Point<dim> & b, const Point<dim> & e)
 	: begin(b), end(e) {};
 
-	virtual bool isLeft(const Point<2> & pt) const {
-		return ((end.x[0]-begin.x[0])*(pt.x[1]-begin.x[1])
-			  - (pt.x[0] - begin.x[0])*(end.x[1] - begin.x[1])) >= 0;
-	}
+	double isLeft(const Point<2> & pt) const {return isLeftImp(pt);};
+	virtual double isLeftImp(const Point<2> & pt) const = 0;
+	// {
+	// 	std::cout << "SEGMENT isLeft" << std::endl;
+	// 	return ((end.x[0]-begin.x[0])*(pt.x[1]-begin.x[1])
+	// 		  - (pt.x[0] - begin.x[0])*(end.x[1] - begin.x[1]));
+	// }
 
 	// data
 	Point<dim> begin, end;
@@ -306,6 +318,12 @@ struct LineSegment : public Segment<2>{
 	LineSegment(const Point<2> & b, const Point<2> & e)
 	: Segment<2>(b,e) {};
 
+	double isLeftImp(const Point<2> & pt) const {
+		// std::cout << "LINESEGMENT isLeft" << std::endl;
+		return ((end.x[0]-begin.x[0])*(pt.x[1]-begin.x[1])
+			  - (pt.x[0] - begin.x[0])*(end.x[1] - begin.x[1]));
+	}
+
 };
 
 
@@ -318,9 +336,10 @@ struct CircleSegment : public Segment<2>{
 	CircleSegment(const Point<2> & b, const Point<2> & e, double rad, bool leftrunning)
 	: Segment(b,e) {};
 
-	bool isLeft(const Point<2> & pt) const {
-		if (begin.x[1] > end.x[1] && lrun) return true;
-		else if (begin.x[1] < end.x[1] && ~lrun) return true;
+	double isLeftImp(const Point<2> & pt) const {
+		// std::cout << "CIRCLESEGMENT isLeft" << std::endl;
+		if (begin.x[1] > end.x[1] && lrun) return false;
+		else if (begin.x[1] < end.x[1] && ~lrun) return false;
 
 		// now check the harder cases
 	}

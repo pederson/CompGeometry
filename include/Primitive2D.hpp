@@ -2,6 +2,7 @@
 #define _PRIMITIVE2D_H
 
 #include "GeomUtils.hpp"
+#include <memory>
 
 class Primitive2D 
 {
@@ -79,21 +80,24 @@ public:
 	Rectangle(){};
 
 	Rectangle(const Point<2> & center, const Point<2> & dims)
-	: m_diag1(center-0.5*dims, center+0.5*dims)
-	, m_diag2(center+Point<2>(-0.5*dims.x[0], 0.5*dims.x[1]), center + Point<2>(0.5*dims.x[0], -0.5*dims.x[1])) {};
+	: m_center(center)
+	, m_lx(dims.x[0])
+	, m_ly(dims.x[1])
+	, m_rotation(0) {};
 
 	Box<2> get_bounding_box() const {
-		return Box<2>(Point<2>(std::min(std::min(m_diag1.begin.x[0],m_diag1.end.x[0]),std::min(m_diag2.begin.x[0], m_diag2.end.x[0])),
-							   std::min(std::min(m_diag1.begin.x[1],m_diag1.end.x[1]),std::min(m_diag2.begin.x[1], m_diag2.end.x[1]))),
-					  Point<2>(std::max(std::max(m_diag1.begin.x[0],m_diag1.end.x[0]),std::max(m_diag2.begin.x[0], m_diag2.end.x[0])), 
-					  		   std::max(std::max(m_diag1.begin.x[1],m_diag1.end.x[1]),std::max(m_diag2.begin.x[1], m_diag2.end.x[1]))));
+		Point<2> p1(0.5*m_lx*cos(m_rotation)-0.5*m_ly*sin(m_rotation)+m_center.x[0], 0.5*m_lx*sin(m_rotation)+0.5*m_ly*cos(m_rotation)+m_center.x[1]);
+		Point<2> p2(-0.5*m_lx*cos(m_rotation)-0.5*m_ly*sin(m_rotation)+m_center.x[0], -0.5*m_lx*sin(m_rotation)+0.5*m_ly*cos(m_rotation)+m_center.x[1]);
+		Point<2> p3(0.5*m_lx*cos(m_rotation)+0.5*m_ly*sin(m_rotation)+m_center.x[0], 0.5*m_lx*sin(m_rotation)-0.5*m_ly*cos(m_rotation)+m_center.x[1]);
+		Point<2> p4(-0.5*m_lx*cos(m_rotation)+0.5*m_ly*sin(m_rotation)+m_center.x[0], -0.5*m_lx*sin(m_rotation)-0.5*m_ly*cos(m_rotation)+m_center.x[1]);
+		return Box<2>(Point<2>(std::min(std::min(p1.x[0],p2.x[0]),std::min(p3.x[0], p4.x[0])),
+							   std::min(std::min(p1.x[1],p2.x[1]),std::min(p3.x[1], p4.x[1]))),
+					  Point<2>(std::max(std::max(p1.x[0],p2.x[0]),std::max(p3.x[0], p4.x[0])), 
+					  		   std::max(std::max(p1.x[1],p2.x[1]),std::max(p3.x[1], p4.x[1]))));
 	}
 
 	void translate(const Point<2> & pt) {
-		m_diag1.begin = m_diag1.begin + pt;
-		m_diag1.end = m_diag1.end + pt;
-		m_diag2.begin = m_diag2.begin + pt;
-		m_diag2.end = m_diag2.end + pt;
+		m_center = m_center + pt;
 	}
 
 	// void rotate(const Point<2> & anchor, double degrees) {
@@ -101,9 +105,11 @@ public:
 	// }
 
 	bool contains_point(const Point<2> & pt) const{
-		double sidelong = std::max(Point<2>::distsq(m_diag1.begin, m_diag2.end), Point<2>::distsq(m_diag1.begin, m_diag2.begin));
-		return (Point<2>::distsq(m_diag1.begin,pt) <= sidelong) && (Point<2>::distsq(m_diag1.end,pt) <= sidelong)
-		    && (Point<2>::distsq(m_diag2.begin,pt) <= sidelong) && (Point<2>::distsq(m_diag2.end,pt) <= sidelong); 
+		Point<2> x = pt - m_center;
+		Point<2> rotx(cos(m_rotation)*x.x[0]+sin(m_rotation)*x.x[1], -sin(m_rotation)*x.x[0]+cos(m_rotation)*x.x[1]);
+		Box<2> bx(Point<2>(-m_lx/2, -m_ly/2), Point<2>(m_lx/2, m_ly/2));
+		// std::cout << "box dist: " << Box<2>::dist(bx,rotx) << std::endl;
+		return Box<2>::distsq(bx, rotx) < 1.0e-16; 
 	}
 
 	bool contains_box(const Box<2> & bx) const{
@@ -119,12 +125,15 @@ public:
 	}
 
 	void print_summary(std::ostream & os = std::cout) const{
-		os << "Rectangle: center = " << (0.5*(m_diag1.begin+m_diag1.end));
-		os << " sides = (" << Point<2>::dist(m_diag1.begin, m_diag2.end) << ", " << Point<2>::dist(m_diag1.begin, m_diag2.begin) << ")" ;
+		os << "Rectangle: center = " << m_center;
+		os << " sides = (" << m_lx << ", " << m_ly << ")" ;
 	}
 private:
 
-	LineSegment m_diag1, m_diag2;
+	double m_rotation;	// rotation angle in radians
+	double m_lx, m_ly;	// length of the x and y sides
+	Point<2> m_center;	
+	// LineSegment m_diag1, m_diag2;
 };
 
 
@@ -143,12 +152,13 @@ public:
 	, m_rotation(0) {};
 
 	Box<2> get_bounding_box() const {
-		double asq = Point<2>::distsq(m_axis1.begin, m_axis1.end);
-		double bsq = Point<2>::distsq(m_axis2.begin, m_axis2.end);
-		return Box<2>(Point<2>(-sqrt(asq*cos(m_rotation)*cos(m_rotation) + bsq*sin(m_rotation)*sin(m_rotation)),
-							   -sqrt(asq*sin(m_rotation)*sin(m_rotation) + bsq*cos(m_rotation)*cos(m_rotation))),
-					  Point<2>(sqrt(asq*cos(m_rotation)*cos(m_rotation) + bsq*sin(m_rotation)*sin(m_rotation)), 
-					  		   sqrt(asq*sin(m_rotation)*sin(m_rotation) + bsq*cos(m_rotation)*cos(m_rotation))));
+		double asq = Point<2>::distsq(m_axis1.begin, m_axis1.end)*0.25;
+		double bsq = Point<2>::distsq(m_axis2.begin, m_axis2.end)*0.25;
+		Point<2> m_center = 0.5*(m_axis1.begin+m_axis1.end);
+		return Box<2>(Point<2>(m_center.x[0]-sqrt(asq*cos(m_rotation)*cos(m_rotation) + bsq*sin(m_rotation)*sin(m_rotation)),
+							   m_center.x[1]-sqrt(asq*sin(m_rotation)*sin(m_rotation) + bsq*cos(m_rotation)*cos(m_rotation))),
+					  Point<2>(m_center.x[0]+sqrt(asq*cos(m_rotation)*cos(m_rotation) + bsq*sin(m_rotation)*sin(m_rotation)), 
+					  		   m_center.x[1]+sqrt(asq*sin(m_rotation)*sin(m_rotation) + bsq*cos(m_rotation)*cos(m_rotation))));
 	}
 
 	void translate(const Point<2> & pt) {
@@ -163,12 +173,12 @@ public:
 	// }
 
 	bool contains_point(const Point<2> & pt) const{
-		double asq = Point<2>::distsq(m_axis1.begin, m_axis1.end);
-		double bsq = Point<2>::distsq(m_axis2.begin, m_axis2.end);
+		double asq = Point<2>::distsq(m_axis1.begin, m_axis1.end)*0.25;
+		double bsq = Point<2>::distsq(m_axis2.begin, m_axis2.end)*0.25;
 		Point<2> cen = 0.5*(m_axis1.begin+m_axis1.end);
 		Point<2> x = pt - cen;
 		return (x.x[0]*cos(m_rotation)-x.x[1]*sin(m_rotation))*(x.x[0]*cos(m_rotation)-x.x[1]*sin(m_rotation))/asq + 
-			   (x.x[0]*sin(m_rotation)-x.x[1]*cos(m_rotation))*(x.x[0]*sin(m_rotation)-x.x[1]*cos(m_rotation))/bsq <= 1; 
+			   (x.x[0]*sin(m_rotation)+x.x[1]*cos(m_rotation))*(x.x[0]*sin(m_rotation)+x.x[1]*cos(m_rotation))/bsq <= 1; 
 	}
 
 	bool contains_box(const Box<2> & bx) const{
@@ -189,7 +199,7 @@ public:
 	}
 private:
 
-	double m_rotation;
+	double m_rotation;	// rotation angle in radians
 	LineSegment m_axis1, m_axis2;
 };
 
@@ -230,40 +240,47 @@ public:
 	bool contains_point(const Point<2> & pt) const{
 
 		// do rigorous point-in-polygon check
-		unsigned int wn = 0;
+		int wn = 0;
 		LineSegment L1(m_p1, m_p2);
+		// std::cout << "point: " << pt << std::endl;
+		// std::cout << "isleft? " << (L1.isLeft(pt)) << std::endl;
 		if (m_p1.x[1] <= pt.x[1]){
 			if (m_p2.x[1] > pt.x[1]){
-				if (L1.isLeft(pt)) wn++;
+				if (L1.isLeft(pt) >=0) wn++;
 			}
 		}
 		else{
 			if (m_p2.x[1] <= pt.x[1]){
-				if (L1.isLeft(pt)) wn--;
+				if (L1.isLeft(pt) <0) wn--;
 			}
 		}
+		// std::cout << "after segment 1: " << wn << std::endl;
 		LineSegment L2(m_p2, m_p3);
+		// std::cout << "isleft? " << (L2.isLeft(pt)) << std::endl;
 		if (m_p2.x[1] <= pt.x[1]){
 			if (m_p3.x[1] > pt.x[1]){
-				if (L2.isLeft(pt)) wn++;
+				if (L2.isLeft(pt) >=0) wn++;
 			}
 		}
 		else{
 			if (m_p3.x[1] <= pt.x[1]){
-				if (L2.isLeft(pt)) wn--;
+				if (L2.isLeft(pt) <0) wn--;
 			}
 		}
+		// std::cout << "after segment 2: " << wn << std::endl;
 		LineSegment L3(m_p3, m_p1);
+		// std::cout << "isleft? " << (L3.isLeft(pt)) << std::endl;
 		if (m_p3.x[1] <= pt.x[1]){
-			if (m_p1.x[1] > pt.x[1]){
-				if (L3.isLeft(pt)) wn++;
+			if (m_p1.x[1] > pt.x[1]){	// downward edge
+				if (L3.isLeft(pt) >=0) wn++;
 			}
 		}
-		else{
-			if (m_p1.x[1] <= pt.x[1]){
-				if (L3.isLeft(pt)) wn--;
+		else{	
+			if (m_p1.x[1] <= pt.x[1]){	// upward edge
+				if (L3.isLeft(pt) <0) wn--;
 			}
 		}
+		// std::cout << "after segment 3: " << wn << std::endl;
 
 		return (wn==0)? false : true;
 	}
@@ -302,30 +319,30 @@ public:
 
 	Polycurve(){};
 
-	Polycurve(const std::vector<Segment<2>> & segs)
+	Polycurve(const std::vector<std::shared_ptr<Segment<2>>> & segs)
 	: m_segments(segs) {};
 
 	Box<2> get_bounding_box() const {
-		Point<2> lo = m_segments[0].begin;
+		Point<2> lo = m_segments[0]->begin;
 		Point<2> hi = lo;
 		for (auto i=0; i<m_segments.size(); i++){
-			lo.x[0] = std::min(lo.x[0],m_segments[i].begin.x[0]);
-			lo.x[0] = std::min(lo.x[0],m_segments[i].end.x[0]);
-			lo.x[1] = std::min(lo.x[1],m_segments[i].begin.x[1]);
-			lo.x[1] = std::min(lo.x[1],m_segments[i].end.x[1]);
+			lo.x[0] = std::min(lo.x[0],m_segments[i]->begin.x[0]);
+			lo.x[0] = std::min(lo.x[0],m_segments[i]->end.x[0]);
+			lo.x[1] = std::min(lo.x[1],m_segments[i]->begin.x[1]);
+			lo.x[1] = std::min(lo.x[1],m_segments[i]->end.x[1]);
 
-			hi.x[0] = std::max(hi.x[0],m_segments[i].begin.x[0]);
-			hi.x[0] = std::max(hi.x[0],m_segments[i].end.x[0]);
-			hi.x[1] = std::max(hi.x[1],m_segments[i].begin.x[1]);
-			hi.x[1] = std::max(hi.x[1],m_segments[i].end.x[1]);
+			hi.x[0] = std::max(hi.x[0],m_segments[i]->begin.x[0]);
+			hi.x[0] = std::max(hi.x[0],m_segments[i]->end.x[0]);
+			hi.x[1] = std::max(hi.x[1],m_segments[i]->begin.x[1]);
+			hi.x[1] = std::max(hi.x[1],m_segments[i]->end.x[1]);
 		}
 		return Box<2>(lo,hi);
 	}
 
 	void translate(const Point<2> & pt) {
 		for (auto i=0; i<m_segments.size(); i++){
-			m_segments[i].begin = m_segments[i].begin + pt;
-			m_segments[i].end = m_segments[i].end + pt;
+			m_segments[i]->begin = m_segments[i]->begin + pt;
+			m_segments[i]->end = m_segments[i]->end + pt;
 		}
 	}
 
@@ -336,21 +353,24 @@ public:
 	bool contains_point(const Point<2> & pt) const{
 		// first check bounding Box
 		Box<2> bx = get_bounding_box();
-		if (Box<2>::distsq(bx, pt) > 0) return false;
+		if (Box<2>::dist(bx, pt) > 1.0e-16) return false;
+		std::cout << "checking polycurve" << std::endl;
 
 		// do more rigorous point-in-polygon check
 		unsigned int wn = 0;
 		for (auto i=0; i<m_segments.size(); i++){
-			Point<2> p1 = m_segments[i].begin;
-			Point<2> p2 = m_segments[i].end;
+
+			Point<2> p1 = m_segments[i]->begin;
+			Point<2> p2 = m_segments[i]->end;
+			// std::cout << p1 << "-->" << p2 << std::endl;
 			if (p1.x[1] <= pt.x[1]){
 				if (p2.x[1] > pt.x[1]){
-					if (m_segments[i].isLeft(pt)) wn++;
+					if (m_segments[i]->isLeft(pt)>=0) wn++;
 				}
 			}
 			else{
 				if (p2.x[1] <= pt.x[1]){
-					if (m_segments[i].isLeft(pt)) wn--;
+					if (m_segments[i]->isLeft(pt)<0) wn--;
 				}
 			}
 		}
@@ -372,15 +392,15 @@ public:
 
 	virtual void print_summary(std::ostream & os = std::cout) const{
 		os << "Polycurve: nsides = " << m_segments.size() ;
-		os << " " << m_segments[0].begin ;
+		os << " " << m_segments[0]->begin ;
 		for (auto i=1; i<m_segments.size(); i++){
-			os << "-->" << m_segments[i].begin ;
+			os << "-->" << m_segments[i]->begin ;
 		}
 	}
 
 protected:
 
-	std::vector<Segment<2>> m_segments;
+	std::vector<std::shared_ptr<Segment<2>>> m_segments;
 };
 
 
@@ -396,18 +416,17 @@ public:
 	Polygon(){};
 
 	Polygon(const std::vector<LineSegment> & segs)
-	: m_segments(segs) {};
+	{
+		for (auto i=0; i<segs.size(); i++) m_segments.push_back(std::shared_ptr<Segment<2>>(new LineSegment(segs[i])));
+	}
 
 	void print_summary(std::ostream & os = std::cout) const{
 		os << "Polygon: nsides = " << m_segments.size() ;
-		os << " " << m_segments[0].begin ;
+		os << " " << m_segments[0]->begin ;
 		for (auto i=1; i<m_segments.size(); i++){
-			os << "-->" << m_segments[i].begin ;
+			os << "-->" << m_segments[i]->begin ;
 		}
 	}
-
-protected:
-	std::vector<LineSegment> m_segments;
 };
 
 
@@ -426,17 +445,22 @@ public:
 	RegularPolygon(unsigned int nsides, const Point<2> & center, double tovertex)
 	{
 		// angle between consecutive segments
-		double dtheta = 360.0/nsides;
+		double pi = 3.14159265358979323846;
+		double dtheta = 360.0/nsides * pi/180.0;
 
 		// beginning angle
-		double theta = -90 - dtheta*0.5;
+		double theta = -pi/2 - dtheta*0.5;
+
+		// std::cout << "dtheta: " << dtheta << " theta0: " << theta << std::endl;
 
 		// calculate locations of line segments
 		for (auto i=0; i<nsides; i++){
+			// std::cout << "theta: " << theta << std::endl;
 			Point<2> begin (tovertex*cos(theta), tovertex*sin(theta));
 			Point<2> end (tovertex*cos(theta+dtheta), tovertex*sin(theta+dtheta));
+			// std::cout << begin << "-->" << end << std::endl;
 			LineSegment s(begin+center, end+center);
-			m_segments.push_back(s);
+			m_segments.push_back(std::shared_ptr<Segment<2>>(new LineSegment(s)));
 			theta += dtheta;
 		}
 
@@ -445,9 +469,9 @@ public:
 
 	void print_summary(std::ostream & os = std::cout) const{
 		os << "RegularPolygon: nsides = " << m_segments.size() ;
-		os << " " << m_segments[0].begin ;
+		os << " " << m_segments[0]->begin ;
 		for (auto i=1; i<m_segments.size(); i++){
-			os << "-->" << m_segments[i].begin ;
+			os << "-->" << m_segments[i]->begin ;
 		}
 	}
 
