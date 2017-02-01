@@ -94,7 +94,7 @@ public:
 				break;
 			case DIFFERENCE:
 				rcoll = m_rdaughter->collides_box(bx);
-				return lc && !rc && !rcoll;
+				return lc && !rcoll;
 				break;
 			case XOR:
 				lcoll = m_ldaughter->collides_box(bx);
@@ -120,7 +120,7 @@ public:
 				break;
 			case DIFFERENCE:
 				rcont = m_rdaughter->contains_box(bx);
-				return lc && !rc && !rcont;
+				return lc && !rcont;
 				break;
 			case XOR:
 				lcont = m_ldaughter->contains_box(bx);

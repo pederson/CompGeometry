@@ -1,7 +1,9 @@
 #include <iostream>
 
 #include "include/GeomUtils.hpp"
+#include "include/Primitive2D.hpp"
 #include "include/CSGeometry2D.hpp"
+#include "include/Primitive3D.hpp"
 
 using namespace std;
 
@@ -17,6 +19,11 @@ int main(int argc, char * argv[])
 	cout << "Contains Point " << Point<2>(0.25, 0.25) << "? " << int(c0.contains_point(Point<2>(0.25,0.25))) << endl;
 	cout << "Contains Point " << Point<2>(-0.5, 0.5) << "? " << int(c0.contains_point(Point<2>(-0.5,0.5))) << endl;
 	cout << "Contains Point " << Point<2>(1.5, 1.5) << "? " << int(c0.contains_point(Point<2>(1.5,1.5))) << endl;
+	cout << "Contains Box " << Box<2>(Point<2>(-0.2, -0.2),Point<2>(0.2,0.2)) << "? " << int(c0.contains_box(Box<2>(Point<2>(-0.2, -0.2),Point<2>(0.2,0.2)))) << endl;
+	cout << "Contains Box " << Box<2>(Point<2>(-0.3, -0.3),Point<2>(0.2,0.2)) << "? " << int(c0.contains_box(Box<2>(Point<2>(-0.3, -0.3),Point<2>(0.2,0.2)))) << endl;
+	cout << "Collides Box " << Box<2>(Point<2>(-0.2, -0.2),Point<2>(0.2,0.2)) << "? " << int(c0.collides_box(Box<2>(Point<2>(-0.2, -0.2),Point<2>(0.2,0.2)))) << endl;
+	cout << "Collides Box " << Box<2>(Point<2>(-0.3, -0.3),Point<2>(0.2,0.2)) << "? " << int(c0.collides_box(Box<2>(Point<2>(-0.3, -0.3),Point<2>(0.2,0.2)))) << endl;
+
 
 	// rectangle
 	cout << "\n******* Rectangle *******" << endl;
@@ -27,6 +34,10 @@ int main(int argc, char * argv[])
 	cout << "Contains Point " << Point<2>(0.5, 0.6) << "? " << int(r0.contains_point(Point<2>(0.5, 0.6))) << endl;
 	cout << "Contains Point " << Point<2>(0.65, 0.7) << "? " << int(r0.contains_point(Point<2>(0.65, 0.7))) << endl;
 	cout << "Contains Point " << Point<2>(0.65, 0.71) << "? " << int(r0.contains_point(Point<2>(0.65, 0.71))) << endl;
+	cout << "Contains Box " << Box<2>(Point<2>(0.5,0.5),Point<2>(0.6,0.6)) << "? " << int(r0.contains_box(Box<2>(Point<2>(0.5, 0.5),Point<2>(0.6,0.6)))) << endl;
+	cout << "Contains Box " << Box<2>(Point<2>(-0.3,-0.3),Point<2>(0.6,0.6)) << "? " << int(r0.contains_box(Box<2>(Point<2>(-0.3, -0.3),Point<2>(0.6,0.6)))) << endl;
+	cout << "Collides Box " << Box<2>(Point<2>(0.5,0.5),Point<2>(0.6,0.6)) << "? " << int(r0.collides_box(Box<2>(Point<2>(0.5, 0.5),Point<2>(0.6,0.6)))) << endl;
+	cout << "Collides Box " << Box<2>(Point<2>(-0.3,-0.3),Point<2>(0.6,0.6)) << "? " << int(r0.collides_box(Box<2>(Point<2>(-0.3, -0.3),Point<2>(0.6,0.6)))) << endl;
 
 
 	// ellipse
@@ -38,6 +49,10 @@ int main(int argc, char * argv[])
 	cout << "Contains Point " << Point<2>(0.5, 0.6) << "? " << int(e0.contains_point(Point<2>(0.5, 0.6))) << endl;
 	cout << "Contains Point " << Point<2>(1.0, 0.5) << "? " << int(e0.contains_point(Point<2>(1.0, 0.5))) << endl;
 	cout << "Contains Point " << Point<2>(1.1, 0.5) << "? " << int(e0.contains_point(Point<2>(1.1, 0.5))) << endl;
+	cout << "Contains Box " << Box<2>(Point<2>(0.5,0.5),Point<2>(0.6,0.6)) << "? " << int(e0.contains_box(Box<2>(Point<2>(0.5, 0.5),Point<2>(0.6,0.6)))) << endl;
+	cout << "Contains Box " << Box<2>(Point<2>(-0.3,-0.3),Point<2>(0.6,0.6)) << "? " << int(e0.contains_box(Box<2>(Point<2>(-0.3, -0.3),Point<2>(0.6,0.6)))) << endl;
+	cout << "Collides Box " << Box<2>(Point<2>(0.5,0.5),Point<2>(0.6,0.6)) << "? " << int(e0.collides_box(Box<2>(Point<2>(0.5, 0.5),Point<2>(0.6,0.6)))) << endl;
+	cout << "Collides Box " << Box<2>(Point<2>(-0.3,-0.3),Point<2>(0.6,0.6)) << "? " << int(e0.collides_box(Box<2>(Point<2>(-0.3, -0.3),Point<2>(0.6,0.6)))) << endl;
 
 
 	// triangle
@@ -49,7 +64,10 @@ int main(int argc, char * argv[])
 	cout << "Contains Point " << Point<2>(0.4, 0.4) << "? " << int(t0.contains_point(Point<2>(0.4, 0.4))) << endl;
 	cout << "Contains Point " << Point<2>(0.5, 0.5) << "? " << int(t0.contains_point(Point<2>(0.5, 0.5))) << endl;
 	cout << "Contains Point " << Point<2>(0.51, 0.51) << "? " << int(t0.contains_point(Point<2>(0.51, 0.51))) << endl;
-
+	cout << "Contains Box " << Box<2>(Point<2>(0.1,0.1),Point<2>(0.4,0.4)) << "? " << int(t0.contains_box(Box<2>(Point<2>(0.1, 0.1),Point<2>(0.4,0.4)))) << endl;
+	cout << "Contains Box " << Box<2>(Point<2>(-0.1,0.1),Point<2>(0.1,0.1)) << "? " << int(t0.contains_box(Box<2>(Point<2>(-0.1, 0.1),Point<2>(0.1,0.1)))) << endl;
+	cout << "Collides Box " << Box<2>(Point<2>(0.1,0.1),Point<2>(0.4,0.4)) << "? " << int(t0.collides_box(Box<2>(Point<2>(0.1, 0.1),Point<2>(0.4,0.4)))) << endl;
+	cout << "Collides Box " << Box<2>(Point<2>(-0.1,0.1),Point<2>(0.1,0.1)) << "? " << int(t0.collides_box(Box<2>(Point<2>(-0.1, 0.1),Point<2>(0.1,0.1)))) << endl;
 
 	// polycurve
 	cout << "\n******* Polycurve *******" << endl;
@@ -64,6 +82,10 @@ int main(int argc, char * argv[])
 	cout << "Contains Point " << Point<2>(-0.9, 1.0) << "? " << int(pc0.contains_point(Point<2>(-0.9,1.0))) << endl;
 	cout << "Contains Point " << Point<2>(0.1, 1.0) << "? " << int(pc0.contains_point(Point<2>(0.1, 1.0))) << endl;
 	cout << "Contains Point " << Point<2>(0.5, 1.0) << "? " << int(pc0.contains_point(Point<2>(0.5, 1.0))) << endl;
+	cout << "Contains Box " << Box<2>(Point<2>(0.1,0.1),Point<2>(0.4,0.4)) << "? " << int(pc0.contains_box(Box<2>(Point<2>(0.1, 0.1),Point<2>(0.4,0.4)))) << endl;
+	cout << "Contains Box " << Box<2>(Point<2>(-0.1,0.1),Point<2>(0.1,0.1)) << "? " << int(pc0.contains_box(Box<2>(Point<2>(-0.1, 0.1),Point<2>(0.1,0.1)))) << endl;
+	cout << "Collides Box " << Box<2>(Point<2>(0.1,0.1),Point<2>(0.4,0.4)) << "? " << int(pc0.collides_box(Box<2>(Point<2>(0.1, 0.1),Point<2>(0.4,0.4)))) << endl;
+	cout << "Collides Box " << Box<2>(Point<2>(-0.1,0.1),Point<2>(0.1,0.1)) << "? " << int(pc0.collides_box(Box<2>(Point<2>(-0.1, 0.1),Point<2>(0.1,0.1)))) << endl;
 
 
 	// polygon
@@ -80,6 +102,10 @@ int main(int argc, char * argv[])
 	cout << "Contains Point " << Point<2>(-0.9, 1.0) << "? " << int(pg0.contains_point(Point<2>(-0.9,1.0))) << endl;
 	cout << "Contains Point " << Point<2>(0.1, 1.0) << "? " << int(pg0.contains_point(Point<2>(0.1, 1.0))) << endl;
 	cout << "Contains Point " << Point<2>(1.1, 1.0) << "? " << int(pg0.contains_point(Point<2>(1.1, 1.0))) << endl;
+	cout << "Contains Box " << Box<2>(Point<2>(0.1,0.1),Point<2>(0.4,0.4)) << "? " << int(pg0.contains_box(Box<2>(Point<2>(0.1, 0.1),Point<2>(0.4,0.4)))) << endl;
+	cout << "Contains Box " << Box<2>(Point<2>(-0.1,0.1),Point<2>(0.1,0.1)) << "? " << int(pg0.contains_box(Box<2>(Point<2>(-0.1, 0.1),Point<2>(0.1,0.1)))) << endl;
+	cout << "Collides Box " << Box<2>(Point<2>(0.1,0.1),Point<2>(0.4,0.4)) << "? " << int(pg0.collides_box(Box<2>(Point<2>(0.1, 0.1),Point<2>(0.4,0.4)))) << endl;
+	cout << "Collides Box " << Box<2>(Point<2>(-0.1,0.1),Point<2>(0.1,0.1)) << "? " << int(pg0.collides_box(Box<2>(Point<2>(-0.1, 0.1),Point<2>(0.1,0.1)))) << endl;
 
 
 
@@ -92,6 +118,10 @@ int main(int argc, char * argv[])
 	cout << "Contains Point " << Point<2>(0,-2) << "? " << int(rpg0.contains_point(Point<2>(0,-2))) << endl;
 	cout << "Contains Point " << Point<2>(0,-1) << "? " << int(rpg0.contains_point(Point<2>(0,-1))) << endl;
 	cout << "Contains Point " << Point<2>(0,0) << "? " << int(rpg0.contains_point(Point<2>(0,0))) << endl;
+	cout << "Contains Box " << Box<2>(Point<2>(0.1,0.1),Point<2>(0.4,0.4)) << "? " << int(rpg0.contains_box(Box<2>(Point<2>(0.1, 0.1),Point<2>(0.4,0.4)))) << endl;
+	cout << "Contains Box " << Box<2>(Point<2>(-0.1,0.1),Point<2>(0.1,0.1)) << "? " << int(rpg0.contains_box(Box<2>(Point<2>(-0.1, 0.1),Point<2>(0.1,0.1)))) << endl;
+	cout << "Collides Box " << Box<2>(Point<2>(0.1,0.1),Point<2>(0.4,0.4)) << "? " << int(rpg0.collides_box(Box<2>(Point<2>(0.1, 0.1),Point<2>(0.4,0.4)))) << endl;
+	cout << "Collides Box " << Box<2>(Point<2>(-0.1,0.1),Point<2>(0.1,0.1)) << "? " << int(rpg0.collides_box(Box<2>(Point<2>(-0.1, 0.1),Point<2>(0.1,0.1)))) << endl;
 
 
 
@@ -108,12 +138,26 @@ int main(int argc, char * argv[])
 	cout << "Contains Point " << Point<2>(0.4,0) << "? " << int(window->contains_point(Point<2>(0.4,0))) << endl;
 	cout << "Contains Point " << Point<2>(0.4,0.15) << "? " << int(window->contains_point(Point<2>(0.4,0.15))) << endl;
 	cout << "Contains Point " << Point<2>(0.4,0.16) << "? " << int(window->contains_point(Point<2>(0.4,0.16))) << endl;
-
-	// CSGeometry2D()
+	cout << "Contains Box " << Box<2>(Point<2>(-0.14,-0.14),Point<2>(0.14,0.14)) << "? " << int(window->contains_box(Box<2>(Point<2>(-0.14, -0.14),Point<2>(0.14,0.14)))) << endl;
+	cout << "Contains Box " << Box<2>(Point<2>(-0.1,0.1),Point<2>(0.16,0.16)) << "? " << int(window->contains_box(Box<2>(Point<2>(-0.1, 0.1),Point<2>(0.16,0.16)))) << endl;
+	cout << "Collides Box " << Box<2>(Point<2>(-0.14,-0.14),Point<2>(0.14,0.14)) << "? " << int(window->collides_box(Box<2>(Point<2>(-0.14, -0.14),Point<2>(0.14,0.14)))) << endl;
+	cout << "Collides Box " << Box<2>(Point<2>(-0.1,0.1),Point<2>(0.16,0.16)) << "? " << int(window->collides_box(Box<2>(Point<2>(-0.1, 0.1),Point<2>(0.16,0.16)))) << endl;
 
 
 
 	// tests 3D primitives
+	// sphere
+	cout << "\n******* Sphere *******" << endl;
+	Sphere s0 (Point<3>(0.5, 0.5, 0.5), 1.0);
+	s0.print_summary(); cout << endl;
+	cout << "BoundingBox: " << s0.get_bounding_box() << endl;
+	cout << "Contains Point " << Point<3>(0.25, 0.25, 0.25) << "? " << int(s0.contains_point(Point<3>(0.25,0.25,0.25))) << endl;
+	cout << "Contains Point " << Point<3>(-0.5, 0.5, 0.5) << "? " << int(s0.contains_point(Point<3>(-0.5,0.5,0.5))) << endl;
+	cout << "Contains Point " << Point<3>(1.5, 1.5, 1.5) << "? " << int(s0.contains_point(Point<3>(1.5,1.5,1.5))) << endl;
+	// cout << "Contains Box " << Box<3>(Point<3>(-0.2, -0.2),Point<3>(0.2,0.2)) << "? " << int(s0.contains_box(Box<3>(Point<3>(-0.2, -0.2),Point<3>(0.2,0.2)))) << endl;
+	// cout << "Contains Box " << Box<3>(Point<3>(-0.3, -0.3),Point<3>(0.2,0.2)) << "? " << int(s0.contains_box(Box<3>(Point<3>(-0.3, -0.3),Point<3>(0.2,0.2)))) << endl;
+	// cout << "Collides Box " << Box<3>(Point<3>(-0.2, -0.2),Point<3>(0.2,0.2)) << "? " << int(s0.collides_box(Box<3>(Point<3>(-0.2, -0.2),Point<3>(0.2,0.2)))) << endl;
+	// cout << "Collides Box " << Box<3>(Point<3>(-0.3, -0.3),Point<3>(0.2,0.2)) << "? " << int(s0.collides_box(Box<3>(Point<3>(-0.3, -0.3),Point<3>(0.2,0.2)))) << endl;
 
 
 	return 0;

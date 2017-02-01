@@ -55,6 +55,13 @@ struct Point{
 		return out;
 	}
 
+	Point normalize() const{
+		double magn = 0;
+		for (auto i=0; i<dim; i++) magn += x[i]*x[i];
+		magn = sqrt(magn);
+		return 1.0/magn*(*this);
+	}
+
 	// comparison
 	bool operator== (const Point & p) const {
 		for (auto i=0; i<dim; i++) if (x[i] != p.x[i]) return false;
@@ -99,6 +106,10 @@ Point<dim> operator*(double val, const Point<dim> & p){
 	Point<dim> out(p);
 	for (auto i=0; i<dim; i++) out.x[i] = val*p.x[i];
 	return out;
+}
+
+inline Point<3> cross(Point<3> p1, Point<3> p2){
+	return Point<3>(p1.x[1]*p2.x[2]-p1.x[2]*p2.x[1], p1.x[2]*p2.x[0]-p1.x[0]*p2.x[2], p1.x[0]*p2.x[1]-p1.x[1]*p2.x[0]);
 }
 
 /*

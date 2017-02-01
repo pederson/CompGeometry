@@ -4,18 +4,40 @@
 #include "GeomUtils.hpp"
 #include "Primitive2D.hpp"
 
-class Primitive2D 
+class Primitive3D
 {
 public:
-	// virtual unsigned int get_flavor() const = 0;
+
 	virtual Box<3> get_bounding_box() const = 0;
 	virtual void translate(const Point<3> & pt) = 0;
-	virtual void rotate(const Point<3> & axis, double degrees) = 0;
+	// virtual void rotate(const Point<3> & axis, double degrees) = 0;
 	// virtual void rescale(const Point<2> & scalefactor) = 0;
 
 	virtual bool contains_point(const Point<3> & pt) const = 0;
-	virtual bool contains_box(const Box<3> & bx) const = 0;
-	virtual bool collides_box(const Box<3> & bx) const = 0;
+
+	bool contains_box(const Box<3> & bx) const{
+		return contains_point(Point<3>(bx.lo.x[0], bx.lo.x[1], bx.hi.x[2])) &&
+			   contains_point(Point<3>(bx.hi.x[0], bx.hi.x[1], bx.hi.x[2])) &&
+			   contains_point(Point<3>(bx.lo.x[0], bx.hi.x[1], bx.hi.x[2])) &&
+			   contains_point(Point<3>(bx.hi.x[0], bx.lo.x[1], bx.hi.x[2])) && 
+
+			   contains_point(Point<3>(bx.lo.x[0], bx.lo.x[1], bx.lo.x[2])) &&
+			   contains_point(Point<3>(bx.hi.x[0], bx.hi.x[1], bx.lo.x[2])) &&
+			   contains_point(Point<3>(bx.lo.x[0], bx.hi.x[1], bx.lo.x[2])) &&
+			   contains_point(Point<3>(bx.hi.x[0], bx.lo.x[1], bx.lo.x[2])) ;
+	}
+
+	bool collides_box(const Box<3> & bx) const{
+		return contains_point(Point<3>(bx.lo.x[0], bx.lo.x[1], bx.hi.x[2])) ||
+			   contains_point(Point<3>(bx.hi.x[0], bx.hi.x[1], bx.hi.x[2])) ||
+			   contains_point(Point<3>(bx.lo.x[0], bx.hi.x[1], bx.hi.x[2])) ||
+			   contains_point(Point<3>(bx.hi.x[0], bx.lo.x[1], bx.hi.x[2])) || 
+
+			   contains_point(Point<3>(bx.lo.x[0], bx.lo.x[1], bx.lo.x[2])) ||
+			   contains_point(Point<3>(bx.hi.x[0], bx.hi.x[1], bx.lo.x[2])) ||
+			   contains_point(Point<3>(bx.lo.x[0], bx.hi.x[1], bx.lo.x[2])) ||
+			   contains_point(Point<3>(bx.hi.x[0], bx.lo.x[1], bx.lo.x[2])) ;
+	}
 
 	virtual void print_summary(std::ostream & os) const = 0;
 };
@@ -31,7 +53,7 @@ public:
 	: m_center(center), m_radius(radius) {};
 
 	Box<3> get_bounding_box() const {
-		return Box<3>(Point<3>(m_center.x[0]-m_radius, m_center.x[1]-m_radius, m_center.x[2]-m_radius)
+		return Box<3>(Point<3>(m_center.x[0]-m_radius, m_center.x[1]-m_radius, m_center.x[2]-m_radius),
 					  Point<3>(m_center.x[0]+m_radius, m_center.x[1]+m_radius, m_center.x[2]+m_radius));
 	}
 
@@ -49,19 +71,7 @@ public:
 			   (pt.x[2]-m_center.x[2])*(pt.x[2]-m_center.x[2]) <= m_radius*m_radius; 
 	}
 
-	bool contains_box(const Box<3> & bx) const{
-		return contains_point(bx.lo) && contains_point(bx.hi) &&
-			   contains_point(Point<2>(bx.lo.x[0], bx.hi.x[1])) &&
-			   contains_point(Point<2>(bx.hi.x[0], bx.lo.x[1]));
-	}
-
-	bool collides_box(const Box<3> & bx) const{
-		return contains_point(bx.lo) || contains_point(bx.hi) ||
-			   contains_point(Point<2>(bx.lo.x[0], bx.hi.x[1])) ||
-			   contains_point(Point<2>(bx.hi.x[0], bx.lo.x[1]));
-	}
-
-	void print_summary(std::ostream & os) const{
+	void print_summary(std::ostream & os = std::cout) const{
 		os << "Sphere: center = " ;
 		os << m_center ;
 		os << " radius = " << m_radius ;
@@ -83,29 +93,32 @@ public:
 
 	Cylinder(){};
 
-	Cylinder(const Point<3> & center, const Point<3> & normal, double radius, double height)
-	: m_plane(Plane(center, normal))
+	Cylinder(const Point<3> & center, const Point<3> & normal, const Point<3> & px, double radius, double height)
+	: m_plane(Plane(center, normal, px))
 	, m_circle(Circle(Point<2>(0,0), radius))
 	, m_height(height) {};
 
 
-	// Box<3> get_bounding_box() const {
-	// 	return Box<3>(Point<3>(m_center.x[0]-m_radius, m_center.x[1]-m_radius, m_center.x[2]-m_radius)
-	// 				  Point<3>(m_center.x[0]+m_radius, m_center.x[1]+m_radius, m_center.x[2]+m_radius));
-	// }
+	Box<3> get_bounding_box() const {
+		Point<3> yhat = (cross(m_plane.normal, m_plane.posx)).normalize();
+		Point<3> xhat = (m_plane.posx).normalize();
+		Point<3> nhat = (m_plane.normal).normalize();
+		Box<2> basebox = m_circle.get_bounding_box();
+		// return Box<3>(Point<3>(m_center.x[0]-m_radius, m_center.x[1]-m_radius, m_center.x[2]-m_radius)
+		// 			  Point<3>(m_center.x[0]+m_radius, m_center.x[1]+m_radius, m_center.x[2]+m_radius));
+	}
 
 	void translate(const Point<3> & pt) {
 		m_plane.origin = m_plane.origin + pt;
 	}
 
 	// void rotate(const Point<3> & axis, double degrees) {
-
 	// }
 
 	bool contains_point(const Point<3> & pt) const{
 		// check projection of point onto normal
 		Point<3> ptvec(pt.x[0]-m_plane.origin.x[0], pt.x[1]-m_plane.origin.x[1], pt.x[2]-m_plane.origin.x[2]);
-		double proj = Point::dot(ptvec, m_plane.normal);
+		double proj = Point<3>::dot(ptvec, m_plane.normal);
 		if (proj > m_height || proj < 0) return false;
 
 		// now project the point onto the plane
@@ -113,22 +126,10 @@ public:
 		return m_circle.contains_point(pp);
 	}
 
-	bool contains_box(const Box<3> & bx) const{
-		return contains_point(bx.lo) && contains_point(bx.hi) &&
-			   contains_point(Point<2>(bx.lo.x[0], bx.hi.x[1])) &&
-			   contains_point(Point<2>(bx.hi.x[0], bx.lo.x[1]));
-	}
-
-	bool collides_box(const Box<3> & bx) const{
-		return contains_point(bx.lo) || contains_point(bx.hi) ||
-			   contains_point(Point<2>(bx.lo.x[0], bx.hi.x[1])) ||
-			   contains_point(Point<2>(bx.hi.x[0], bx.lo.x[1]));
-	}
-
-	void print_summary(std::ostream & os) const{
+	void print_summary(std::ostream & os = std::cout) const{
 		os << "Cylinder: center = " ;
-		os << m_center ;
-		os << " radius = " << m_circle.m_radius ;
+		os << m_plane.origin ;
+		os << " radius = " << m_circle.radius() ;
 		os << " height = " << m_height ;
 	}
 private:
@@ -149,8 +150,8 @@ public:
 
 	Pyramid(){};
 
-	Pyramid(const Primitive2D * base, const Point<3> & center, const Point<3> & normal, double height)
-	: m_plane(Plane(center, normal))
+	Pyramid(const Primitive2D * base, const Point<3> & center, const Point<3> & normal, const Point<3> & px, double height)
+	: m_plane(Plane(center, normal, px))
 	, m_base(base)
 	, m_height(height) {};
 
@@ -171,7 +172,7 @@ public:
 	bool contains_point(const Point<3> & pt) const{
 		// check projection of point onto normal
 		Point<3> ptvec(pt.x[0]-m_plane.origin.x[0], pt.x[1]-m_plane.origin.x[1], pt.x[2]-m_plane.origin.x[2]);
-		double proj = Point::dot(ptvec, m_plane.normal);
+		double proj = Point<3>::dot(ptvec, m_plane.normal);
 		if (proj >= m_height || proj < 0) return false;
 
 		// now project the point onto the plane
@@ -181,19 +182,7 @@ public:
 		return m_base->contains_point(pp);
 	}
 
-	bool contains_box(const Box<3> & bx) const{
-		return contains_point(bx.lo) && contains_point(bx.hi) &&
-			   contains_point(Point<2>(bx.lo.x[0], bx.hi.x[1])) &&
-			   contains_point(Point<2>(bx.hi.x[0], bx.lo.x[1]));
-	}
-
-	bool collides_box(const Box<3> & bx) const{
-		return contains_point(bx.lo) || contains_point(bx.hi) ||
-			   contains_point(Point<2>(bx.lo.x[0], bx.hi.x[1])) ||
-			   contains_point(Point<2>(bx.hi.x[0], bx.lo.x[1]));
-	}
-
-	void print_summary(std::ostream & os) const{
+	void print_summary(std::ostream & os = std::cout) const{
 		os << "Pyramid: center = " ;
 		os << m_plane.origin ;
 		os << " height = " << m_height ;
@@ -220,8 +209,8 @@ public:
 
 	Extrusion(){};
 
-	Extrusion(const Primitive2D * base, const Point<3> & center, const Point<3> & normal, double height)
-	: m_plane(Plane(center, normal))
+	Extrusion(const Primitive2D * base, const Point<3> & center, const Point<3> & normal, const Point<3> & px, double height)
+	: m_plane(Plane(center, normal, px))
 	, m_base(base)
 	, m_height(height) {};
 
@@ -242,7 +231,7 @@ public:
 	bool contains_point(const Point<3> & pt) const{
 		// check projection of point onto normal
 		Point<3> ptvec(pt.x[0]-m_plane.origin.x[0], pt.x[1]-m_plane.origin.x[1], pt.x[2]-m_plane.origin.x[2]);
-		double proj = Point::dot(ptvec, m_plane.normal);
+		double proj = Point<3>::dot(ptvec, m_plane.normal);
 		if (proj > m_height || proj < 0) return false;
 
 		// now project the point onto the plane
@@ -250,19 +239,7 @@ public:
 		return m_base->contains_point(pp);
 	}
 
-	bool contains_box(const Box<3> & bx) const{
-		return contains_point(bx.lo) && contains_point(bx.hi) &&
-			   contains_point(Point<2>(bx.lo.x[0], bx.hi.x[1])) &&
-			   contains_point(Point<2>(bx.hi.x[0], bx.lo.x[1]));
-	}
-
-	bool collides_box(const Box<3> & bx) const{
-		return contains_point(bx.lo) || contains_point(bx.hi) ||
-			   contains_point(Point<2>(bx.lo.x[0], bx.hi.x[1])) ||
-			   contains_point(Point<2>(bx.hi.x[0], bx.lo.x[1]));
-	}
-
-	void print_summary(std::ostream & os) const{
+	void print_summary(std::ostream & os = std::cout) const{
 		os << "Extrusion: center = " ;
 		os << m_plane.origin ;
 		os << " height = " << m_height ;
@@ -289,8 +266,8 @@ public:
 
 	Sweep(){};
 
-	Sweep(const Primitive2D * base, const Point<3> & center, const Point<3> & normal, Line ln, double angle)
-	: m_plane(Plane(center, normal))
+	Sweep(const Primitive2D * base, const Point<3> & center, const Point<3> & normal, const Point<3> & px, Line<3> ln, double angle)
+	: m_plane(Plane(center, normal, px))
 	, m_base(base)
 	, m_line(ln)
 	, m_angle(angle) {};
@@ -311,35 +288,12 @@ public:
 	// }
 
 	bool contains_point(const Point<3> & pt) const{
-		// check projection of point onto normal
-		Point<3> ptvec(pt.x[0]-m_plane.origin.x[0], pt.x[1]-m_plane.origin.x[1], pt.x[2]-m_plane.origin.x[2]);
-		double proj = Point::dot(ptvec, m_plane.normal);
-		if (proj > m_height || proj < 0) return false;
-
-		// want to somehow use 2D projection
-
-		// now project the point onto the plane
-		Point<2> pp = m_plane.project(pt);
-		pp = M*pp;
-		return m_base->contains_point(pp);
+		return false;
 	}
 
-	bool contains_box(const Box<3> & bx) const{
-		return contains_point(bx.lo) && contains_point(bx.hi) &&
-			   contains_point(Point<2>(bx.lo.x[0], bx.hi.x[1])) &&
-			   contains_point(Point<2>(bx.hi.x[0], bx.lo.x[1]));
-	}
-
-	bool collides_box(const Box<3> & bx) const{
-		return contains_point(bx.lo) || contains_point(bx.hi) ||
-			   contains_point(Point<2>(bx.lo.x[0], bx.hi.x[1])) ||
-			   contains_point(Point<2>(bx.hi.x[0], bx.lo.x[1]));
-	}
-
-	void print_summary(std::ostream & os) const{
+	void print_summary(std::ostream & os = std::cout) const{
 		os << "Sweep: center = " ;
 		os << m_plane.origin ;
-		os << " height = " << m_height ;
 		os << " base = " ;
 		m_base->print_summary(os);
 	}
@@ -348,14 +302,14 @@ private:
 	const Primitive2D * m_base;
 	double m_angle;
 	Plane m_plane;
-	Line m_line;
+	Line<3> m_line;
 
 };
 
 
 
 
-
+/*
 class TriangleMesh : public GeometricObject3D{
 public:
 
@@ -425,13 +379,6 @@ public:
 			outmesh->vertex_inds[i*3+2] = i*3+2;
 		}
 
-	  /*
-	  for (unsigned int i=0; i<20; i++){
-	    cout << " TRIANGLES PREVIEW" << endl;
-	    cout << "vertex: " << outmesh
-	  }
-	  */
-
 	  if (munmap(stlmap, 84 + sizeof(stl_tri)*tricount) < 0){
 	    cout << "ruh roh! problem unmapping STL file" << endl;
 	    throw -1;
@@ -442,7 +389,7 @@ public:
 
 		return outmesh;
 	}
-	}
+	};
 
 
 	unsigned int * vertex_inds; // 3 inds per triangle
@@ -478,5 +425,6 @@ struct stl_tri{
 	unsigned short attrib_byte_count;
 };
 #pragma pack(pop)
+*/
 
 #endif

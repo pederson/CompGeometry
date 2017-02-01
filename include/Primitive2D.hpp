@@ -25,7 +25,7 @@ public:
 			   contains_point(Point<2>(bx.lo.x[0], bx.hi.x[1])) ||
 			   contains_point(Point<2>(bx.hi.x[0], bx.lo.x[1]));
 	}
-	
+
 	virtual void print_summary(std::ostream & os = std::cout) const = 0;
 };
 
@@ -38,6 +38,8 @@ public:
 
 	Circle(const Point<2> & center, double radius)
 	: m_center(center), m_radius(radius) {};
+
+	double radius() const {return m_radius;};
 
 	Box<2> get_bounding_box() const {
 		return Box<2>(Point<2>(m_center.x[0]-m_radius, m_center.x[1]-m_radius),
@@ -316,7 +318,7 @@ public:
 		// first check bounding Box
 		Box<2> bx = get_bounding_box();
 		if (Box<2>::dist(bx, pt) > 1.0e-16) return false;
-		std::cout << "checking polycurve" << std::endl;
+		// std::cout << "checking polycurve" << std::endl;
 
 		// do more rigorous point-in-polygon check
 		unsigned int wn = 0;
