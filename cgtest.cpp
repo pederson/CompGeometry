@@ -159,6 +159,45 @@ int main(int argc, char * argv[])
 	// cout << "Collides Box " << Box<3>(Point<3>(-0.2, -0.2),Point<3>(0.2,0.2)) << "? " << int(s0.collides_box(Box<3>(Point<3>(-0.2, -0.2),Point<3>(0.2,0.2)))) << endl;
 	// cout << "Collides Box " << Box<3>(Point<3>(-0.3, -0.3),Point<3>(0.2,0.2)) << "? " << int(s0.collides_box(Box<3>(Point<3>(-0.3, -0.3),Point<3>(0.2,0.2)))) << endl;
 
+	// cylinder
+	cout << "\n******* Cylinder *******" << endl;
+	Cylinder cy0 (Point<3>(0,0,0), Point<3>(0,0,1), Point<3>(1,0,0), 1.0, 1.0);
+	cy0.print_summary(); cout << endl;
+	cout << "BoundingBox: " << cy0.get_bounding_box() << endl;
+	cout << "Contains Point " << Point<3>(0.25, 0.25, 0.25) << "? " << int(cy0.contains_point(Point<3>(0.25,0.25,0.25))) << endl;
+	cout << "Contains Point " << Point<3>(-1.0, 0.0, 0.5) << "? " << int(cy0.contains_point(Point<3>(-1.0,0.0,0.5))) << endl;
+	cout << "Contains Point " << Point<3>(1.5, 1.5, 1.5) << "? " << int(cy0.contains_point(Point<3>(1.5,1.5,1.5))) << endl;
+	// cout << "Contains Box " << Box<3>(Point<3>(-0.2, -0.2),Point<3>(0.2,0.2)) << "? " << int(s0.contains_box(Box<3>(Point<3>(-0.2, -0.2),Point<3>(0.2,0.2)))) << endl;
+	// cout << "Contains Box " << Box<3>(Point<3>(-0.3, -0.3),Point<3>(0.2,0.2)) << "? " << int(s0.contains_box(Box<3>(Point<3>(-0.3, -0.3),Point<3>(0.2,0.2)))) << endl;
+	// cout << "Collides Box " << Box<3>(Point<3>(-0.2, -0.2),Point<3>(0.2,0.2)) << "? " << int(s0.collides_box(Box<3>(Point<3>(-0.2, -0.2),Point<3>(0.2,0.2)))) << endl;
+	// cout << "Collides Box " << Box<3>(Point<3>(-0.3, -0.3),Point<3>(0.2,0.2)) << "? " << int(s0.collides_box(Box<3>(Point<3>(-0.3, -0.3),Point<3>(0.2,0.2)))) << endl;
+
+
+	cout << "\n******* Pyramid *******" << endl;
+	Pyramid py0 (&pg0, Point<3>(0,0,0), Point<3>(0,0,1), Point<3>(1,0,0), 1.0);
+	py0.print_summary(); cout << endl;
+	cout << "BoundingBox: " << py0.get_bounding_box() << endl;
+	cout << "Contains Point " << Point<3>(0.25, 0.25, 0.25) << "? " << int(py0.contains_point(Point<3>(0.25,0.25,0.25))) << endl;
+	cout << "Contains Point " << Point<3>(0.9, 0.9, 0.1) << "? " << int(py0.contains_point(Point<3>(0.9, 0.9, 0.1))) << endl;
+	cout << "Contains Point " << Point<3>(1.5, 1.5, 1.5) << "? " << int(py0.contains_point(Point<3>(1.5,1.5,1.5))) << endl;
+	// cout << "Contains Box " << Box<3>(Point<3>(-0.2, -0.2),Point<3>(0.2,0.2)) << "? " << int(s0.contains_box(Box<3>(Point<3>(-0.2, -0.2),Point<3>(0.2,0.2)))) << endl;
+	// cout << "Contains Box " << Box<3>(Point<3>(-0.3, -0.3),Point<3>(0.2,0.2)) << "? " << int(s0.contains_box(Box<3>(Point<3>(-0.3, -0.3),Point<3>(0.2,0.2)))) << endl;
+	// cout << "Collides Box " << Box<3>(Point<3>(-0.2, -0.2),Point<3>(0.2,0.2)) << "? " << int(s0.collides_box(Box<3>(Point<3>(-0.2, -0.2),Point<3>(0.2,0.2)))) << endl;
+	// cout << "Collides Box " << Box<3>(Point<3>(-0.3, -0.3),Point<3>(0.2,0.2)) << "? " << int(s0.collides_box(Box<3>(Point<3>(-0.3, -0.3),Point<3>(0.2,0.2)))) << endl;
+
+
+	cout << "\n******* Extrusion *******" << endl;
+	Extrusion ex0 (&pg0, Point<3>(0,0,0), Point<3>(0,0,1), Point<3>(1,0,0), 1.0);
+	ex0.print_summary(); cout << endl;
+	cout << "BoundingBox: " << ex0.get_bounding_box() << endl;
+	cout << "Contains Point " << Point<3>(0.25, 0.25, 0.25) << "? " << int(ex0.contains_point(Point<3>(0.25,0.25,0.25))) << endl;
+	cout << "Contains Point " << Point<3>(0.9, 0.9, 0.5) << "? " << int(ex0.contains_point(Point<3>(0.9,0.9,0.5))) << endl;
+	cout << "Contains Point " << Point<3>(1.5, 1.5, 1.5) << "? " << int(ex0.contains_point(Point<3>(1.5,1.5,1.5))) << endl;
+	// cout << "Contains Box " << Box<3>(Point<3>(-0.2, -0.2),Point<3>(0.2,0.2)) << "? " << int(s0.contains_box(Box<3>(Point<3>(-0.2, -0.2),Point<3>(0.2,0.2)))) << endl;
+	// cout << "Contains Box " << Box<3>(Point<3>(-0.3, -0.3),Point<3>(0.2,0.2)) << "? " << int(s0.contains_box(Box<3>(Point<3>(-0.3, -0.3),Point<3>(0.2,0.2)))) << endl;
+	// cout << "Collides Box " << Box<3>(Point<3>(-0.2, -0.2),Point<3>(0.2,0.2)) << "? " << int(s0.collides_box(Box<3>(Point<3>(-0.2, -0.2),Point<3>(0.2,0.2)))) << endl;
+	// cout << "Collides Box " << Box<3>(Point<3>(-0.3, -0.3),Point<3>(0.2,0.2)) << "? " << int(s0.collides_box(Box<3>(Point<3>(-0.3, -0.3),Point<3>(0.2,0.2)))) << endl;
+
 
 	return 0;
 }

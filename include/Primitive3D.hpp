@@ -103,9 +103,32 @@ public:
 		Point<3> yhat = (cross(m_plane.normal, m_plane.posx)).normalize();
 		Point<3> xhat = (m_plane.posx).normalize();
 		Point<3> nhat = (m_plane.normal).normalize();
+
 		Box<2> basebox = m_circle.get_bounding_box();
-		// return Box<3>(Point<3>(m_center.x[0]-m_radius, m_center.x[1]-m_radius, m_center.x[2]-m_radius)
-		// 			  Point<3>(m_center.x[0]+m_radius, m_center.x[1]+m_radius, m_center.x[2]+m_radius));
+
+		// get the 8 box points in 3D space
+		std::vector<Point<3>> bpts(8);
+		bpts[0] = xhat*basebox.lo.x[0] + yhat*basebox.lo.x[1] + m_plane.origin;
+		bpts[1] = xhat*basebox.hi.x[0] + yhat*basebox.lo.x[1] + m_plane.origin;
+		bpts[2] = xhat*basebox.hi.x[0] + yhat*basebox.hi.x[1] + m_plane.origin;
+		bpts[3] = xhat*basebox.lo.x[0] + yhat*basebox.hi.x[1] + m_plane.origin;
+
+		bpts[4] = xhat*basebox.lo.x[0] + yhat*basebox.lo.x[1] + m_plane.origin + m_height*nhat;
+		bpts[5] = xhat*basebox.hi.x[0] + yhat*basebox.lo.x[1] + m_plane.origin + m_height*nhat;
+		bpts[6] = xhat*basebox.hi.x[0] + yhat*basebox.hi.x[1] + m_plane.origin + m_height*nhat;
+		bpts[7] = xhat*basebox.lo.x[0] + yhat*basebox.hi.x[1] + m_plane.origin + m_height*nhat;
+
+		Point<3> lo = bpts[0];
+		Point<3> hi = bpts[0];
+		for (auto i=0; i<8; i++){
+			lo.x[0] = std::min(lo.x[0], bpts[i].x[0]);
+			lo.x[1] = std::min(lo.x[1], bpts[i].x[1]);
+			lo.x[2] = std::min(lo.x[2], bpts[i].x[2]);
+			hi.x[0] = std::max(hi.x[0], bpts[i].x[0]);
+			hi.x[1] = std::max(hi.x[1], bpts[i].x[1]);
+			hi.x[2] = std::max(hi.x[2], bpts[i].x[2]);
+		}
+		return Box<3>(lo,hi);
 	}
 
 	void translate(const Point<3> & pt) {
@@ -156,10 +179,36 @@ public:
 	, m_height(height) {};
 
 
-	// Box<3> get_bounding_box() const {
-	// 	return Box<3>(Point<3>(m_center.x[0]-m_radius, m_center.x[1]-m_radius, m_center.x[2]-m_radius)
-	// 				  Point<3>(m_center.x[0]+m_radius, m_center.x[1]+m_radius, m_center.x[2]+m_radius));
-	// }
+	Box<3> get_bounding_box() const {
+		Point<3> yhat = (cross(m_plane.normal, m_plane.posx)).normalize();
+		Point<3> xhat = (m_plane.posx).normalize();
+		Point<3> nhat = (m_plane.normal).normalize();
+		Box<2> basebox = m_base->get_bounding_box();
+
+		// get the 8 box points in 3D space
+		std::vector<Point<3>> bpts(8);
+		bpts[0] = xhat*basebox.lo.x[0] + yhat*basebox.lo.x[1] + m_plane.origin;
+		bpts[1] = xhat*basebox.hi.x[0] + yhat*basebox.lo.x[1] + m_plane.origin;
+		bpts[2] = xhat*basebox.hi.x[0] + yhat*basebox.hi.x[1] + m_plane.origin;
+		bpts[3] = xhat*basebox.lo.x[0] + yhat*basebox.hi.x[1] + m_plane.origin;
+
+		bpts[4] = xhat*basebox.lo.x[0] + yhat*basebox.lo.x[1] + m_plane.origin + m_height*nhat;
+		bpts[5] = xhat*basebox.hi.x[0] + yhat*basebox.lo.x[1] + m_plane.origin + m_height*nhat;
+		bpts[6] = xhat*basebox.hi.x[0] + yhat*basebox.hi.x[1] + m_plane.origin + m_height*nhat;
+		bpts[7] = xhat*basebox.lo.x[0] + yhat*basebox.hi.x[1] + m_plane.origin + m_height*nhat;
+
+		Point<3> lo = bpts[0];
+		Point<3> hi = bpts[0];
+		for (auto i=0; i<8; i++){
+			lo.x[0] = std::min(lo.x[0], bpts[i].x[0]);
+			lo.x[1] = std::min(lo.x[1], bpts[i].x[1]);
+			lo.x[2] = std::min(lo.x[2], bpts[i].x[2]);
+			hi.x[0] = std::max(hi.x[0], bpts[i].x[0]);
+			hi.x[1] = std::max(hi.x[1], bpts[i].x[1]);
+			hi.x[2] = std::max(hi.x[2], bpts[i].x[2]);
+		}
+		return Box<3>(lo,hi);
+	}
 
 	void translate(const Point<3> & pt) {
 		m_plane.origin = m_plane.origin + pt;
@@ -178,7 +227,7 @@ public:
 		// now project the point onto the plane
 		double M = 1.0/(1.0-proj/m_height); // need to scale the plane projection b/c pyramid shape
 		Point<2> pp = m_plane.project(pt);
-		pp = M*pp;
+		pp = 1.0/M*pp;
 		return m_base->contains_point(pp);
 	}
 
@@ -215,10 +264,35 @@ public:
 	, m_height(height) {};
 
 
-	// Box<3> get_bounding_box() const {
-	// 	return Box<3>(Point<3>(m_center.x[0]-m_radius, m_center.x[1]-m_radius, m_center.x[2]-m_radius)
-	// 				  Point<3>(m_center.x[0]+m_radius, m_center.x[1]+m_radius, m_center.x[2]+m_radius));
-	// }
+	Box<3> get_bounding_box() const {
+		Point<3> yhat = (cross(m_plane.normal, m_plane.posx)).normalize();
+		Point<3> xhat = (m_plane.posx).normalize();
+		Point<3> nhat = (m_plane.normal).normalize();
+		Box<2> basebox = m_base->get_bounding_box();
+
+		// get the 8 box points in 3D space
+		std::vector<Point<3>> bpts(8);
+		bpts[0] = xhat*basebox.lo.x[0] + yhat*basebox.lo.x[1] + m_plane.origin;
+		bpts[1] = xhat*basebox.hi.x[0] + yhat*basebox.lo.x[1] + m_plane.origin;
+		bpts[2] = xhat*basebox.hi.x[0] + yhat*basebox.hi.x[1] + m_plane.origin;
+		bpts[3] = xhat*basebox.lo.x[0] + yhat*basebox.hi.x[1] + m_plane.origin;
+
+		bpts[4] = xhat*basebox.lo.x[0] + yhat*basebox.lo.x[1] + m_plane.origin + m_height*nhat;
+		bpts[5] = xhat*basebox.hi.x[0] + yhat*basebox.lo.x[1] + m_plane.origin + m_height*nhat;
+		bpts[6] = xhat*basebox.hi.x[0] + yhat*basebox.hi.x[1] + m_plane.origin + m_height*nhat;
+		bpts[7] = xhat*basebox.lo.x[0] + yhat*basebox.hi.x[1] + m_plane.origin + m_height*nhat;
+
+		Point<3> lo = bpts[0];
+		Point<3> hi = bpts[0];
+		for (auto i=0; i<8; i++){
+			lo.x[0] = std::min(lo.x[0], bpts[i].x[0]);
+			lo.x[1] = std::min(lo.x[1], bpts[i].x[1]);
+			lo.x[2] = std::min(lo.x[2], bpts[i].x[2]);
+			hi.x[0] = std::max(hi.x[0], bpts[i].x[0]);
+			hi.x[1] = std::max(hi.x[1], bpts[i].x[1]);
+			hi.x[2] = std::max(hi.x[2], bpts[i].x[2]);
+		}
+		return Box<3>(lo,hi);	}
 
 	void translate(const Point<3> & pt) {
 		m_plane.origin = m_plane.origin + pt;
