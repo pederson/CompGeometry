@@ -5,6 +5,9 @@
 #include <math.h>
 #include <vector>
 
+// Constructive Solid Geometry operations
+enum Operation {UNION, INTERSECT, DIFFERENCE, XOR};
+
 template <std::size_t dim>
 struct Point{
 	// data

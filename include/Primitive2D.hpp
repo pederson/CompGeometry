@@ -7,6 +7,9 @@
 class Primitive2D 
 {
 public:
+
+	virtual std::shared_ptr<Primitive2D> copy() const = 0;
+
 	virtual Box<2> get_bounding_box() const = 0;
 	virtual void translate(const Point<2> & pt) = 0;
 	// virtual void rotate(const Point<2> & anchor, double degrees) = 0;
@@ -38,6 +41,8 @@ public:
 
 	Circle(const Point<2> & center, double radius)
 	: m_center(center), m_radius(radius) {};
+
+	std::shared_ptr<Primitive2D> copy() const {return std::make_shared<Circle>(*this);};
 
 	double radius() const {return m_radius;};
 
@@ -84,6 +89,8 @@ public:
 	, m_lx(dims.x[0])
 	, m_ly(dims.x[1])
 	, m_rotation(0) {};
+
+	std::shared_ptr<Primitive2D> copy() const {return std::make_shared<Rectangle>(*this);};
 
 	Box<2> get_bounding_box() const {
 		Point<2> p1(0.5*m_lx*cos(m_rotation)-0.5*m_ly*sin(m_rotation)+m_center.x[0], 0.5*m_lx*sin(m_rotation)+0.5*m_ly*cos(m_rotation)+m_center.x[1]);
@@ -138,6 +145,8 @@ public:
 	: m_axis1(center+Point<2>(-0.5*dims.x[0], 0), center + Point<2>(0.5*dims.x[0], 0))
 	, m_axis2(center+Point<2>(0, -0.5*dims.x[1]), center + Point<2>(0, 0.5*dims.x[1]))
 	, m_rotation(0) {};
+
+	std::shared_ptr<Primitive2D> copy() const {return std::make_shared<Ellipse>(*this);};
 
 	Box<2> get_bounding_box() const {
 		double asq = Point<2>::distsq(m_axis1.begin, m_axis1.end)*0.25;
@@ -195,6 +204,8 @@ public:
 	: m_p1(p1)
 	, m_p2(p2)
 	, m_p3(p3) {};
+
+	std::shared_ptr<Primitive2D> copy() const {return std::make_shared<Triangle>(*this);};
 
 	Box<2> get_bounding_box() const {
 		return Box<2>(Point<2>(std::min(std::min(m_p1.x[0],m_p2.x[0]),m_p3.x[0]), 
@@ -286,6 +297,8 @@ public:
 	Polycurve(const std::vector<std::shared_ptr<Segment<2>>> & segs)
 	: m_segments(segs) {};
 
+	virtual std::shared_ptr<Primitive2D> copy() const {return std::make_shared<Polycurve>(*this);};
+
 	Box<2> get_bounding_box() const {
 		Point<2> lo = m_segments[0]->begin;
 		Point<2> hi = lo;
@@ -372,6 +385,8 @@ public:
 		for (auto i=0; i<segs.size(); i++) m_segments.push_back(std::shared_ptr<Segment<2>>(new LineSegment(segs[i])));
 	}
 
+	std::shared_ptr<Primitive2D> copy() const {return std::make_shared<Polygon>(*this);};
+
 	void print_summary(std::ostream & os = std::cout) const{
 		os << "Polygon: nsides = " << m_segments.size() ;
 		os << " " << m_segments[0]->begin ;
@@ -418,6 +433,8 @@ public:
 
 
 	};
+
+	std::shared_ptr<Primitive2D> copy() const {return std::make_shared<RegularPolygon>(*this);};
 
 	void print_summary(std::ostream & os = std::cout) const{
 		os << "RegularPolygon: nsides = " << m_segments.size() ;

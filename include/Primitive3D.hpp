@@ -8,6 +8,8 @@ class Primitive3D
 {
 public:
 
+	virtual std::shared_ptr<Primitive3D> copy() const = 0;
+
 	virtual Box<3> get_bounding_box() const = 0;
 	virtual void translate(const Point<3> & pt) = 0;
 	// virtual void rotate(const Point<3> & axis, double degrees) = 0;
@@ -51,6 +53,8 @@ public:
 
 	Sphere(const Point<3> & center, double radius)
 	: m_center(center), m_radius(radius) {};
+
+	std::shared_ptr<Primitive3D> copy() const {return std::make_shared<Sphere>(*this);};
 
 	Box<3> get_bounding_box() const {
 		return Box<3>(Point<3>(m_center.x[0]-m_radius, m_center.x[1]-m_radius, m_center.x[2]-m_radius),
@@ -98,6 +102,7 @@ public:
 	, m_circle(Circle(Point<2>(0,0), radius))
 	, m_height(height) {};
 
+	std::shared_ptr<Primitive3D> copy() const {return std::make_shared<Cylinder>(*this);};
 
 	Box<3> get_bounding_box() const {
 		Point<3> yhat = (cross(m_plane.normal, m_plane.posx)).normalize();
@@ -178,6 +183,7 @@ public:
 	, m_base(base)
 	, m_height(height) {};
 
+	std::shared_ptr<Primitive3D> copy() const {return std::make_shared<Pyramid>(*this);};
 
 	Box<3> get_bounding_box() const {
 		Point<3> yhat = (cross(m_plane.normal, m_plane.posx)).normalize();
@@ -263,6 +269,7 @@ public:
 	, m_base(base)
 	, m_height(height) {};
 
+	std::shared_ptr<Primitive3D> copy() const {return std::make_shared<Extrusion>(*this);};
 
 	Box<3> get_bounding_box() const {
 		Point<3> yhat = (cross(m_plane.normal, m_plane.posx)).normalize();
@@ -346,6 +353,7 @@ public:
 	, m_line(ln)
 	, m_angle(angle) {};
 
+	// std::shared_ptr<Primitive3D> copy() const {return std::make_shared<Sweep>(*this);};
 
 	// Box<3> get_bounding_box() const {
 	// 	return Box<3>(Point<3>(m_center.x[0]-m_radius, m_center.x[1]-m_radius, m_center.x[2]-m_radius)
