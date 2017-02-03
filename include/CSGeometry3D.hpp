@@ -137,14 +137,15 @@ public:
 
 	void print_summary(std::ostream & os = std::cout, unsigned int level=0) const{
 		if (m_isleaf){
-			m_leaf->print_summary(os);
+			m_leaf->print_summary(os,level);
 			return;
 		}
 
 		for (auto i=0; i<level; i++) os << "\t" ;
-		os << "CSGeometry3D: " << std::endl;
+		os << "<CSGeometry3D> " << std::endl;
 		for (auto i=0; i<level; i++) os << "\t" ;
 
+		os << "<Operation>" ;
 		switch (m_op){
 			case UNION:
 				os << "UNION" ;
@@ -159,12 +160,15 @@ public:
 				os << "XOR" ;
 				break;
 		}
+		os << "</Operation>" ;
 		os << std::endl;
 		for (auto i=0; i<level; i++) os << "\t" ;
-		os << "L: " ; m_ldaughter->print_summary(os, level+1); os << std::endl;
+		os << "<Left> " << std::endl ; m_ldaughter->print_summary(os, level+1); os << "</Left>" << std::endl;
 		for (auto i=0; i<level; i++) os << "\t" ;
-		os << "R: " ; m_rdaughter->print_summary(os, level+1); os << std::endl;
+		os << "<Right> " << std::endl ; m_rdaughter->print_summary(os, level+1); os <<"</Right>" << std::endl;
 
+		for (auto i=0; i<level; i++) os << "\t" ;
+		os << "</CSGeometry3D> " << std::endl;
 	}
 
 private:

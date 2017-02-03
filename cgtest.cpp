@@ -75,7 +75,7 @@ int main(int argc, char * argv[])
 	vector<shared_ptr<Segment<2>>> seg;
 	seg.push_back(shared_ptr<Segment<2>>(new LineSegment(Point<2>(0,0),Point<2>(-1,1))));
 	seg.push_back(shared_ptr<Segment<2>>(new LineSegment(Point<2>(-1,1),Point<2>(0,2))));
-	seg.push_back(shared_ptr<Segment<2>>(new CircleSegment(Point<2>(0,2),Point<2>(0,0),5,true)));
+	seg.push_back(shared_ptr<Segment<2>>(new CircleSegment(Point<2>(0,2),Point<2>(0,0),5,true,true)));
 	Polycurve pc0(seg);
 	pc0.print_summary();
 	cout << endl;

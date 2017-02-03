@@ -309,6 +309,10 @@ struct Segment{
 	Segment(const Point<dim> & b, const Point<dim> & e)
 	: begin(b), end(e) {};
 
+	// return where a point pt is to the left of this segment
+	// positive value indicates yes it is, 
+	// negative indicates it is not
+	// zero indicates it lies on the line
 	double isLeft(const Point<2> & pt) const {return isLeftImp(pt);};
 	virtual double isLeftImp(const Point<2> & pt) const = 0;
 	// {
@@ -316,6 +320,10 @@ struct Segment{
 	// 	return ((end.x[0]-begin.x[0])*(pt.x[1]-begin.x[1])
 	// 		  - (pt.x[0] - begin.x[0])*(end.x[1] - begin.x[1]));
 	// }
+
+	virtual void print_summary(std::ostream & os = std::cout) const = 0;
+	// template<std::size_t d>
+	// friend std::ostream & operator<<(std::ostream & os, const Segment<d> & p);
 
 	// data
 	Point<dim> begin, end;
@@ -338,7 +346,17 @@ struct LineSegment : public Segment<2>{
 			  - (pt.x[0] - begin.x[0])*(end.x[1] - begin.x[1]));
 	}
 
+	void print_summary(std::ostream & os = std::cout) const{
+			os << "<LineSegment>(" ;
+			os << begin.x[0] << ", " ;
+			os << begin.x[1] << ")" ;
+			os << ",(" ;
+			os << end.x[0] << ", " ;
+			os << end.x[1] << ")</LineSegment>" ;
+	}
+
 };
+
 
 
 struct CircleSegment : public Segment<2>{
@@ -347,10 +365,26 @@ struct CircleSegment : public Segment<2>{
 	CircleSegment(){};
 
 	// constructor
-	CircleSegment(const Point<2> & b, const Point<2> & e, double rad, bool leftrunning)
+	CircleSegment(const Point<2> & b, const Point<2> & e, double rad, bool leftcenter, bool leftrunning)
 	: Segment(b,e) {};
 
 	double isLeftImp(const Point<2> & pt) const {
+		if (lcen && !lrun){
+			return ((end.x[0]-begin.x[0])*(pt.x[1]-begin.x[1])
+			  - (pt.x[0] - begin.x[0])*(end.x[1] - begin.x[1]));
+		}
+		if (~lcen && lrun) return false;
+		double dsq = Point<2>::distsq(begin,end);
+		double x = sqrt(radius*radius - 0.25*dsq);
+		Point<2> yhat = (end-begin).normalize();
+		Point<2> mid = 0.5*(end+begin);
+		Point<2> xhat(-yhat.x[1]/yhat.x[0],1); xhat.normalize();
+		if (xhat.x[0]*yhat.x[1] - xhat.x[1]*yhat.x[0] < 0) xhat = -1.0*xhat;
+
+		Point<2> cen;
+		if (lcen) cen = mid + sqrt(dsq)*yhat - x*xhat;
+		else cen = mid + sqrt(dsq)*yhat + x*xhat;
+
 		// std::cout << "CIRCLESEGMENT isLeft" << std::endl;
 		if (begin.x[1] > end.x[1] && lrun) return false;
 		else if (begin.x[1] < end.x[1] && ~lrun) return false;
@@ -358,8 +392,21 @@ struct CircleSegment : public Segment<2>{
 		// now check the harder cases
 	}
 
+
+	void print_summary(std::ostream & os = std::cout) const{
+			os << "<CircleSegment>(" ;
+			os << begin.x[0] << ", " ;
+			os << begin.x[1] << ")" ;
+			os << ",(" ;
+			os << end.x[0] << ", " ;
+			os << end.x[1] << ")" ;
+			os << "," << radius << "," << int(lcen) << "," << int(lrun) << "</CircleSegment>" ;
+	}
+
+
 	double radius;
-	bool lrun;	// if true, the circle segment runs from begin, to the left to end. 
+	bool lcen;	// if true, the circle center is to the left when viewed from begin to end
+	bool lrun;	// if true, the circle segment runs left when viewed from begin to end 
 };
 
 

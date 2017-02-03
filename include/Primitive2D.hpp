@@ -29,7 +29,7 @@ public:
 			   contains_point(Point<2>(bx.hi.x[0], bx.lo.x[1]));
 	}
 
-	virtual void print_summary(std::ostream & os = std::cout) const = 0;
+	virtual void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const = 0;
 };
 
 
@@ -64,11 +64,17 @@ public:
 			   (pt.x[1]-m_center.x[1])*(pt.x[1]-m_center.x[1]) <= m_radius*m_radius; 
 	}
 
-	void print_summary(std::ostream & os = std::cout) const{
-		os << "Circle: center = " ;
-		os << m_center ;
-		os << " radius = " << m_radius ;
+	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "<Circle>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Center>" << m_center << "</Center>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Radius>" << m_radius << "</Radius>" << std::endl ;
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "</Circle>" << std::endl;
 	}
+
 private:
 
 	double m_radius;
@@ -119,9 +125,17 @@ public:
 		return Box<2>::distsq(bx, rotx) < 1.0e-16; 
 	}
 
-	void print_summary(std::ostream & os = std::cout) const{
-		os << "Rectangle: center = " << m_center;
-		os << " sides = (" << m_lx << ", " << m_ly << ")" ;
+	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "<Rectangle>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Center>" << m_center << "</Center>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Sides>(" << m_lx << ", " << m_ly << ")</Sides>" << std::endl ;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Rotation>" << m_rotation << "</Rotation>" << std::endl;
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "</Rectangle>" << std::endl;
 	}
 private:
 
@@ -178,9 +192,17 @@ public:
 			   (x.x[0]*sin(m_rotation)+x.x[1]*cos(m_rotation))*(x.x[0]*sin(m_rotation)+x.x[1]*cos(m_rotation))/bsq <= 1; 
 	}
 
-	void print_summary(std::ostream & os = std::cout) const{
-		os << "Ellipse: center = " << 0.5*(m_axis1.begin + m_axis1.end) ;
-		os << " sides = (" << Point<2>::dist(m_axis1.begin, m_axis1.end) << ", " << Point<2>::dist(m_axis2.begin, m_axis2.end) << ")" ;
+	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "<Ellipse>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Center>" << 0.5*(m_axis1.begin+m_axis1.end) << "</Center>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Axes>(" << 0.5*Point<2>::dist(m_axis1.end,m_axis1.begin) << ", " << 0.5*Point<2>::dist(m_axis2.end,m_axis2.begin) << ")</Axes>" << std::endl ;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Rotation>" << m_rotation << "</Rotation>" << std::endl;
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "</Ellipse>" << std::endl;
 	}
 private:
 
@@ -272,8 +294,18 @@ public:
 		return (wn==0)? false : true;
 	}
 
-	void print_summary(std::ostream & os = std::cout) const{
-		os << "Triangle: " << m_p1 << "-->" << m_p2 << "-->" << m_p3 ;
+	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
+		// os << "Triangle: " << m_p1 << "-->" << m_p2 << "-->" << m_p3 ;
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "<Triangle>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Point>" << m_p1 << "</Point>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Point>" << m_p2 << "</Point>" << std::endl ;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Point>" << m_p3 << "</Point>" << std::endl ;
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "</Triangle>" << std::endl;
 	}
 private:
 
@@ -355,12 +387,16 @@ public:
 		return (wn==0)? false : true;
 	}
 
-	virtual void print_summary(std::ostream & os = std::cout) const{
-		os << "Polycurve: nsides = " << m_segments.size() ;
-		os << " " << m_segments[0]->begin ;
-		for (auto i=1; i<m_segments.size(); i++){
-			os << "-->" << m_segments[i]->begin ;
+	virtual void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "<Polycurve>" << std::endl;
+		for (auto n=0; n<m_segments.size(); n++){
+			for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+			m_segments[n]->print_summary(os);
+			os << std::endl;
 		}
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "</Polycurve>" << std::endl;
 	}
 
 protected:
@@ -387,12 +423,16 @@ public:
 
 	std::shared_ptr<Primitive2D> copy() const {return std::make_shared<Polygon>(*this);};
 
-	void print_summary(std::ostream & os = std::cout) const{
-		os << "Polygon: nsides = " << m_segments.size() ;
-		os << " " << m_segments[0]->begin ;
-		for (auto i=1; i<m_segments.size(); i++){
-			os << "-->" << m_segments[i]->begin ;
+	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "<Polygon>" << std::endl;
+		for (auto n=0; n<m_segments.size(); n++){
+			for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+			m_segments[n]->print_summary(os);
+			os << std::endl;
 		}
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "</Polygon>" << std::endl;
 	}
 };
 
@@ -436,12 +476,17 @@ public:
 
 	std::shared_ptr<Primitive2D> copy() const {return std::make_shared<RegularPolygon>(*this);};
 
-	void print_summary(std::ostream & os = std::cout) const{
-		os << "RegularPolygon: nsides = " << m_segments.size() ;
-		os << " " << m_segments[0]->begin ;
-		for (auto i=1; i<m_segments.size(); i++){
-			os << "-->" << m_segments[i]->begin ;
+	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "<RegularPolygon>" << std::endl;
+		for (auto n=0; n<m_segments.size(); n++){
+			for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+			m_segments[n]->print_summary(os);
+			os << std::endl;
 		}
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "</RegularPolygon>" << std::endl;
+
 	}
 
 };

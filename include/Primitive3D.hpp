@@ -41,7 +41,7 @@ public:
 			   contains_point(Point<3>(bx.hi.x[0], bx.lo.x[1], bx.lo.x[2])) ;
 	}
 
-	virtual void print_summary(std::ostream & os) const = 0;
+	virtual void print_summary(std::ostream & os, unsigned int ntabs=0) const = 0;
 };
 
 
@@ -75,10 +75,15 @@ public:
 			   (pt.x[2]-m_center.x[2])*(pt.x[2]-m_center.x[2]) <= m_radius*m_radius; 
 	}
 
-	void print_summary(std::ostream & os = std::cout) const{
-		os << "Sphere: center = " ;
-		os << m_center ;
-		os << " radius = " << m_radius ;
+	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "<Sphere>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Center>" << m_center << "</Center>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Radius>" << m_radius << "</Radius>" << std::endl ;
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "</Sphere>" << std::endl;
 	}
 private:
 
@@ -154,11 +159,19 @@ public:
 		return m_circle.contains_point(pp);
 	}
 
-	void print_summary(std::ostream & os = std::cout) const{
-		os << "Cylinder: center = " ;
-		os << m_plane.origin ;
-		os << " radius = " << m_circle.radius() ;
-		os << " height = " << m_height ;
+	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "<Cylinder>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Center>" << m_plane.origin << "</Center>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Normal>" << m_plane.normal << "</Normal>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<XDir>" << m_plane.posx << "</XDir>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Radius>" << m_circle.radius() << "</Radius>" << std::endl ;
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "</Cylinder>" << std::endl;
 	}
 private:
 
@@ -237,12 +250,22 @@ public:
 		return m_base->contains_point(pp);
 	}
 
-	void print_summary(std::ostream & os = std::cout) const{
-		os << "Pyramid: center = " ;
-		os << m_plane.origin ;
-		os << " height = " << m_height ;
-		os << " base = " ;
-		m_base->print_summary(os);
+	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "<Pyramid>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Center>" << m_plane.origin << "</Center>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Normal>" << m_plane.normal << "</Normal>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<XDir>" << m_plane.posx << "</XDir>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Base>" << std::endl;
+		m_base->print_summary(os, ntabs+2);
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "</Base>" << std::endl ;
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "</Pyramid>" << std::endl;
 	}
 private:
 
@@ -320,12 +343,22 @@ public:
 		return m_base->contains_point(pp);
 	}
 
-	void print_summary(std::ostream & os = std::cout) const{
-		os << "Extrusion: center = " ;
-		os << m_plane.origin ;
-		os << " height = " << m_height ;
-		os << " base = " ;
-		m_base->print_summary(os);
+	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "<Extrusion>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Center>" << m_plane.origin << "</Center>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Normal>" << m_plane.normal << "</Normal>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<XDir>" << m_plane.posx << "</XDir>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Base>" << std::endl;
+		m_base->print_summary(os, ntabs+2);
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "</Base>" << std::endl ;
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "</Extrusion>" << std::endl;
 	}
 private:
 
@@ -373,11 +406,11 @@ public:
 		return false;
 	}
 
-	void print_summary(std::ostream & os = std::cout) const{
+	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
 		os << "Sweep: center = " ;
 		os << m_plane.origin ;
-		os << " base = " ;
-		m_base->print_summary(os);
+		os << " base = " << std::endl;
+		m_base->print_summary(os,ntabs+1);
 	}
 private:
 
