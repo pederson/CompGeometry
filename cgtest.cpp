@@ -175,7 +175,7 @@ int main(int argc, char * argv[])
 
 
 	cout << "\n******* Pyramid *******" << endl;
-	Pyramid py0 (&pg0, Point<3>(0,0,0), Point<3>(0,0,1), Point<3>(1,0,0), 1.0);
+	Pyramid py0 (pg0, Point<3>(0,0,0), Point<3>(0,0,1), Point<3>(1,0,0), 1.0);
 	py0.print_summary(); cout << endl;
 	cout << "BoundingBox: " << py0.get_bounding_box() << endl;
 	cout << "Contains Point " << Point<3>(0.25, 0.25, 0.25) << "? " << int(py0.contains_point(Point<3>(0.25,0.25,0.25))) << endl;
@@ -188,7 +188,7 @@ int main(int argc, char * argv[])
 
 
 	cout << "\n******* Extrusion *******" << endl;
-	Extrusion ex0 (&pg0, Point<3>(0,0,0), Point<3>(0,0,1), Point<3>(1,0,0), 1.0);
+	Extrusion ex0 (pg0, Point<3>(0,0,0), Point<3>(0,0,1), Point<3>(1,0,0), 1.0);
 	ex0.print_summary(); cout << endl;
 	cout << "BoundingBox: " << ex0.get_bounding_box() << endl;
 	cout << "Contains Point " << Point<3>(0.25, 0.25, 0.25) << "? " << int(ex0.contains_point(Point<3>(0.25,0.25,0.25))) << endl;
@@ -198,6 +198,27 @@ int main(int argc, char * argv[])
 	// cout << "Contains Box " << Box<3>(Point<3>(-0.3, -0.3),Point<3>(0.2,0.2)) << "? " << int(s0.contains_box(Box<3>(Point<3>(-0.3, -0.3),Point<3>(0.2,0.2)))) << endl;
 	// cout << "Collides Box " << Box<3>(Point<3>(-0.2, -0.2),Point<3>(0.2,0.2)) << "? " << int(s0.collides_box(Box<3>(Point<3>(-0.2, -0.2),Point<3>(0.2,0.2)))) << endl;
 	// cout << "Collides Box " << Box<3>(Point<3>(-0.3, -0.3),Point<3>(0.2,0.2)) << "? " << int(s0.collides_box(Box<3>(Point<3>(-0.3, -0.3),Point<3>(0.2,0.2)))) << endl;
+
+
+
+
+	// build a 3D geometry model
+	cout << "\n******* CSGeometry3D *******" << endl;
+	CSGeometry3D obj31(Sphere(Point<3>(0,0,0),1), Cylinder(Point<3>(-1,0,0),Point<3>(1,0,0),Point<3>(0,0,1), 0.3, 2.0), DIFFERENCE);
+	obj31.print_summary();
+	CSGeometry3D obj32(Cylinder(Point<3>(0,0,1),Point<3>(0,0,1),Point<3>(1,0,0), 0.3, 1.0), Cylinder(Point<3>(-0.5,0,2),Point<3>(1,0,0),Point<3>(0,0,1), 0.3, 1.0), UNION);
+	obj32.print_summary();
+
+	CSGeometry3D window3(obj31, obj32, UNION);
+	window3.print_summary();
+	cout << "BoundingBox: " << window3.get_bounding_box() << endl;
+	cout << "Contains Point " << Point<3>(0,0,0.5) << "? " << int(window3.contains_point(Point<3>(0,0,0.5))) << endl;
+	cout << "Contains Point " << Point<3>(0,0,2.3) << "? " << int(window3.contains_point(Point<3>(0,0,2.3))) << endl;
+	cout << "Contains Point " << Point<3>(0,0,0) << "? " << int(window3.contains_point(Point<3>(0,0,0))) << endl;
+	// cout << "Contains Box " << Box<2>(Point<2>(-0.14,-0.14),Point<2>(0.14,0.14)) << "? " << int(window->contains_box(Box<2>(Point<2>(-0.14, -0.14),Point<2>(0.14,0.14)))) << endl;
+	// cout << "Contains Box " << Box<2>(Point<2>(-0.1,0.1),Point<2>(0.16,0.16)) << "? " << int(window->contains_box(Box<2>(Point<2>(-0.1, 0.1),Point<2>(0.16,0.16)))) << endl;
+	// cout << "Collides Box " << Box<2>(Point<2>(-0.14,-0.14),Point<2>(0.14,0.14)) << "? " << int(window->collides_box(Box<2>(Point<2>(-0.14, -0.14),Point<2>(0.14,0.14)))) << endl;
+	// cout << "Collides Box " << Box<2>(Point<2>(-0.1,0.1),Point<2>(0.16,0.16)) << "? " << int(window->collides_box(Box<2>(Point<2>(-0.1, 0.1),Point<2>(0.16,0.16)))) << endl;
 
 
 	return 0;

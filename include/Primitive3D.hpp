@@ -178,9 +178,9 @@ public:
 
 	Pyramid(){};
 
-	Pyramid(const Primitive2D * base, const Point<3> & center, const Point<3> & normal, const Point<3> & px, double height)
+	Pyramid(const Primitive2D & base, const Point<3> & center, const Point<3> & normal, const Point<3> & px, double height)
 	: m_plane(Plane(center, normal, px))
-	, m_base(base)
+	, m_base(base.copy())
 	, m_height(height) {};
 
 	std::shared_ptr<Primitive3D> copy() const {return std::make_shared<Pyramid>(*this);};
@@ -246,7 +246,7 @@ public:
 	}
 private:
 
-	const Primitive2D * m_base;
+	std::shared_ptr<Primitive2D> m_base;
 	double m_height;
 	Plane m_plane;
 
@@ -264,9 +264,9 @@ public:
 
 	Extrusion(){};
 
-	Extrusion(const Primitive2D * base, const Point<3> & center, const Point<3> & normal, const Point<3> & px, double height)
+	Extrusion(const Primitive2D & base, const Point<3> & center, const Point<3> & normal, const Point<3> & px, double height)
 	: m_plane(Plane(center, normal, px))
-	, m_base(base)
+	, m_base(base.copy())
 	, m_height(height) {};
 
 	std::shared_ptr<Primitive3D> copy() const {return std::make_shared<Extrusion>(*this);};
@@ -329,7 +329,7 @@ public:
 	}
 private:
 
-	const Primitive2D * m_base;
+	std::shared_ptr<Primitive2D> m_base;
 	double m_height;
 	Plane m_plane;
 
@@ -347,9 +347,9 @@ public:
 
 	Sweep(){};
 
-	Sweep(const Primitive2D * base, const Point<3> & center, const Point<3> & normal, const Point<3> & px, Line<3> ln, double angle)
+	Sweep(const Primitive2D & base, const Point<3> & center, const Point<3> & normal, const Point<3> & px, Line<3> ln, double angle)
 	: m_plane(Plane(center, normal, px))
-	, m_base(base)
+	, m_base(base.copy())
 	, m_line(ln)
 	, m_angle(angle) {};
 
@@ -381,7 +381,7 @@ public:
 	}
 private:
 
-	const Primitive2D * m_base;
+	std::shared_ptr<Primitive2D> m_base;
 	double m_angle;
 	Plane m_plane;
 	Line<3> m_line;

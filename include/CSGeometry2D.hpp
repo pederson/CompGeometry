@@ -134,30 +134,36 @@ public:
 		}
 	}
 
-	void print_summary(std::ostream & os = std::cout) const{
+	void print_summary(std::ostream & os = std::cout, unsigned int level=0) const{
 		if (m_isleaf){
 			m_leaf->print_summary(os);
 			return;
 		}
 
+		for (auto i=0; i<level; i++) os << "\t" ;
 		os << "CSGeometry2D: " << std::endl;
+		for (auto i=0; i<level; i++) os << "\t" ;
+
 		switch (m_op){
 			case UNION:
-				os << "\tUNION" ;
+				os << "UNION" ;
 				break;
 			case INTERSECT:
-				os << "\tINTERSECTION" ;
+				os << "INTERSECTION" ;
 				break;
 			case DIFFERENCE:
-				os << "\tDIFFERENCE" ;
+				os << "DIFFERENCE" ;
 				break;
 			case XOR:
-				os << "\tXOR" ;
+				os << "XOR" ;
 				break;
 		}
-		os << "\n\tL: " ; m_ldaughter->print_summary(os);
-		os << "\n\tR: " ; m_rdaughter->print_summary(os);
 		os << std::endl;
+		for (auto i=0; i<level; i++) os << "\t" ;
+		os << "L: " ; m_ldaughter->print_summary(os, level+1); os << std::endl;
+		for (auto i=0; i<level; i++) os << "\t" ;
+		os << "R: " ; m_rdaughter->print_summary(os, level+1); os << std::endl;
+
 	}
 
 private:
