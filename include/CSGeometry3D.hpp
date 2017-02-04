@@ -5,6 +5,7 @@
 #include "GeomUtils.hpp"
 #include "Primitive3D.hpp"
 
+namespace csg{
 
 class CSGeometry3D 
 {
@@ -180,4 +181,5 @@ private:
 	Operation m_op;
 };
 
+}
 #endif

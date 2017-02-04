@@ -5,6 +5,8 @@
 #include "GeomUtils.hpp"
 #include "Primitive2D.hpp"
 
+namespace csg{
+
 class CSGeometry2D 
 {
 public:
@@ -181,4 +183,5 @@ private:
 	Operation m_op;
 };
 
+}
 #endif

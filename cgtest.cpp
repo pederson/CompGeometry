@@ -1,12 +1,9 @@
 #include <iostream>
 
-#include "include/GeomUtils.hpp"
-#include "include/Primitive2D.hpp"
-#include "include/CSGeometry2D.hpp"
-#include "include/Primitive3D.hpp"
-#include "include/CSGeometry3D.hpp"
+#include <csg.h>
 
 using namespace std;
+using namespace csg;
 
 int main(int argc, char * argv[])
 {

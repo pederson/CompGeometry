@@ -4,6 +4,8 @@
 #include "GeomUtils.hpp"
 #include "Primitive2D.hpp"
 
+namespace csg{
+
 class Primitive3D
 {
 public:
@@ -542,4 +544,5 @@ struct stl_tri{
 #pragma pack(pop)
 */
 
+}
 #endif

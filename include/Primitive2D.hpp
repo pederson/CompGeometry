@@ -4,6 +4,8 @@
 #include "GeomUtils.hpp"
 #include <memory>
 
+namespace csg{
+
 class Primitive2D 
 {
 public:
@@ -490,4 +492,6 @@ public:
 	}
 
 };
+
+}
 #endif

@@ -5,6 +5,8 @@
 #include <math.h>
 #include <vector>
 
+namespace csg{
+
 // Constructive Solid Geometry operations
 enum Operation {UNION, INTERSECT, DIFFERENCE, XOR};
 
@@ -410,4 +412,5 @@ struct CircleSegment : public Segment<2>{
 };
 
 
+}
 #endif
