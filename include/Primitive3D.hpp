@@ -248,7 +248,7 @@ public:
 		// now project the point onto the plane
 		double M = 1.0/(1.0-proj/m_height); // need to scale the plane projection b/c pyramid shape
 		Point<2> pp = m_plane.project(pt);
-		pp = 1.0/M*pp;
+		pp = M*pp;
 		return m_base->contains_point(pp);
 	}
 
