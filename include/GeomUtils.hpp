@@ -292,7 +292,7 @@ struct Line{
 
 	// constructor
 	Line(const Point<dim> & p, const Point<dim> & d)
-	: pt(p), dir(d) {};
+	: pt(p), dir(d) {dir.normalize();};
 
 	// data
 	Point<dim> pt, dir;

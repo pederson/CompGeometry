@@ -79,8 +79,8 @@ public:
 
 private:
 
-	double m_radius;
-	Point<2> m_center;
+	double 			m_radius;
+	Point<2> 		m_center;
 };
 
 
@@ -141,9 +141,9 @@ public:
 	}
 private:
 
-	double m_rotation;	// rotation angle in radians
-	double m_lx, m_ly;	// length of the x and y sides
-	Point<2> m_center;	
+	double 			m_rotation;	// rotation angle in radians
+	double 			m_lx, m_ly;	// length of the x and y sides
+	Point<2> 		m_center;	
 	// LineSegment m_diag1, m_diag2;
 };
 
@@ -208,8 +208,8 @@ public:
 	}
 private:
 
-	double m_rotation;	// rotation angle in radians
-	LineSegment m_axis1, m_axis2;
+	double 				m_rotation;	// rotation angle in radians
+	LineSegment 		m_axis1, m_axis2;
 };
 
 
@@ -311,7 +311,7 @@ public:
 	}
 private:
 
-	Point<2> m_p1, m_p2, m_p3;
+	Point<2> 			m_p1, m_p2, m_p3;
 };
 
 
@@ -403,7 +403,7 @@ public:
 
 protected:
 
-	std::vector<std::shared_ptr<Segment<2>>> m_segments;
+	std::vector<std::shared_ptr<Segment<2>>> 		m_segments;
 };
 
 

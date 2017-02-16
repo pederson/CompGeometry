@@ -3,6 +3,7 @@
 
 #include "GeomUtils.hpp"
 #include "Primitive2D.hpp"
+#include "CSGeometry2D.hpp"
 
 namespace csg{
 
@@ -89,8 +90,8 @@ public:
 	}
 private:
 
-	double m_radius;
-	Point<3> m_center;
+	double 				m_radius;
+	Point<3> 			m_center;
 };
 
 
@@ -177,9 +178,9 @@ public:
 	}
 private:
 
-	double m_height;
-	Plane m_plane;
-	Circle m_circle;
+	double 			m_height;
+	Plane 			m_plane;
+	Circle 			m_circle;
 };
 
 
@@ -193,7 +194,7 @@ public:
 
 	Pyramid(){};
 
-	Pyramid(const Primitive2D & base, const Point<3> & center, const Point<3> & normal, const Point<3> & px, double height)
+	Pyramid(const CSGeometry2D & base, const Point<3> & center, const Point<3> & normal, const Point<3> & px, double height)
 	: m_plane(Plane(center, normal, px))
 	, m_base(base.copy())
 	, m_height(height) {};
@@ -271,9 +272,9 @@ public:
 	}
 private:
 
-	std::shared_ptr<Primitive2D> m_base;
-	double m_height;
-	Plane m_plane;
+	std::shared_ptr<CSGeometry2D> 	m_base;
+	double 							m_height;
+	Plane 							m_plane;
 
 };
 
@@ -289,7 +290,7 @@ public:
 
 	Extrusion(){};
 
-	Extrusion(const Primitive2D & base, const Point<3> & center, const Point<3> & normal, const Point<3> & px, double height)
+	Extrusion(const CSGeometry2D & base, const Point<3> & center, const Point<3> & normal, const Point<3> & px, double height)
 	: m_plane(Plane(center, normal, px))
 	, m_base(base.copy())
 	, m_height(height) {};
@@ -364,9 +365,9 @@ public:
 	}
 private:
 
-	std::shared_ptr<Primitive2D> m_base;
-	double m_height;
-	Plane m_plane;
+	std::shared_ptr<CSGeometry2D> 	m_base;
+	double 							m_height;
+	Plane 							m_plane;
 
 };
 
@@ -382,18 +383,18 @@ public:
 
 	Sweep(){};
 
-	Sweep(const Primitive2D & base, const Point<3> & center, const Point<3> & normal, const Point<3> & px, Line<3> ln, double angle)
+	Sweep(const CSGeometry2D & base, const Point<3> & center, const Point<3> & normal, const Point<3> & px, Line<3> ln, double angle)
 	: m_plane(Plane(center, normal, px))
 	, m_base(base.copy())
 	, m_line(ln)
 	, m_angle(angle) {};
 
-	// std::shared_ptr<Primitive3D> copy() const {return std::make_shared<Sweep>(*this);};
+	std::shared_ptr<Primitive3D> copy() const {return std::make_shared<Sweep>(*this);};
 
-	// Box<3> get_bounding_box() const {
-	// 	return Box<3>(Point<3>(m_center.x[0]-m_radius, m_center.x[1]-m_radius, m_center.x[2]-m_radius)
-	// 				  Point<3>(m_center.x[0]+m_radius, m_center.x[1]+m_radius, m_center.x[2]+m_radius));
-	// }
+	Box<3> get_bounding_box() const {
+		return Box<3>({0,0,0},
+					  {0,0,0});
+	}
 
 	void translate(const Point<3> & pt) {
 		m_plane.origin = m_plane.origin + pt;
@@ -405,7 +406,38 @@ public:
 	// }
 
 	bool contains_point(const Point<3> & pt) const{
-		return false;
+		Point<3> rho = pt - m_line.pt;
+		Point<3> o = m_plane.origin - m_line.pt;
+
+		// project onto line
+		Box<2> bb = m_base->get_bounding_box();
+		double pproj_l = Point<3>::dot(rho, m_line.dir);
+		Point<3> p_x = rho - pproj_l*m_line.dir;
+		double pproj_x = Point<3>::dist(p_x, {0,0,0});
+
+		double oproj_l = Point<3>::dot(o, m_line.dir);
+		Point<3> o_x = o - oproj_l*m_line.dir;
+		double oproj_x = Point<3>::dist(o_x, {0,0,0});
+
+		
+
+		if (pproj_l > bb.hi.x[1] + oproj_l || pproj_l < bb.lo.x[1] + oproj_l 
+			|| pproj_x > bb.hi.x[0] + oproj_x || pproj_x < bb.lo.x[0] + oproj_x) return false;
+		
+		// std::cout << "pt: " << pt << std::endl;
+		// std::cout << "rho: " << rho << std::endl;
+		// std::cout << "o: " << o << std::endl;
+		// std::cout << "pproj_l: " << pproj_l << std::endl;
+		// std::cout << "oproj_l: " << oproj_l << std::endl;
+		// std::cout << "pproj_x: " << pproj_x << std::endl;
+		// std::cout << "oproj_x: " << oproj_x << std::endl;
+		// std::cout << "bb: " << bb << std::endl;
+		// std::cout << "returning: " << ((pproj_l > bb.hi.x[1] + oproj_l || pproj_l < bb.lo.x[1] + oproj_l)? "false" : "true") << std::endl;
+		// std::cout << std::endl;
+		// // throw -1;
+
+		Point<2> dprime(pproj_x-oproj_x, pproj_l-oproj_l);
+		return m_base->contains_point(dprime);
 	}
 
 	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
@@ -416,10 +448,10 @@ public:
 	}
 private:
 
-	std::shared_ptr<Primitive2D> m_base;
-	double m_angle;
-	Plane m_plane;
-	Line<3> m_line;
+	std::shared_ptr<CSGeometry2D> 		m_base;
+	double 								m_angle;	// sweep angle in degrees
+	Plane 								m_plane;
+	Line<3> 							m_line;
 
 };
 

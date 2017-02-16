@@ -173,12 +173,12 @@ public:
 	}
 
 private:
-	bool m_isleaf;
-	std::shared_ptr<Primitive3D> m_leaf;
-	unsigned int m_flavor;
+	bool 							m_isleaf;
+	std::shared_ptr<Primitive3D> 	m_leaf;
+	unsigned int 					m_flavor;
 
-	std::shared_ptr<CSGeometry3D> m_ldaughter, m_rdaughter;
-	Operation m_op;
+	std::shared_ptr<CSGeometry3D> 	m_ldaughter, m_rdaughter;
+	Operation 						m_op;
 };
 
 }
