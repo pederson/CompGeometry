@@ -439,6 +439,26 @@ public:
 		os << m_plane.origin ;
 		os << " base = " << std::endl;
 		m_base->print_summary(os,ntabs+1);
+
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "<Sweep>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Center>" << m_plane.origin << "</Center>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Normal>" << m_plane.normal << "</Normal>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<XDir>" << m_plane.posx << "</XDir>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<LinePoint>" << m_line.pt << "</LinePoint>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<LineDir>" << m_line.dir << "</LineDir>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Base>" << std::endl;
+		m_base->print_summary(os, ntabs+2);
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "</Base>" << std::endl ;
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "</Sweep>" << std::endl;
 	}
 private:
 
