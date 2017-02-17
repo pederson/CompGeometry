@@ -424,17 +424,11 @@ public:
 		if (pproj_l > bb.hi.x[1] + oproj_l || pproj_l < bb.lo.x[1] + oproj_l 
 			|| pproj_x > bb.hi.x[0] + oproj_x || pproj_x < bb.lo.x[0] + oproj_x) return false;
 		
-		// std::cout << "pt: " << pt << std::endl;
-		// std::cout << "rho: " << rho << std::endl;
-		// std::cout << "o: " << o << std::endl;
-		// std::cout << "pproj_l: " << pproj_l << std::endl;
-		// std::cout << "oproj_l: " << oproj_l << std::endl;
-		// std::cout << "pproj_x: " << pproj_x << std::endl;
-		// std::cout << "oproj_x: " << oproj_x << std::endl;
-		// std::cout << "bb: " << bb << std::endl;
-		// std::cout << "returning: " << ((pproj_l > bb.hi.x[1] + oproj_l || pproj_l < bb.lo.x[1] + oproj_l)? "false" : "true") << std::endl;
-		// std::cout << std::endl;
-		// // throw -1;
+
+		Point<3> yhat = (cross(m_line.dir, o_x)).normalize();
+		double theta = atan2(Point<3>::dot(p_x.normalize(), yhat), Point<3>::dot(p_x.normalize(), o_x.normalize()))*180.0/3.14159265;
+		if (theta < 0) theta += 360.0;
+		if (theta > m_angle) return false;
 
 		Point<2> dprime(pproj_x-oproj_x, pproj_l-oproj_l);
 		return m_base->contains_point(dprime);
