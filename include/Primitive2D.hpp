@@ -13,6 +13,7 @@ public:
 	virtual std::shared_ptr<Primitive2D> copy() const = 0;
 
 	virtual Box<2> get_bounding_box() const = 0;
+	virtual std::vector<Hull<2>> get_outline(unsigned int npts) const = 0;
 	virtual void translate(const Point<2> & pt) = 0;
 	// virtual void rotate(const Point<2> & anchor, double degrees) = 0;
 	// virtual void rescale(const Point<2> & scalefactor) = 0;
@@ -51,6 +52,16 @@ public:
 	Box<2> get_bounding_box() const {
 		return Box<2>(Point<2>(m_center.x[0]-m_radius, m_center.x[1]-m_radius),
 					  Point<2>(m_center.x[0]+m_radius, m_center.x[1]+m_radius));
+	}
+
+	std::vector<Hull<2>> get_outline(unsigned int npts) const {
+		Hull<2> h1;
+		h1.points.resize(npts);
+		double angle = 2*pi/npts;	// angle between points in radians
+		for (auto i=0; i<npts; i++){
+			h1.points[i] = Point<2>(m_center.x[0]+m_radius*cos(angle*i), m_center.x[1]+m_radius*sin(angle*i));
+		}
+		return {h1};
 	}
 
 	void translate(const Point<2> & pt) {
@@ -109,6 +120,27 @@ public:
 							   std::min(std::min(p1.x[1],p2.x[1]),std::min(p3.x[1], p4.x[1]))),
 					  Point<2>(std::max(std::max(p1.x[0],p2.x[0]),std::max(p3.x[0], p4.x[0])), 
 					  		   std::max(std::max(p1.x[1],p2.x[1]),std::max(p3.x[1], p4.x[1]))));
+	}
+
+	std::vector<Hull<2>> get_outline(unsigned int npts) const {
+		Hull<2> h1;
+		// h1.points.resize(npts);
+		
+		// fraction of points allocated to x side
+		double fx = m_lx/(m_lx+m_ly), fy = m_ly/(m_lx+m_ly);
+		// bottom side
+		unsigned int nB = (fx*npts)/2;
+		for (auto i=0; i<nB; i++) h1.points.push_back(Point<2>(m_center.x[0]-m_lx/2.0+m_lx*double(i)/double(nB), m_center.x[1]-m_ly/2.0));
+		// right side
+		unsigned int nR = (fy*npts)/2;
+		for (auto i=0; i<nR; i++) h1.points.push_back(Point<2>(m_center.x[0]+m_lx/2.0, m_center.x[1]-m_ly/2.0 + m_ly*double(i)/double(nR)));
+		// top side
+		for (auto i=0; i<nB; i++) h1.points.push_back(Point<2>(m_center.x[0]+m_lx/2.0-m_lx*double(i)/double(nB), m_center.x[1]+m_ly/2.0));
+		// right side
+		for (auto i=0; i<nR; i++) h1.points.push_back(Point<2>(m_center.x[0]-m_lx/2.0, m_center.x[1]+m_ly/2.0 - m_ly*double(i)/double(nR)));
+
+
+		return {h1};
 	}
 
 	void translate(const Point<2> & pt) {
@@ -174,6 +206,20 @@ public:
 					  		   m_center.x[1]+sqrt(asq*sin(m_rotation)*sin(m_rotation) + bsq*cos(m_rotation)*cos(m_rotation))));
 	}
 
+	std::vector<Hull<2>> get_outline(unsigned int npts) const {
+		Hull<2> h1;
+		// h1.points.resize(npts);
+		double angle = 2*pi/npts;	// angle between points in radians
+		double asq = Point<2>::distsq(m_axis1.begin, m_axis1.end)*0.25;
+		double bsq = Point<2>::distsq(m_axis2.begin, m_axis2.end)*0.25;
+		Point<2> m_center = 0.5*(m_axis1.begin+m_axis1.end);
+		for (auto i=0; i<npts; i++){
+			double rad = sqrt(asq*bsq)/sqrt(bsq*cos(angle*i)*cos(angle*i)+asq*sin(angle*i)*sin(angle*i));
+			h1.points.push_back(Point<2>(m_center.x[0]+rad*cos(angle*i), m_center.x[1]+rad*sin(angle*i)));
+		}
+		return {h1};
+	}
+
 	void translate(const Point<2> & pt) {
 		m_axis1.begin = m_axis1.begin + pt;
 		m_axis1.end = m_axis1.end + pt;
@@ -236,6 +282,28 @@ public:
 					  		   std::min(std::min(m_p1.x[1],m_p2.x[1]),m_p3.x[1])),
 					  Point<2>(std::max(std::max(m_p1.x[0],m_p2.x[0]),m_p3.x[0]),
 					  		   std::max(std::max(m_p1.x[1],m_p2.x[1]),m_p3.x[1])));
+	}
+
+	std::vector<Hull<2>> get_outline(unsigned int npts) const {
+		Hull<2> h1;
+		// h1.points.resize(npts);
+		double l1 = Point<2>::dist(m_p1, m_p2);
+		double l2 = Point<2>::dist(m_p2, m_p3);
+		double l3 = Point<2>::dist(m_p3, m_p1);
+		double f1 = l1/(l1+l2+l3);
+		double f2 = l2/(l1+l2+l3);
+		double f3 = l3/(l1+l2+l3);
+		unsigned int np1 = f1*npts;
+		unsigned int np2 = f2*npts;
+		unsigned int np3 = f3*npts;
+		Point<2> p1top2 = m_p2-m_p1;
+		for (auto i=0; i<np1; i++) h1.points.push_back(m_p1 + double(i)/double(np1)*p1top2);
+		Point<2> p2top3 = m_p3-m_p2;
+		for (auto i=0; i<np2; i++) h1.points.push_back(m_p2 + double(i)/double(np2)*p2top3);
+		Point<2> p3top1 = m_p1-m_p3;
+		for (auto i=0; i<np3; i++) h1.points.push_back(m_p3 + double(i)/double(np3)*p3top1);
+
+		return {h1};
 	}
 
 	void translate(const Point<2> & pt) {
@@ -348,6 +416,14 @@ public:
 			hi.x[1] = std::max(hi.x[1],m_segments[i]->end.x[1]);
 		}
 		return Box<2>(lo,hi);
+	}
+
+	std::vector<Hull<2>> get_outline(unsigned int npts) const {
+		Hull<2> h1;
+		h1.points.resize(npts);
+		// should divide up each segment to its respective size
+		std::cout << "Polycurve: get_outline not working! FIX ME" << std::endl;
+		return {h1};
 	}
 
 	void translate(const Point<2> & pt) {

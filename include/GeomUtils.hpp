@@ -7,6 +7,8 @@
 
 namespace csg{
 
+const double pi = 3.14159265358979323846264338327950288;
+
 // Constructive Solid Geometry operations
 enum Operation {UNION, INTERSECT, DIFFERENCE, XOR};
 
@@ -409,6 +411,27 @@ struct CircleSegment : public Segment<2>{
 	double radius;
 	bool lcen;	// if true, the circle center is to the left when viewed from begin to end
 	bool lrun;	// if true, the circle segment runs left when viewed from begin to end 
+};
+
+
+template<std::size_t dim>
+struct Hull{
+	// list of points assumed to be in consecutive order
+	std::vector<Point<dim>> points;
+
+	// empty constructor
+	Hull(){};
+
+	// constructor
+	Hull(const std::vector<Point<dim>> & pts)
+	: points(pts) {};
+
+
+	void print_summary(std::ostream & os = std::cout) const{
+			os << "<Hull>" ;
+			for (auto i=0; i<points.size(); i++) os << points[i] ;
+			os << "</Hull>" ;
+	}
 };
 
 

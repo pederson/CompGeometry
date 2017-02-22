@@ -51,6 +51,33 @@ public:
 		return Box<2>::bounding_box(m_ldaughter->get_bounding_box(), m_rdaughter->get_bounding_box());
 	}
 
+	std::vector<Hull<2>> get_outline(unsigned int npts) const {
+		if (m_isleaf) return m_leaf->get_outline(npts);
+
+		std::vector<Hull<2>> oleft = m_ldaughter->get_outline(npts);
+		std::vector<Hull<2>> oright = m_rdaughter->get_outline(npts);
+		oleft.insert(oleft.end(), oright.begin(), oright.end());
+		return oleft;
+
+		// switch (m_op){
+		// 	case UNION:
+		// 		unsigned int loc_left = 0;
+		// 		while
+		// 		return lc || rc;
+		// 		break;
+		// 	case INTERSECT:
+		// 		return lc && rc;
+		// 		break;
+		// 	case DIFFERENCE:
+		// 		return lc && !rc;
+		// 		break;
+		// 	case XOR:
+		// 		return (lc || rc) && !(lc && rc);
+		// 		break;
+		// }
+
+	}
+
 	void translate(const Point<2> & pt){
 		if (m_isleaf) return m_leaf->translate(pt);
 
