@@ -56,26 +56,73 @@ public:
 
 		std::vector<Hull<2>> oleft = m_ldaughter->get_outline(npts);
 		std::vector<Hull<2>> oright = m_rdaughter->get_outline(npts);
+		
+
+		switch (m_op){
+			case UNION:
+				for (auto j=0; j<oleft.size(); j++){
+					for (auto it=oleft[j].points.begin(); it != oleft[j].points.end();){
+						if (m_rdaughter->contains_point(*it)) it = oleft[j].points.erase(it);
+						else it++;
+					}
+				}
+
+				for (auto j=0; j<oright.size(); j++){
+					for (auto it=oright[j].points.begin(); it != oright[j].points.end();){
+						if (m_ldaughter->contains_point(*it)) it = oright[j].points.erase(it);
+						else it++;
+					}
+				}
+				break;
+			case INTERSECT:
+				for (auto j=0; j<oleft.size(); j++){
+					for (auto it=oleft[j].points.begin(); it != oleft[j].points.end();){
+						if (!m_rdaughter->contains_point(*it)) it = oleft[j].points.erase(it);
+						else it++;
+					}
+				}
+
+				for (auto j=0; j<oright.size(); j++){
+					for (auto it=oright[j].points.begin(); it != oright[j].points.end();){
+						if (!m_ldaughter->contains_point(*it)) it = oright[j].points.erase(it);
+						else it++;
+					}
+				}
+				break;
+			case DIFFERENCE:
+				for (auto j=0; j<oleft.size(); j++){
+					for (auto it=oleft[j].points.begin(); it != oleft[j].points.end();){
+						if (m_rdaughter->contains_point(*it)) it = oleft[j].points.erase(it);
+						else it++;
+					}
+				}
+
+				for (auto j=0; j<oright.size(); j++){
+					for (auto it=oright[j].points.begin(); it != oright[j].points.end();){
+						if (!m_ldaughter->contains_point(*it)) it = oright[j].points.erase(it);
+						else it++;
+					}
+				}
+				break;
+			case XOR:
+				// no culling necessary for XOR
+				// for (auto j=0; j<oleft.size(); j++){
+				// 	for (auto it=oleft[j].points.begin(); it != oleft[j].points.end();){
+				// 		if (m_rdaughter->contains_point(*it)) it = oleft[j].points.erase(it);
+				// 		else it++;
+				// 	}
+				// }
+
+				// for (auto j=0; j<oright.size(); j++){
+				// 	for (auto it=oright[j].points.begin(); it != oright[j].points.end();){
+				// 		if (!m_ldaughter->contains_point(*it)) it = oright[j].points.erase(it);
+				// 		else it++;
+				// 	}
+				// }
+				break;
+		}
 		oleft.insert(oleft.end(), oright.begin(), oright.end());
 		return oleft;
-
-		// switch (m_op){
-		// 	case UNION:
-		// 		unsigned int loc_left = 0;
-		// 		while
-		// 		return lc || rc;
-		// 		break;
-		// 	case INTERSECT:
-		// 		return lc && rc;
-		// 		break;
-		// 	case DIFFERENCE:
-		// 		return lc && !rc;
-		// 		break;
-		// 	case XOR:
-		// 		return (lc || rc) && !(lc && rc);
-		// 		break;
-		// }
-
 	}
 
 	void translate(const Point<2> & pt){
