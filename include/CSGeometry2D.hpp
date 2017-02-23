@@ -60,7 +60,25 @@ public:
 
 		switch (m_op){
 			case UNION:
+				// unsigned int nleft0 = oleft.size();
+				// unsigned int nright0 = oright.size();
+
+				// std::vector<std::vector<unsigned int>> lswitchpts;
+				// lswitchpts.resize(oleft.size());
+				// for (auto j=0; j<oleft.size(); j++){
+				// 	bool state0 = m_rdaughter->contains_point(*(--oleft[j].points.end()));
+				// 	for (auto it=oleft[j].points.begin(); it != oleft[j].points.end();){
+				// 		bool res = m_rdaughter->contains_point(*it);
+				// 		if (res != state0) {
+				// 			state0 = res;
+				// 			lswitchpts[j].push_back(it-oleft[j].points.begin());
+				// 		}
+				// 	}
+				// }
+
+
 				for (auto j=0; j<oleft.size(); j++){
+					bool state0 = m_rdaughter->contains_point(*(--oleft[j].points.end()));
 					for (auto it=oleft[j].points.begin(); it != oleft[j].points.end();){
 						if (m_rdaughter->contains_point(*it)) it = oleft[j].points.erase(it);
 						else it++;

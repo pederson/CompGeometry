@@ -435,5 +435,13 @@ struct Hull{
 };
 
 
+
+struct Triangulation{
+
+	std::vector<Point<2>> points;		// list of points
+	// std::vector<iPoint<3>> triangles;	// list of triangles as indices in the points vector
+};
+
+
 }
 #endif
