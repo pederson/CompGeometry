@@ -119,27 +119,106 @@ inline Point<3> cross(Point<3> p1, Point<3> p2){
 	return Point<3>(p1.x[1]*p2.x[2]-p1.x[2]*p2.x[1], p1.x[2]*p2.x[0]-p1.x[0]*p2.x[2], p1.x[0]*p2.x[1]-p1.x[1]*p2.x[0]);
 }
 
-/*
-namespace Point{
 
-	
 
-	template<std::size_t dim>
-	double distsq(const Point<dim> & p1, const Point<dim> & p2){
+
+
+template <std::size_t dim>
+struct iPoint{
+	// data
+	unsigned int x[dim];
+
+	// constructor
+	iPoint(unsigned int x0=0.0, unsigned int x1=0.0, unsigned int x2=0.0){
+		x[0] = x0;
+		if (dim > 1) x[1] = x1;
+		if (dim > 2) x[2] = x2;
+		if (dim > 3) throw("ERROR: That iPoint constructor not implemented for dim > 3");
+	}
+
+	// constructor
+	iPoint(std::vector<unsigned int> xin){
+		for (auto i=0; i<xin.size(); i++) x[i] = xin[i];
+	}
+
+	// copy constructor
+	iPoint(const iPoint & p){
+		for (auto i=0; i<dim; i++) x[i] = p.x[i];
+	}
+
+	// assignment
+	iPoint & operator= (const iPoint & p){
+		for (auto i=0; i<dim; i++) x[i] = p.x[i];
+		return *this;
+	}
+
+	// addition
+	iPoint operator+ (const iPoint & p) const{
+		iPoint out(p);
+		for (auto i=0; i<dim; i++) out.x[i] = x[i] + p.x[i];
+		return out;
+	}
+
+	// subtraction
+	iPoint operator- (const iPoint & p) const{
+		iPoint out(p);
+		for (auto i=0; i<dim; i++) out.x[i] = x[i] - p.x[i];
+		return out;
+	}
+
+	// scalar multiplication
+	iPoint operator* (unsigned int val) const{
+		iPoint out(*this);
+		for (auto i=0; i<dim; i++) out.x[i] = val*x[i];
+		return out;
+	}
+
+	// comparison
+	bool operator== (const iPoint & p) const {
+		for (auto i=0; i<dim; i++) if (x[i] != p.x[i]) return false;
+		return true;
+	}
+
+	static double dist(const iPoint & p1, const iPoint & p2){
+		double dsq = 0.0;
+		for (auto i=0; i<dim; i++) dsq += (p1.x[i] - p2.x[i])*(p1.x[i] - p2.x[i]);
+		return sqrt(dsq);
+	}
+
+	static double distsq(const iPoint & p1, const iPoint & p2){
 		double dsq = 0.0;
 		for (auto i=0; i<dim; i++) dsq += (p1.x[i] - p2.x[i])*(p1.x[i] - p2.x[i]);
 		return dsq;
 	}
 
-	template<std::size_t dim>
-	double dot(const Point<dim> & p1, const Point<dim> & p2){
+	static double dot(const iPoint & p1, const iPoint & p2){
 		double dt = 0.0;
 		for (auto i=0; i<dim; i++) dt += p1.x[i]*p2.x[i];
 		return dt;
 	}
 
+	// print to std::out
+	template<std::size_t d>
+	friend std::ostream & operator<<(std::ostream & os, const iPoint<d> & p);
+
+};
+
+template<std::size_t dim>
+std::ostream & operator<<(std::ostream & os, const iPoint<dim> & p){
+	os << "(" ;
+	for (auto i=0; i< dim-1; i++) os << p.x[i] << ", " ;
+	os << p.x[dim-1] << ")" ;
+	
+	return os;
 }
-*/
+
+template<std::size_t dim>
+iPoint<dim> operator*(double val, const iPoint<dim> & p){
+	iPoint<dim> out(p);
+	for (auto i=0; i<dim; i++) out.x[i] = val*p.x[i];
+	return out;
+}
+
 
 
 
@@ -435,11 +514,14 @@ struct Hull{
 };
 
 
-
+template <std::size_t dim>
 struct Triangulation{
 
-	std::vector<Point<2>> points;		// list of points
-	// std::vector<iPoint<3>> triangles;	// list of triangles as indices in the points vector
+	std::vector<Point<dim>> points;		// list of points
+	std::vector<iPoint<3>> triangles;	// list of triangles as indices in the points vector
+
+	Triangulation() {};
+
 };
 
 
