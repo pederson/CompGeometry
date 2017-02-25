@@ -4,6 +4,7 @@
 #include <memory>
 #include "GeomUtils.hpp"
 #include "Primitive2D.hpp"
+#include "Delaunay.hpp"
 
 namespace csg{
 
@@ -60,23 +61,6 @@ public:
 
 		switch (m_op){
 			case UNION:
-				// unsigned int nleft0 = oleft.size();
-				// unsigned int nright0 = oright.size();
-
-				// std::vector<std::vector<unsigned int>> lswitchpts;
-				// lswitchpts.resize(oleft.size());
-				// for (auto j=0; j<oleft.size(); j++){
-				// 	bool state0 = m_rdaughter->contains_point(*(--oleft[j].points.end()));
-				// 	for (auto it=oleft[j].points.begin(); it != oleft[j].points.end();){
-				// 		bool res = m_rdaughter->contains_point(*it);
-				// 		if (res != state0) {
-				// 			state0 = res;
-				// 			lswitchpts[j].push_back(it-oleft[j].points.begin());
-				// 		}
-				// 	}
-				// }
-
-
 				for (auto j=0; j<oleft.size(); j++){
 					bool state0 = m_rdaughter->contains_point(*(--oleft[j].points.end()));
 					for (auto it=oleft[j].points.begin(); it != oleft[j].points.end();){
@@ -141,6 +125,55 @@ public:
 		}
 		oleft.insert(oleft.end(), oright.begin(), oright.end());
 		return oleft;
+	}
+
+
+	// get only the points that define an outline of the geometry
+	std::vector<Point<2>> get_outline_points(unsigned int npts) const {
+		std::vector<Hull<2>> hv = get_outline(npts);
+		std::vector<csg::Point<2>> pts;
+		for (auto i=0; i<hv.size(); i++) pts.insert(pts.end(), hv[i].points.begin(), hv[i].points.end());
+		return pts;
+	}
+
+
+	// get a triangulation of the object
+	Triangulation<2> get_triangulation(unsigned int npts) const {
+		// first get set of points that define the outline
+		Triangulation<2> tout;
+		tout.points = get_outline_points(npts);
+
+		// do a Delaunay triangulation of these points
+		Delaunay del(tout.points, 1);
+
+		// go through the triangulation and remove triangles with
+		// 2 or more edges whose centerpoint is not contained 
+		// within the geometry
+		unsigned int ct;
+		for (auto it=del.triangles.begin(); it != del.triangles.end(); it++){
+			if (it->state <= 0) continue;
+
+			ct=0;
+			if (!contains_point(0.5*(del.points[it->vertices[0]]+del.points[it->vertices[1]]))) ct++;
+			if (!contains_point(0.5*(del.points[it->vertices[1]]+del.points[it->vertices[2]]))) ct++;
+			if (!contains_point(0.5*(del.points[it->vertices[2]]+del.points[it->vertices[0]]))) ct++;
+			
+			if (ct > 1){
+				del.erase_triangle(it->vertices[0], it->vertices[1], it->vertices[2],
+								   -1, -1, -1);
+			}
+		}
+
+		unsigned int pos = 0;
+		tout.triangles.resize(del.ntri);
+		for (auto it=del.triangles.begin(); it != del.triangles.end(); it++){
+			if (it->state <= 0) continue;
+
+			tout.triangles[pos] = {(unsigned int)it->vertices[0], (unsigned int)it->vertices[1], (unsigned int)it->vertices[2]};
+			pos++;
+		}
+
+		return tout;
 	}
 
 	void translate(const Point<2> & pt){

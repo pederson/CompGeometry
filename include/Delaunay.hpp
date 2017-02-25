@@ -5,6 +5,7 @@
 #include "Primitive2D.hpp"
 
 #include <unordered_map>
+#include <iostream>
 
 // add some typedefs for consistency with the Numerical Recipes book
 typedef unsigned long long int Ullong;
@@ -301,7 +302,10 @@ struct Delaunay {
 		Int j;
 		key = hashfn.int64(a) ^ hashfn.int64(b) ^ hashfn.int64(c);
 		// if (trihash->get(key,j) == 0) throw("nonexistent triangle");
-		if (trihash.count(key)==0) throw("nonexistent triangle");
+		if (trihash.count(key)==0) {
+			std::cerr << "Delaunay: Cannot erase triangle... it doesnt exist" << std::endl;
+			throw("nonexistent triangle");
+		}
 		j = trihash[key];
 		// trihash->erase(key);
 		trihash.erase(key);
@@ -332,7 +336,10 @@ struct Delaunay {
 		// linehash->set(key,c);
 		linehash[key] = c;
 
-		if (++ntree == ntreemax) throw("triangles is sized too small");
+		if (++ntree == ntreemax){
+			std::cerr << "Delaunay: Cannot store more triangles... out of space!" << std::endl;
+			throw("triangles is sized too small");
+		} 
 		ntri++;
 		return (ntree-1);
 	}
