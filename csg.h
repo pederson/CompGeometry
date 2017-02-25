@@ -6,5 +6,6 @@
 #include "include/Primitive3D.hpp"
 #include "include/CSGeometry2D.hpp"
 #include "include/CSGeometry3D.hpp"
+#include "include/Delaunay.hpp"
 
 #endif

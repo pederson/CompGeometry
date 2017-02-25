@@ -49,6 +49,8 @@ public:
 
 	double radius() const {return m_radius;};
 
+	Point<2> center() const {return m_center;};
+
 	Box<2> get_bounding_box() const {
 		return Box<2>(Point<2>(m_center.x[0]-m_radius, m_center.x[1]-m_radius),
 					  Point<2>(m_center.x[0]+m_radius, m_center.x[1]+m_radius));
@@ -86,6 +88,21 @@ public:
 		os << "<Radius>" << m_radius << "</Radius>" << std::endl ;
 		for (auto i=0; i<ntabs; i++) os << "\t" ;
 		os << "</Circle>" << std::endl;
+	}
+
+	static Circle circumcircle(const Point<2> & p1, const Point<2> & p2, const Point<2> & p3){
+		double a0, a1, c0, c1, det, asq, csq, ctr0, ctr1, rad2;
+		a0 = p1.x[0] - p2.x[0]; a1 = p1.x[1] - p2.x[1];
+		c0 = p3.x[0] - p2.x[0]; c1 = p3.x[1] - p2.x[1];
+		det = a0*c1 - c0*a1;
+		if (det == 0.0) throw("no circle thru colinear points");
+		det = 0.5/det;
+		asq = a0*a0 + a1*a1;
+		csq = c0*c0 + c1*c1;
+		ctr0 = det*(asq*c1 - csq*a1);
+		ctr1 = det*(csq*a0 - asq*c0);
+		rad2 = ctr0*ctr0 + ctr1*ctr1;
+		return Circle(Point<2>(ctr0 + p2.x[0], ctr1 + p2.x[1]), sqrt(rad2));
 	}
 
 private:

@@ -2,12 +2,21 @@
 #define _DELAUNAY_H
 
 #include "GeomUtils.hpp"
+#include "Primitive2D.hpp"
+
+#include <unordered_map>
+
+// add some typedefs for consistency with the Numerical Recipes book
+typedef unsigned long long int Ullong;
+typedef double Doub;
+typedef unsigned int Uint;
+typedef int Int;
 
 namespace csg{
 
 struct RandomHash{
-	inline unsigned long int int64(unsigned long int u){
-		unsigned long int v = u * 3935559000370003845LL + 2691343689449507681LL;
+	inline Ullong int64(Ullong u){
+		Ullong v = u * 3935559000370003845LL + 2691343689449507681LL;
 		v ^= v >> 21; v ^= v << 37; v ^= v >> 4;
 		v *= 4768777513237032717LL;
 		v ^= v << 20;
@@ -26,101 +35,51 @@ struct RandomHash{
 
 
 
-template<class keyT, class hfnT> struct Hashtable {
-	//Instantiate a hash table, with methods for maintaining a one-to-one correspondence between
-	//arbitrary keys and unique integers in a specified range.
-	Int nhash, nmax, nn, ng;
-	VecInt htable, next, garbg;
-	VecUllong thehash;
-	hfnT hash;
-	//An instance of a hash function object.
-	Hashtable(Int nh, Int nv);
-	//Constructor. Arguments are size of hash table and max number of stored elements (keys).
-	Int	iget(const keyT &key);
-	Int iset(const keyT &key);
-	Int ierase(const keyT &key);
-	Int ireserve();
-	Int irelinquish(Int k);
-	//Return integer for a previously set key.
-	//Return unique integer for a new key.
-	//Erase a key.
-	//Reserve an integer (with no key).
-	//Un-reserve an integer.
-};
 
-
-
-template<class keyT, class elT, class hfnT>
-struct Hash : Hashtable<keyT, hfnT> {
-	//Extend the Hashtable class with storage for elements of type elT, and provide methods for
-	//storing, retrieving. and erasing elements. key is passed by address in all methods.
-	using Hashtable<keyT,hfnT>::iget;
-	using Hashtable<keyT,hfnT>::iset;
-	using Hashtable<keyT,hfnT>::ierase;
-	vector<elT> els;
-
-
-	Hash(Int nh, Int nm) : Hashtable<keyT, hfnT>(nh, nm), els(nm) {}
-	//Same constructor syntax as Hashtable.
-
-	void set(const keyT &key, const elT &el)
-	//Store an element el.
-	{els[iset(key)] = el;}
-
-	Int get(const keyT &key, elT &el) {
-	///Retrieve an element into el. Returns 0 if no element is stored under key, or 1 for success.
-	Int ll = iget(key);
-	if (ll < 0) return 0;
-	el = els[ll];
-	return 1;
-	}
-
-	elT& operator[] (const keyT &key) {
-	//Store or retrieve an element using subscript notation for its key. Returns a reference that
-	//can be used as an l-value.
-	Int ll = iget(key);
-	if (ll < 0) {
-	ll = iset(key);
-	els[ll] = elT();
-	}
-	return els[ll];
-	}
-
-	Int count(const keyT &key) {
-	//Return the number of elements stored under key, that is, either 0 or 1.
-	Int ll = iget(key);
-	return (ll < 0 ? 0 : 1);
-	}
-
-	Int erase(const keyT &key) {
-	//Erase an element. Returns 1 for success, or 0 if no element is stored under key.
-	return (ierase(key) < 0 ? 0 : 1);
-	}
-};
+// Return positive, zero, or negative value if point d is respectively inside, 
+// on, or outside the circle through points a, b, and c.
+inline double in_circle(const Point<2> & d, const Point<2> & a, const Point<2> & b, const Point<2> & c) {
+	
+	Circle cc = Circle::circumcircle(a,b,c);
+	Point<2> ccen = cc.center();
+	double crad = cc.radius();
+	double radd = (d.x[0]-ccen.x[0])*(d.x[0]-ccen.x[0]) + (d.x[1]-ccen.x[1])*(d.x[1]-ccen.x[1]);
+	return ((crad)*(crad) - radd);
+}
 
 
 
 
 struct TriElem{
-	std::vector<Point<2>> & 	points;	// the vector of points that this references
-	iPoint<3> 					vertices;	// the 3 vertices in this element
-	iPoint<3> 					daughters;	// locations of up to 3 daughters
-	bool 						state;		// true if the element is a leaf
+	const Point<2> * 			points;	// the vector of points that this references
+	Int  						vertices[3];	// the 3 vertices in this element
+	Int 						daughters[3];	// locations of up to 3 daughters
+	Int 						state;		// nonzero if the element is live
 
-	TriElem() {};
-	TriElem(iPoint<3> p, std::vector<Point<2>> & pts)
-	: points(pts), vertices(p), daughters({0,0,0}), state(true) {};
+	// TriElem() {};
+	// TriElem(iPoint<3> p, std::vector<Point<2>> & pts)
+	// : points(pts), vertices(p), daughters({0,0,0}), state(true) {};
 
-	int contains_points(const Point<2> & pt){
-		double d;
-		bool ztest = false;
-		unsigned int i,j;
+	void set(Int a, Int b, Int c, const Point<2> * pts)
+	{
+		points = pts;
+		vertices[0] = a;
+		vertices[1] = b;
+		vertices[2] = c;
+		daughters[0] = daughters[1] = daughters[2] = -1;
+		state = 1;
+	}
+
+	Int contains_point(const Point<2> & pt){
+		Doub d;
+		Int ztest = 0;
+		Int i,j;
 		for (auto i=0; i<3; i++){
 			j = (i+1)%3;
-			d = (points[vertices.x[j]].x[0] - points[vertices.x[i]].x[0])
-				*(pt.x[1]-points[vertices.x[i]].x[1])
-				- (points[vertices.x[j]].x[1] - points[vertices.x[i]].x[1])
-				*(pt.x[0]-points[vertices.x[i]].x[0]);
+			d = (points[vertices[j]].x[0] - points[vertices[i]].x[0])
+				*(pt.x[1]-points[vertices[i]].x[1])
+				- (points[vertices[j]].x[1] - points[vertices[i]].x[1])
+				*(pt.x[0]-points[vertices[i]].x[0]);
 			if (d<0.0) return -1;
 			if (d == 0.0) ztest = true;
 		}
@@ -128,14 +87,264 @@ struct TriElem{
 	}
 };
 
+
+
+
+
+
+
+// const std::function<std::size_t(unsigned long int)> nullhash{return *(unsigned long int *)key;};
+
 struct Delaunay {
-	unsigned int npts, ntri, ntree, ntreemax, opt;
-	double delx, dely;
-	std::vector<Point<2>> points;
-	vector<TriElem> triangles;
+	Int 						npts, ntri, ntree, ntreemax, opt;
+	Doub 								delx, dely;
+	std::vector<Point<2>> 				points;
+	std::vector<TriElem> 				triangles;
+	std::unordered_map<Ullong, Int> 	linehash;
+	std::unordered_map<Ullong, Int> 	trihash;
+	std::vector<Int> 					perm;	//Permutation for randomizing point order.
+	RandomHash 							hashfn;
+
+	static Uint jran;
+	static const Doub fuzz, bigscale;
+
+
+	//Construct Delaunay triangulation from a vector of points pvec. If bit 0 in options is nonzero,
+	//hash memories used in the construction are deleted. (Some applications may want to use them
+	//and will set options to 1.)
+	Delaunay(std::vector<Point<2> > &pvec, Int options) 
+	: npts(pvec.size()), ntri(0), ntree(0), ntreemax(10*npts+1000)
+	, opt(options), points(pvec){
+		
+		Doub xl,xh,yl,yh;
+		// linehash = new Hash<Ullong,Int,Nullhash>(6*npts+12,6*npts+12);
+		// trihash = new Hash<Ullong,Int,Nullhash>(2*npts+6,2*npts+6);
+		// perm = new int[npts];
+
+		linehash.reserve(6*npts+12);
+		trihash.reserve(2*npts+6);
+		perm.resize(npts);
+		triangles.resize(ntreemax);
+		
+		
+		//Copy points to local store and calculate their
+		//bounding box.
+		xl = xh = pvec[0].x[0];
+		yl = yh = pvec[0].x[1];
+		for (auto j=0; j<npts; j++) {
+			// pts[j] = pvec[j];
+			perm[j] = j;
+			if (pvec[j].x[0] < xl) xl = pvec[j].x[0];
+			if (pvec[j].x[0] > xh) xh = pvec[j].x[0];
+			if (pvec[j].x[1] < yl) yl = pvec[j].x[1];
+			if (pvec[j].x[1] > yh) yh = pvec[j].x[1];
+		}
+		delx = xh - xl;
+		dely = yh - yl;
+
+		//Store bounding box dimensions, then construct
+		//the three fictitious points and store them.
+		points.push_back(Point<2>(0.5*(xl + xh), yh + bigscale*dely));
+		points.push_back(Point<2>(xl - 0.5*bigscale*delx,yl - 0.5*bigscale*dely));
+		points.push_back(Point<2>(xh + 0.5*bigscale*delx,yl - 0.5*bigscale*dely));
+		store_triangle(npts,npts+1,npts+2);
+
+		// mix up the order of insertion
+		for (auto j=npts; j>0; j--) std::swap(perm[j-1],perm[hashfn.int64(jran++) % j]);
+		
+		// insert points one-by-one
+		for (auto j=0; j<npts; j++) insert_point(perm[j]);
+		
+		// Deactivate the huge root triangle and all of its connecting edges.
+		for (auto j=0; j<ntree; j++) {
+			if (triangles[j].state > 0) {
+				if (triangles[j].vertices[0] >= npts || 
+					triangles[j].vertices[1] >= npts ||
+					triangles[j].vertices[2] >= npts) {
+					triangles[j].state = -1;
+					ntri--;
+				}
+			}
+		}
+
+		// Clean up, unless option bit says not to.
+		if (!(opt & 1)) {
+			// delete [] perm;
+			// delete trihash;
+			// delete linehash;
+			perm.clear();
+			trihash.clear();
+			linehash.clear();
+		}
+	}
+
+	//Add the point with index r incrementally to the Delaunay triangulation.
+	void insert_point(Int r) {
+		
+		Int i,j,k,l,s,tno,ntask,d0,d1,d2;
+		Ullong key;
+		Int tasks[50], taski[50], taskj[50];
+		//Stacks (3 vertices) for legalizing edges.
+
+		//Find triangle containing point. Fuzz if it lies on an edge.
+		for (j=0; j<3; j++) {
+			
+			tno = which_contains_point(points[r],1);
+
+			if (tno >= 0) break; //The desired result: Point is OK
+
+
+			points[r].x[0] += fuzz * delx * (hashfn.doub(jran++)-0.5);
+			points[r].x[1] += fuzz * dely * (hashfn.doub(jran++)-0.5);
+		}
+		if (j == 3) throw("points degenerate even after fuzzing");
+
+		ntask = 0;
+		i = triangles[tno].vertices[0]; 
+		j = triangles[tno].vertices[1]; 
+		k = triangles[tno].vertices[2];
+		
+		//The following line is relevant only when the indicated bit in opt is set. This feature is used
+		//by the convex hull application and causes any points already known to be interior to the
+		//convex hull to be omitted from the triangulation, saving time (but giving in an incomplete
+		//triangulation).
+		if (opt & 2 && i < npts && j < npts && k < npts) return;
+
+		//Create three triangles and queue them for legal edge tests.
+		d0 = store_triangle(r,i,j);
+		tasks[++ntask] = r; taski[ntask] = i; taskj[ntask] = j;
+		d1 = store_triangle(r,j,k);
+		tasks[++ntask] = r; taski[ntask] = j; taskj[ntask] = k;
+		d2 = store_triangle(r,k,i);
+		tasks[++ntask] = r; taski[ntask] = k; taskj[ntask] = i;
+		
+		//Erase the old triangle.
+		erase_triangle(i,j,k,d0,d1,d2);
+
+		while (ntask) {
+			//Legalize edges recursively.
+			s=tasks[ntask]; 
+			i=taski[ntask]; 
+			j=taskj[ntask--];
+
+			//Look up fourth point
+			key = hashfn.int64(j) - hashfn.int64(i);
+			// if ( ! linehash->get(key,l) ) continue; //Case of no triangle on other side.
+			if (linehash.count(key) == 0) continue;
+			l = linehash[key];
+
+			if (in_circle(points[l],points[j],points[s],points[i]) > 0.0){ //Needs legalizing?
+				//Create two new triangles
+				d0 = store_triangle(s,l,j);
+				d1 = store_triangle(s,i,l);
+
+				//and erase old ones.
+				erase_triangle(s,i,j,d0,d1,-1);
+				erase_triangle(l,j,i,d0,d1,-1);
+
+				//Erase line in both directions.
+				key = hashfn.int64(i)-hashfn.int64(j);
+				// linehash->erase(key);
+				linehash.erase(key);
+				key = 0 - key;	//Unsigned, hence binary minus.
+				// linehash->erase(key);
+				linehash.erase(key);
+
+				//Two new edges now need checking:
+				tasks[++ntask] = s; taski[ntask] = l; taskj[ntask] = j;
+				tasks[++ntask] = s; taski[ntask] = i; taskj[ntask] = l;
+			}
+		}
+	}
+
+
+	//Given point p, return index in triangles of the triangle in the triangulation that contains it, or
+	//return -1 for failure. If strict is nonzero, require strict containment, otherwise allow the point
+	//to lie on an edge.
+	Int which_contains_point(const Point<2> &p, Int strict) {
+		
+		Int i,j,k=0;
+		//Descend in tree until reach a “live” triangle.
+		while (triangles[k].state <= 0) {
+			
+			//Check up to three daughters.
+			for (i=0; i<3; i++) {
+
+				//Daughter doesn’t exist.
+				if ((j = triangles[k].daughters[i]) < 0) continue;
+				
+				if (strict) {
+					if (triangles[j].contains_point(p) > 0) break;
+				} 
+				else {
+					//Yes, descend on this branch.
+					if (triangles[j].contains_point(p) >= 0) break;
+				}
+			}
+
+			//No daughters contain the point.
+			if (i == 3) return -1;
+			
+			//Set new mother.
+			k = j;
+			
+		}
+		//Normal return.
+		return k;
+	}
+
+
+	//Erase triangle abc in trihash and inactivate it in triangles after setting its daughters.
+	void erase_triangle(Int a, Int b, Int c, 
+						Int d0, Int d1, Int d2) {
+		Ullong key;
+		Int j;
+		key = hashfn.int64(a) ^ hashfn.int64(b) ^ hashfn.int64(c);
+		// if (trihash->get(key,j) == 0) throw("nonexistent triangle");
+		if (trihash.count(key)==0) throw("nonexistent triangle");
+		j = trihash[key];
+		// trihash->erase(key);
+		trihash.erase(key);
+		triangles[j].daughters[0] = d0; 
+		triangles[j].daughters[1] = d1; 
+		triangles[j].daughters[2] = d2;
+		triangles[j].state = 0;
+		ntri--;
+	}
+
+
+	//Store a triangle with vertices a, b, c in trihash. Store its points in linehash under keys to
+	//opposite sides. Add it to triangles, returning its index there.
+	Int store_triangle(Int a, Int b, Int c) {
+		
+		Ullong key;
+		triangles[ntree].set(a,b,c,&points.front());
+		key = hashfn.int64(a) ^ hashfn.int64(b) ^ hashfn.int64(c);
+		// trihash->set(key,ntree);
+		trihash[key] = ntree;
+		key = hashfn.int64(b)-hashfn.int64(c);
+		// linehash->set(key,a);
+		linehash[key] = a;
+		key = hashfn.int64(c)-hashfn.int64(a);
+		// linehash->set(key,b);
+		linehash[key] = b;
+		key = hashfn.int64(a)-hashfn.int64(b);
+		// linehash->set(key,c);
+		linehash[key] = c;
+
+		if (++ntree == ntreemax) throw("triangles is sized too small");
+		ntri++;
+		return (ntree-1);
+	}
 };
+
+const Doub Delaunay::fuzz = 1.0e-6;
+const Doub Delaunay::bigscale = 1000.0;
+Uint Delaunay::jran = 14921620;
 
 
 
 }
+
+
 #endif
