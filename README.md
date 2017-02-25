@@ -6,5 +6,6 @@ Computational Geometry classes
 * Point data manipulation (PointCloud, filtering, sorting, convex hull)
 * Delaunay triangulation
 
-![CSG2D](csg2d.png)
 ![Primitive2D](primitive2d.png)
+![CSG2D](csg2d.png)
+![Delaunay](delaunay.png)
