@@ -5,6 +5,7 @@
 #include "Primitive2D.hpp"
 
 #include <unordered_map>
+#include <stack>
 #include <iostream>
 
 // add some typedefs for consistency with the Numerical Recipes book
@@ -56,10 +57,6 @@ struct TriElem{
 	Int  						vertices[3];	// the 3 vertices in this element
 	Int 						daughters[3];	// locations of up to 3 daughters
 	Int 						state;		// nonzero if the element is live
-
-	// TriElem() {};
-	// TriElem(iPoint<3> p, std::vector<Point<2>> & pts)
-	// : points(pts), vertices(p), daughters({0,0,0}), state(true) {};
 
 	void set(Int a, Int b, Int c, const Point<2> * pts)
 	{
@@ -118,10 +115,6 @@ struct Delaunay {
 	, opt(options), points(pvec){
 		
 		Doub xl,xh,yl,yh;
-		// linehash = new Hash<Ullong,Int,Nullhash>(6*npts+12,6*npts+12);
-		// trihash = new Hash<Ullong,Int,Nullhash>(2*npts+6,2*npts+6);
-		// perm = new int[npts];
-
 		linehash.reserve(6*npts+12);
 		trihash.reserve(2*npts+6);
 		perm.resize(npts);
@@ -133,7 +126,6 @@ struct Delaunay {
 		xl = xh = pvec[0].x[0];
 		yl = yh = pvec[0].x[1];
 		for (auto j=0; j<npts; j++) {
-			// pts[j] = pvec[j];
 			perm[j] = j;
 			if (pvec[j].x[0] < xl) xl = pvec[j].x[0];
 			if (pvec[j].x[0] > xh) xh = pvec[j].x[0];
@@ -170,9 +162,6 @@ struct Delaunay {
 
 		// Clean up, unless option bit says not to.
 		if (!(opt & 1)) {
-			// delete [] perm;
-			// delete trihash;
-			// delete linehash;
 			perm.clear();
 			trihash.clear();
 			linehash.clear();
@@ -184,7 +173,7 @@ struct Delaunay {
 		
 		Int i,j,k,l,s,tno,ntask,d0,d1,d2;
 		Ullong key;
-		Int tasks[50], taski[50], taskj[50];
+		std::stack<Int> tasks, taski, taskj;
 		//Stacks (3 vertices) for legalizing edges.
 
 		//Find triangle containing point. Fuzz if it lies on an edge.
@@ -198,7 +187,10 @@ struct Delaunay {
 			points[r].x[0] += fuzz * delx * (hashfn.doub(jran++)-0.5);
 			points[r].x[1] += fuzz * dely * (hashfn.doub(jran++)-0.5);
 		}
-		if (j == 3) throw("points degenerate even after fuzzing");
+		if (j == 3){
+			std::cerr << "Delaunay: points degenerate even after fuzzing!" << std::endl;
+			throw("points degenerate even after fuzzing");
+		} 
 
 		ntask = 0;
 		i = triangles[tno].vertices[0]; 
@@ -213,28 +205,28 @@ struct Delaunay {
 
 		//Create three triangles and queue them for legal edge tests.
 		d0 = store_triangle(r,i,j);
-		tasks[++ntask] = r; taski[ntask] = i; taskj[ntask] = j;
+		tasks.push(r); taski.push(i); taskj.push(j);
 		d1 = store_triangle(r,j,k);
-		tasks[++ntask] = r; taski[ntask] = j; taskj[ntask] = k;
+		tasks.push(r); taski.push(j); taskj.push(k);
 		d2 = store_triangle(r,k,i);
-		tasks[++ntask] = r; taski[ntask] = k; taskj[ntask] = i;
+		tasks.push(r); taski.push(k); taskj.push(i);
 		
 		//Erase the old triangle.
 		erase_triangle(i,j,k,d0,d1,d2);
 
-		while (ntask) {
-			//Legalize edges recursively.
-			s=tasks[ntask]; 
-			i=taski[ntask]; 
-			j=taskj[ntask--];
+		//Legalize edges recursively.
+		while (tasks.size()>0) {
+			
+			s = tasks.top(); tasks.pop();
+			i = taski.top(); taski.pop();
+			j = taskj.top(); taskj.pop();
 
 			//Look up fourth point
 			key = hashfn.int64(j) - hashfn.int64(i);
-			// if ( ! linehash->get(key,l) ) continue; //Case of no triangle on other side.
 			if (linehash.count(key) == 0) continue;
 			l = linehash[key];
 
-			if (in_circle(points[l],points[j],points[s],points[i]) > 0.0){ //Needs legalizing?
+			if (in_circle(points[l],points[j],points[s],points[i]) > 0.0){ //Needs legalizing
 				//Create two new triangles
 				d0 = store_triangle(s,l,j);
 				d1 = store_triangle(s,i,l);
@@ -245,15 +237,13 @@ struct Delaunay {
 
 				//Erase line in both directions.
 				key = hashfn.int64(i)-hashfn.int64(j);
-				// linehash->erase(key);
 				linehash.erase(key);
 				key = 0 - key;	//Unsigned, hence binary minus.
-				// linehash->erase(key);
 				linehash.erase(key);
 
 				//Two new edges now need checking:
-				tasks[++ntask] = s; taski[ntask] = l; taskj[ntask] = j;
-				tasks[++ntask] = s; taski[ntask] = i; taskj[ntask] = l;
+				tasks.push(s); taski.push(l); taskj.push(j);
+				tasks.push(s); taski.push(i); taskj.push(l);
 			}
 		}
 	}
@@ -301,13 +291,13 @@ struct Delaunay {
 		Ullong key;
 		Int j;
 		key = hashfn.int64(a) ^ hashfn.int64(b) ^ hashfn.int64(c);
-		// if (trihash->get(key,j) == 0) throw("nonexistent triangle");
+
 		if (trihash.count(key)==0) {
 			std::cerr << "Delaunay: Cannot erase triangle... it doesnt exist" << std::endl;
 			throw("nonexistent triangle");
 		}
 		j = trihash[key];
-		// trihash->erase(key);
+
 		trihash.erase(key);
 		triangles[j].daughters[0] = d0; 
 		triangles[j].daughters[1] = d1; 
@@ -324,16 +314,12 @@ struct Delaunay {
 		Ullong key;
 		triangles[ntree].set(a,b,c,&points.front());
 		key = hashfn.int64(a) ^ hashfn.int64(b) ^ hashfn.int64(c);
-		// trihash->set(key,ntree);
 		trihash[key] = ntree;
 		key = hashfn.int64(b)-hashfn.int64(c);
-		// linehash->set(key,a);
 		linehash[key] = a;
 		key = hashfn.int64(c)-hashfn.int64(a);
-		// linehash->set(key,b);
 		linehash[key] = b;
 		key = hashfn.int64(a)-hashfn.int64(b);
-		// linehash->set(key,c);
 		linehash[key] = c;
 
 		if (++ntree == ntreemax){
