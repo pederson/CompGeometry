@@ -5,6 +5,10 @@
 #include <math.h>
 #include <vector>
 
+#include <sys/mman.h>
+#include <unistd.h>
+#include <fcntl.h>
+
 namespace csg{
 
 const double pi = 3.14159265358979323846264338327950288;
@@ -522,7 +526,84 @@ struct Triangulation{
 
 	Triangulation() {};
 
+	// static std::shared_ptr<Triangulation<3>> read_STL(std::string filename, unsigned int byte_offset=0);
+
 };
+
+
+#pragma pack(push,1)
+struct stl_tri{
+	float norm_x;
+	float norm_y;
+	float norm_z;
+
+	float v1_x;
+	float v1_y;
+	float v1_z;
+
+	float v2_x;
+	float v2_y;
+	float v2_z;
+
+	float v3_x;
+	float v3_y;
+	float v3_z;
+
+	unsigned short attrib_byte_count;
+};
+#pragma pack(pop)
+
+inline std::shared_ptr<Triangulation<3>> read_STL(std::string filename, unsigned int byte_offset=0){
+	// declare vars
+	std::shared_ptr<Triangulation<3>> out(new Triangulation<3>());
+	int fd;
+	unsigned int tricount;
+	char * stlmap;
+
+	// open file and fast forward
+	fd = open(filename.c_str(), O_RDONLY);
+	if (fd < 0){
+		std::cerr << "Triangulation<3>: Error opening file in read_STL" << std::endl;
+	throw -1;
+	}
+	lseek(fd, byte_offset, SEEK_SET);
+
+	// find the triangle count
+	lseek(fd, 80, SEEK_CUR); // skip the header
+	read(fd, &tricount, 4); // read the triangle count
+
+
+  lseek(fd, byte_offset, SEEK_CUR); // back to the beginning
+	stlmap = (char *)mmap(NULL, 84 + sizeof(stl_tri)*tricount, PROT_READ, MAP_PRIVATE, fd, 0);
+	if (stlmap == MAP_FAILED){
+		std::cerr << "Triangulation<3>: Failed to map STL file" << std::endl;
+	throw -1;
+	}
+
+	// copy the triangle data into structures
+	stl_tri * triangles = new stl_tri[tricount];
+	memcpy(triangles, &stlmap[84], sizeof(stl_tri)*tricount);
+
+	// copy the structure data into the member data
+	out->points.resize(tricount*3);
+	out->triangles.resize(tricount);
+	for (unsigned int i=0; i<tricount; i++){
+		out->points[i*3] = Point<3>(triangles[i].v1_x, triangles[i].v1_y, triangles[i].v1_z);
+		out->points[i*3+1] = Point<3>(triangles[i].v2_x, triangles[i].v2_y, triangles[i].v2_z);
+		out->points[i*3+2] = Point<3>(triangles[i].v3_x, triangles[i].v3_y, triangles[i].v3_z);
+
+		out->triangles[i] = iPoint<3>(i*3, i*3+1, i*3+2);
+	}
+
+	if (munmap(stlmap, 84 + sizeof(stl_tri)*tricount) < 0){
+		std::cerr << "Triangulation<3>: ruh roh! problem unmapping STL file" << std::endl;
+		throw -1;
+	}
+	close(fd);
+
+	delete[] triangles;
+	return out;
+}
 
 
 }
