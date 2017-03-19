@@ -218,5 +218,13 @@ int main(int argc, char * argv[])
 	// cout << "Collides Box " << Box<2>(Point<2>(-0.1,0.1),Point<2>(0.16,0.16)) << "? " << int(window->collides_box(Box<2>(Point<2>(-0.1, 0.1),Point<2>(0.16,0.16)))) << endl;
 
 
+
+
+
+
+	// trees 
+	Orthtree<3,3,int> tree3;
+	Quadtree<double> qtree;
+
 	return 0;
 }

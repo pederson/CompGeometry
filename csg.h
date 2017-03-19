@@ -7,5 +7,8 @@
 #include "include/CSGeometry2D.hpp"
 #include "include/CSGeometry3D.hpp"
 #include "include/Delaunay.hpp"
+#include "include/Orthtree.hpp"
+#include "include/Quadtree.hpp"
+#include "include/Octree.hpp"
 
 #endif

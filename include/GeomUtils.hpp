@@ -4,6 +4,9 @@
 #include <iostream>
 #include <math.h>
 #include <vector>
+#include <memory>
+#include <iterator>
+#include <algorithm>
 
 #include <sys/mman.h>
 #include <unistd.h>
@@ -477,6 +480,7 @@ struct CircleSegment : public Segment<2>{
 		else if (begin.x[1] < end.x[1] && ~lrun) return false;
 
 		// now check the harder cases
+		// return false;
 	}
 
 
@@ -581,8 +585,10 @@ inline std::shared_ptr<Triangulation<3>> read_STL(std::string filename, unsigned
 	}
 
 	// copy the triangle data into structures
-	stl_tri * triangles = new stl_tri[tricount];
-	memcpy(triangles, &stlmap[84], sizeof(stl_tri)*tricount);
+	// stl_tri * triangles = new stl_tri[tricount];
+	std::vector<stl_tri> triangles(tricount);
+	// memcpy(triangles, &stlmap[84], sizeof(stl_tri)*tricount);
+	std::copy(&stlmap[84], &stlmap[84+sizeof(stl_tri)*tricount], (char *) &triangles.front());
 
 	// copy the structure data into the member data
 	out->points.resize(tricount*3);
@@ -601,7 +607,7 @@ inline std::shared_ptr<Triangulation<3>> read_STL(std::string filename, unsigned
 	}
 	close(fd);
 
-	delete[] triangles;
+	// delete[] triangles;
 	return out;
 }
 
