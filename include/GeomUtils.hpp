@@ -274,7 +274,7 @@ struct CircleSegment : public Segment<2>{
 		else if (begin.x[1] < end.x[1] && ~lrun) return false;
 
 		// now check the harder cases
-		// return false;
+		return false;
 	}
 
 

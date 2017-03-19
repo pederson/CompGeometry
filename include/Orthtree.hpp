@@ -29,12 +29,46 @@ template <	std::size_t dim,
 class Orthtree{
 public:
 
-	Orthtree(){};
+	Orthtree(){
+		std::cout << Power<3, 3>::value << std::endl;
+		std::cout << "Ref: " << rfactor << " Dim: " << dim << std::endl;
+		std::cout << "Parent(9): " << getParentKey(9) << std::endl;
+		std::cout << "LeftChild(1): " << getLeftChildKey(1) << std::endl;
+		std::cout << "Level(9): " << getLevel(9) << std::endl;
+		std::cout << "PosWithinParent(9): " << getPositionWithinParent(9) << std::endl;
+		std::cout << "OffsetWithinParent(9): " << getOffsetWithinParent(9) << std::endl;
+		std::cout << "LevelOffset(9): " << getLevelOffset(9) << std::endl;
+		std::cout << std::endl; 
+	};
 
 	// define some construction functions
 	// build tree using an indicator function that outputs an int for a given point,
 	// then use a map to a prototype Value to fill the tree
 	// void buildTree(IndicatorFunction<Point<dim>> ifn, std::map<std::size_t, ValueT> proto, std::size_t nlevels);
+
+	// random access
+	void insertValue(std::size_t key, const ValueT & v){
+		// find level
+		std::size_t lvl = getLevel(key);
+		// insert node
+		Node n;
+		n.mVal = std::shared_ptr<ValueT>(v);
+		n.mIsLeaf = true;
+		mLevelMaps[lvl][key] = n;
+	}
+
+	void setValue(std::size_t key, const ValueT & v){
+		// find level
+		std::size_t lvl = getLevel(key);
+		// insert node value
+		mLevelMaps[lvl].at(key).mVal = std::shared_ptr<ValueT>(v);
+	}
+
+	void removeValue(std::size_t key){
+		// find level
+		std::size_t lvl = getLevel(key);
+		mLevelMaps[lvl].remove(key);
+	}
 
 	// expose iterators
 
@@ -54,7 +88,9 @@ protected:
 
 	// define some utility functions (can be specialized)
 	std::size_t getParentKey(std::size_t key) const {return (key-1)/sSize;};
+
 	std::size_t getLeftChildKey(std::size_t key) const {return key*sSize + 1;};
+	
 	std::size_t getLevel(std::size_t key) const {
 		std::size_t lvl=0;
 		while (key>0){
@@ -63,28 +99,30 @@ protected:
 		}
 		return lvl;
 	}
+	
 	std::size_t getPositionWithinParent(std::size_t key) const {return (key-1)%sSize;};
+	
 	IntPoint<dim> getOffsetWithinParent(std::size_t key) const {
 		IntPoint<dim> off;
-		for (auto i=0; i<dim; i++) off[i] = 0;
+		key = getPositionWithinParent(key);
+		for (auto i=0; i<dim; i++) off.x[i] = 0;
 		for (auto i=0; i<dim; i++) {
-			off[i] = key%rfactor; 
-			key -= off[i];
+			off.x[i] = key%rfactor; 
+			key -= off.x[i];
 			key /= rfactor;
 		}
 		return off;
 	}
+	
 	IntPoint<dim> getLevelOffset(std::size_t key) const {
 
 		IntPoint<dim> off;
-		for (auto i=0; i<dim; i++) off[i] = 0;
+		for (auto i=0; i<dim; i++) off.x[i] = 0;
 		std::size_t mult = 1;
 		std::size_t pkey;
 		while (key>0) {
-			// get key within parent
-			pkey = getPositionWithinParent(key);
 			// get the offset within parent
-			off = off + mult*getOffsetWithinParent(pkey);
+			off = off + getOffsetWithinParent(key)*mult;
 			// begin anew with parent key
 			key = getParentKey(key);
 			mult *= rfactor;
@@ -92,9 +130,7 @@ protected:
 		return off;
 	}
 
-	// random access
-	// void insertValue(std::size_t key, ValueT v);
-	// void removeValue(std::size_t key);
+	
 };	
 
 }

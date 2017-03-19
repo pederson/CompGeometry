@@ -227,7 +227,7 @@ int main(int argc, char * argv[])
 
 
 	// trees 
-	Orthtree<3,3,int> tree3;
+	Orthtree<2,3,int> tree3;
 	Quadtree<double> qtree;
 
 	return 0;
