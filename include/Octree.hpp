@@ -10,6 +10,7 @@ template<class ValueT>
 struct OctreeTypedef{
 	typedef Orthtree<3,2,ValueT> type;
 };
+
 template<class ValueT>
 using Octree = typename OctreeTypedef<ValueT>::type;
 

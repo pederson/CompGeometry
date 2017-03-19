@@ -64,8 +64,8 @@ protected:
 		return lvl;
 	}
 	std::size_t getPositionWithinParent(std::size_t key) const {return (key-1)%sSize;};
-	iPoint<dim> getOffsetWithinParent(std::size_t key) const {
-		iPoint<dim> off;
+	IntPoint<dim> getOffsetWithinParent(std::size_t key) const {
+		IntPoint<dim> off;
 		for (auto i=0; i<dim; i++) off[i] = 0;
 		for (auto i=0; i<dim; i++) {
 			off[i] = key%rfactor; 
@@ -74,9 +74,9 @@ protected:
 		}
 		return off;
 	}
-	iPoint<dim> getLevelOffset(std::size_t key) const {
+	IntPoint<dim> getLevelOffset(std::size_t key) const {
 
-		iPoint<dim> off;
+		IntPoint<dim> off;
 		for (auto i=0; i<dim; i++) off[i] = 0;
 		std::size_t mult = 1;
 		std::size_t pkey;

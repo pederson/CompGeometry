@@ -10,6 +10,7 @@ template<class ValueT>
 struct QuadtreeTypedef{
 	typedef Orthtree<2,2,ValueT> type;
 };
+
 template<class ValueT>
 using Quadtree = typename QuadtreeTypedef<ValueT>::type;
 

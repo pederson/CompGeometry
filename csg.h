@@ -1,6 +1,7 @@
 #ifndef _CSG_H
 #define _CSG_H
 
+#include "include/Point.hpp"
 #include "include/GeomUtils.hpp"
 #include "include/Primitive2D.hpp"
 #include "include/Primitive3D.hpp"

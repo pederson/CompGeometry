@@ -169,7 +169,7 @@ public:
 		for (auto it=del.triangles.begin(); it != del.triangles.end(); it++){
 			if (it->state <= 0) continue;
 
-			tout.triangles[pos] = {(unsigned int)it->vertices[0], (unsigned int)it->vertices[1], (unsigned int)it->vertices[2]};
+			tout.triangles[pos] = {static_cast<double>(it->vertices[0]), static_cast<double>(it->vertices[1]), static_cast<double>(it->vertices[2])};
 			pos++;
 		}
 
