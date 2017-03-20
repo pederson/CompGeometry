@@ -265,5 +265,13 @@ int main(int argc, char * argv[])
 	qtree.buildTree(5, bounds, c1, c1);
 	qtree.print_summary();
 
+
+	// iterate over leaves
+	int ctr=0;
+	for (auto it=qtree.leaf_begin(); it!=qtree.leaf_end(); it++){
+		ctr++;
+	}
+	cout << "leaf count: " << ctr << endl;
+
 	return 0;
 }

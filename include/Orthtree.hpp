@@ -7,6 +7,12 @@
 
 #include "GeomUtils.hpp"
 
+
+namespace csg{
+
+
+
+
 // evaluate Val^P at compile time (template metaprogram)
 template <std::size_t Val, std::size_t P>
 struct Power {
@@ -20,14 +26,21 @@ struct Power<Val,0> {
 
 
 
+// forward declare iterators
+// template<std::size_t dim, std::size_t rfactor, class ValueT> class leaf_iterator;
 
-namespace csg{
 
 template <	std::size_t dim,
 			std::size_t rfactor,
 			class ValueT>
 class Orthtree{
 public:
+
+	struct Node{
+		std::shared_ptr<ValueT>	mVal;			// hold the value or pointer to value
+		bool					mIsLeaf;		// if this node is a leaf. If not, it has children
+	};
+
 
 	Orthtree(){
 		std::cout << Power<3, 3>::value << std::endl;
@@ -147,15 +160,93 @@ public:
 	}
 
 	// expose iterators
+	friend class leaf_iterator;
+	// iterate over key/node pairs for leaf nodes only 
+	class leaf_iterator{
+	public:
+		typedef leaf_iterator self_type;
+		typedef std::ptrdiff_t difference_type;
+	    typedef Node value_type;
+	    typedef Node & reference;
+	    typedef Node * pointer;
+	    typedef std::forward_iterator_tag iterator_category;
+
+		// construction
+		leaf_iterator(Orthtree & t)
+		: tree(t)
+		, level(0)
+		, lit(t.mLevelMaps.begin())
+		, it((t.mLevelMaps.begin())->second.begin()){
+			if (! it->second.mIsLeaf) this->operator++();
+		}
+
+		leaf_iterator(Orthtree & t, typename std::unordered_map<std::size_t, Node>::iterator iter)
+		: tree(t)
+		, level(0)
+		, lit(t.mLevelMaps.begin())
+		, it(iter) {};
+
+		// dereferencing
+		reference operator*(){ return *it.second;};
+
+		// preincrement 
+		self_type operator++(){
+
+			while (lit != tree.mLevelMaps.end()){
+				while (it != lit->second.end()){
+					it++;
+					if (it->second.mIsLeaf) return *this;
+				}
+
+				// reached end of level
+				lit++;
+			}
+
+			// have reached the end of all the cells
+			return *this;
+		}
+
+		// preincrement 
+		self_type operator++(int blah){
+
+			while (lit != tree.mLevelMaps.end()){
+				while (it != lit->second.end()){
+					it++;
+					if (it->second.mIsLeaf) return *this;
+				}
+
+				// reached end of level
+				lit++;
+			}
+
+			// have reached the end of all the cells
+			return *this;
+		}
+
+		// pointer
+		pointer operator->() {return it->second;};
+
+		// inequality
+		bool operator!=(const self_type & leaf) const {return it != leaf.it;};
+
+		// equality
+		bool operator==(const self_type & leaf) const {return it == leaf.it;};
+
+
+	private:
+		std::size_t level;
+		typename std::map<std::size_t, std::unordered_map<std::size_t, Node>>::iterator lit;
+		typename std::unordered_map<std::size_t, Node>::iterator it;
+		Orthtree & tree;
+	};
+
+	
+	leaf_iterator leaf_begin(){return leaf_iterator(*this);};
+	leaf_iterator leaf_end(){auto p=mLevelMaps.end(); p--; return leaf_iterator(*this, p->second.end());};
 
 protected:
 
 	static const std::size_t 	sSize = Power<rfactor, dim>::value;	// the number of children possible
-
-	struct Node{
-		std::shared_ptr<ValueT>	mVal;			// hold the value or pointer to value
-		bool					mIsLeaf;		// if this node is a leaf. If not, it has children
-	};
 
 	// these map an integer LEVEL (starting from 0) to another map that maps a KEY to a NODE
 	std::map<std::size_t, std::unordered_map<std::size_t, Node>> 		mLevelMaps; 		
@@ -206,7 +297,7 @@ protected:
 		return off;
 	}
 	
-};	
+};
 
 
 
