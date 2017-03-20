@@ -7,7 +7,7 @@
 
 #include "GeomUtils.hpp"
 
-// evaluate Val^P at compile time
+// evaluate Val^P at compile time (template metaprogram)
 template <std::size_t Val, std::size_t P>
 struct Power {
     static constexpr const std::size_t value {Val*Power<Val,P-1>::value};
@@ -42,12 +42,45 @@ public:
 	};
 
 	// define some construction functions
+
 	// build tree using an indicator function that outputs an int for a given point,
 	// then use a map to a prototype Value to fill the tree
-	// void buildTree(IndicatorFunction<Point<dim>> ifn, std::map<std::size_t, ValueT> proto, std::size_t nlevels);
+	template <class PrototypeMap, class RefineOracle>
+	void buildTree(std::size_t lvlmax, Box<dim> boundbox, 
+				  const PrototypeMap & pm, const RefineOracle & ro,
+				  std::size_t key=0){
+
+		// std::cout << "key: " << key << "  box: " << boundbox << std::endl;
+		// boundbox.print_summary(); 
+
+		// create node for key
+		std::size_t lvl = getLevel(key);
+		Node n; n.mIsLeaf = true; 
+		n.mVal = std::make_shared<ValueT>(pm.getValue(boundbox));
+		mLevelMaps[lvl][key] = n;
+		// std::cout << "checking refinement conditions" << std::endl;
+
+		// decide if refinement is necessary
+		if (lvl == lvlmax) return;
+		if (ro.isUniform(boundbox)) return;
+
+		// std::cout << "got here" << std::endl;
+		// if refining, 
+		Point<dim> boxsize = 1.0/static_cast<double>(rfactor)*(boundbox.hi-boundbox.lo);
+		std::size_t kl = getLeftChildKey(key);
+		for (auto kc=kl; kc<kl+dim*rfactor; kc++){
+			IntPoint<dim> off = getOffsetWithinParent(kc);
+			// std::cout << "kc: " << kc << " offsetwithinparent: " << off << std::endl;
+			Point<dim> newlo = boundbox.lo+boxsize*off;
+			Box<dim> rbox(newlo, newlo+boxsize);
+			buildTree(lvlmax, rbox, pm, ro, kc);
+		}
+	}
 
 	// random access
-	void insertValue(std::size_t key, const ValueT & v){
+	/*
+	// insert a value to a new key
+	void insertCell(std::size_t key, const ValueT & v){
 		// find level
 		std::size_t lvl = getLevel(key);
 		// insert node
@@ -56,18 +89,61 @@ public:
 		n.mIsLeaf = true;
 		mLevelMaps[lvl][key] = n;
 	}
+	*/
 
-	void setValue(std::size_t key, const ValueT & v){
+	// set a value to a pre-existing key
+	void setCellValue(std::size_t key, const ValueT & v){
 		// find level
 		std::size_t lvl = getLevel(key);
 		// insert node value
 		mLevelMaps[lvl].at(key).mVal = std::shared_ptr<ValueT>(v);
 	}
 
-	void removeValue(std::size_t key){
+	// split parent key, and endow all children
+	// with a copy of the parent value
+	void refineCell(std::size_t key) {
+		std::size_t lvl = getLevel(key);
+		if (!mLevelMaps[lvl][key].mIsLeaf){
+			std::cerr << "Orthtree: Cell is already refined!" << std::endl;
+			throw -1;
+		}
+		std::size_t kl = getLeftChildKey(key);
+		Node n = mLevelMaps[lvl].at(key);
+		for (auto kc=kl; kc<kl+dim*rfactor; kc++){
+			mLevelMaps[lvl+1][kc] = n;
+		}
+		mLevelMaps[lvl][key].mIsLeaf = false;
+	}
+
+	// delete all child cells of a given parent key
+	void pruneChildren(std::size_t key) {
+		std::size_t lvl = getLevel(key);
+		if (mLevelMaps[lvl][key].mIsLeaf){
+			std::cerr << "Orthtree: Cell is already a leaf!" << std::endl;
+			throw -1;
+		}
+		std::size_t kl = getLeftChildKey(key);
+		for (auto kc=kl; kc<kl+dim*rfactor; kc++){
+			if (!mLevelMaps[lvl+1][kc].mIsLeaf) pruneChildren(kc);
+			mLevelMaps[lvl+1].remove(kc);
+		}
+		mLevelMaps[lvl][key].mIsLeaf = true;
+	}
+
+	/*
+	// delete a given cell... this will also delete all
+	// of the cells siblings
+	void pruneCell(std::size_t key){
 		// find level
 		std::size_t lvl = getLevel(key);
 		mLevelMaps[lvl].remove(key);
+	}
+	*/
+
+	void print_summary(std::ostream & os = std::cout) const {
+		for (auto lit=mLevelMaps.begin(); lit!=mLevelMaps.end(); lit++){
+			os << "Level (" << lit->first << ") --> " << lit->second.size() << std::endl;
+		}
 	}
 
 	// expose iterators
@@ -129,9 +205,11 @@ protected:
 		}
 		return off;
 	}
-
 	
 };	
+
+
+
 
 }
 

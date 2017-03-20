@@ -155,6 +155,7 @@ struct Plane{
 
 };
 
+// static const Plane XYPlane = Plane(Point3(0,0,0),Point3(0,0,1),Point3(1,0,0));
 
 // typedef Plane(Point<3>(0,0,0),Point<3>(0,0,1),Point<3>(1,0,0)) XYPLANE;
 // typedef Plane(Point<3>(0,0,0),Point<3>(0,0,-1),Point<3>(0,1,0)) YXPLANE;

@@ -230,5 +230,40 @@ int main(int argc, char * argv[])
 	Orthtree<2,3,int> tree3;
 	Quadtree<double> qtree;
 
+	// build a quadtree of doubles corresponding to a cirlce centered at 0,0 with radius 1
+	struct CircleThing{
+		double rad = 1.0;
+		Point2 cen = Point2(0,0);
+
+		double getValue(Box<2> bx) const{
+			Point2 p = 0.5*(bx.lo + bx.hi);
+			return getValue(p);
+		}
+
+		double getValue(const Point2 & p) const{
+			if (Point2::distsq(p,cen) > rad*rad) return 0.0;
+			return 1.0;
+		}
+
+		bool isUniform(Box<2> bx) const{
+			Point2 tl = bx.lo; tl.x[1] = bx.hi.x[1];
+			Point2 br = bx.hi; br.x[1] = bx.lo.x[1];
+			Point2 c = 0.5*(bx.hi+bx.lo);
+
+			// cout << c << tl << br << endl;
+			// cout << getValue(tl) << "  " << getValue(c) << endl;
+			if (getValue(tl) == getValue(br) &&
+				getValue(br) == getValue(bx.hi) &&
+				getValue(bx.hi) == getValue(bx.lo) &&
+				getValue(bx.lo) == getValue(c)) return true;
+			return false;
+		}
+	};
+
+	CircleThing c1;
+	Box<2> bounds(Point2(-1,-1), Point2(1,1));
+	qtree.buildTree(5, bounds, c1, c1);
+	qtree.print_summary();
+
 	return 0;
 }

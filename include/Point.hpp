@@ -121,46 +121,9 @@ GeneralPoint<dim, T> operator*(T val, const GeneralPoint<dim, T> & p){
 }
 
 
-// // add specialization for doubles
-// template<std::size_t dim>
-// class GeneralPoint<dim, double> {
-// public:
-
-// 	// constructor
-// 	GeneralPoint(double x0=0.0, double x1=0.0, double x2=0.0){
-// 		x[0] = x0;
-// 		if (dim > 1) x[1] = x1;
-// 		if (dim > 2) x[2] = x2;
-// 		if (dim > 3) throw("ERROR: That GeneralPoint constructor not implemented for dim > 3");
-// 	}
-
-// 	// normalization
-// 	GeneralPoint normalize() const{
-// 		double magn = 0;
-// 		for (auto i=0; i<dim; i++) magn += x[i]*x[i];
-// 		magn = sqrt(magn);
-// 		return 1.0/magn*(*this);
-// 	}
-// };
 
 
-// // add specialization for ints
-// template<std::size_t dim>
-// class GeneralPoint<dim, int> {
-// public:
-// 	int x[dim];
-
-// 	// constructor
-// 	GeneralPoint(int x0=0.0, int x1=0.0, int x2=0.0){
-// 		x[0] = x0;
-// 		if (dim > 1) x[1] = x1;
-// 		if (dim > 2) x[2] = x2;
-// 		if (dim > 3) throw("ERROR: That GeneralPoint constructor not implemented for dim > 3");
-// 	}
-
-// };
-
-
+// specializations/overloads
 template<> GeneralPoint<2,double>::GeneralPoint(double x0, double x1){
 	x[0] = x0; x[1] = x1;
 }
@@ -169,13 +132,36 @@ template<> GeneralPoint<3,double>::GeneralPoint(double x0, double x1, double x2)
 	x[0] = x0; x[1] = x1; x[2] = x2;
 }
 
+template<> GeneralPoint<2,int>::GeneralPoint(int x0, int x1){
+	x[0] = x0; x[1] = x1;
+}
+
+template<> GeneralPoint<3,int>::GeneralPoint(int x0, int x1, int x2){
+	x[0] = x0; x[1] = x1; x[2] = x2;
+}
+
+// return double when double arithmetic is performed on int
+template<std::size_t dim> 
+GeneralPoint<dim, double> operator*(double val, const GeneralPoint<dim, int> & p){
+	GeneralPoint<dim, double> out;
+	for (auto i=0; i<dim; i++) out.x[i] = val*p.x[i];
+	return out;
+}
+
+template<std::size_t dim> 
+GeneralPoint<dim, double> operator*(const GeneralPoint<dim, double> & pd, const GeneralPoint<dim, int> & pi){
+	GeneralPoint<dim, double> out;
+	for (auto i=0; i<dim; i++) out.x[i] = pd.x[i]*pi.x[i];
+	return out;
+}
+
 
 // add template typedefs for special GeneralPoint types
 template<std::size_t dim>
 using Point = GeneralPoint<dim, double>;
 
 template<std::size_t dim>
-using IntPoint = GeneralPoint<dim, double>;
+using IntPoint = GeneralPoint<dim, int>;
 
 using Point2 = Point<2>;
 using Point3 = Point<3>;
