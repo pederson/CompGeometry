@@ -269,6 +269,7 @@ int main(int argc, char * argv[])
 	// iterate over leaves
 	int ctr=0;
 	for (auto it=qtree.leaf_begin(); it!=qtree.leaf_end(); it++){
+		// cout << ctr << endl;
 		ctr++;
 	}
 	cout << "leaf count: " << ctr << endl;

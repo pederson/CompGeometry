@@ -12,3 +12,4 @@ Computational Geometry classes
 ![Primitive2D](primitive2d.png)
 ![CSG2D](csg2d.png)
 ![Delaunay](delaunay.png)
+![Quadtree](quadtree_circle.png)

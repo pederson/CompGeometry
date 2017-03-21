@@ -76,6 +76,7 @@ public:
 		// decide if refinement is necessary
 		if (lvl == lvlmax) return;
 		if (ro.isUniform(boundbox)) return;
+		mLevelMaps[lvl][key].mIsLeaf = false;
 
 		// std::cout << "got here" << std::endl;
 		// if refining, 
@@ -91,18 +92,6 @@ public:
 	}
 
 	// random access
-	/*
-	// insert a value to a new key
-	void insertCell(std::size_t key, const ValueT & v){
-		// find level
-		std::size_t lvl = getLevel(key);
-		// insert node
-		Node n;
-		n.mVal = std::shared_ptr<ValueT>(v);
-		n.mIsLeaf = true;
-		mLevelMaps[lvl][key] = n;
-	}
-	*/
 
 	// set a value to a pre-existing key
 	void setCellValue(std::size_t key, const ValueT & v){
@@ -143,16 +132,6 @@ public:
 		mLevelMaps[lvl][key].mIsLeaf = true;
 	}
 
-	/*
-	// delete a given cell... this will also delete all
-	// of the cells siblings
-	void pruneCell(std::size_t key){
-		// find level
-		std::size_t lvl = getLevel(key);
-		mLevelMaps[lvl].remove(key);
-	}
-	*/
-
 	void print_summary(std::ostream & os = std::cout) const {
 		for (auto lit=mLevelMaps.begin(); lit!=mLevelMaps.end(); lit++){
 			os << "Level (" << lit->first << ") --> " << lit->second.size() << std::endl;
@@ -166,9 +145,9 @@ public:
 	public:
 		typedef leaf_iterator self_type;
 		typedef std::ptrdiff_t difference_type;
-	    typedef Node value_type;
-	    typedef Node & reference;
-	    typedef Node * pointer;
+	    typedef std::pair<const std::size_t, Node> value_type;
+	    typedef std::pair<const std::size_t, Node> & reference;
+	    typedef std::pair<const std::size_t, Node> * pointer;
 	    typedef std::forward_iterator_tag iterator_category;
 
 		// construction
@@ -177,7 +156,10 @@ public:
 		, level(0)
 		, lit(t.mLevelMaps.begin())
 		, it((t.mLevelMaps.begin())->second.begin()){
-			if (! it->second.mIsLeaf) this->operator++();
+			it = tree.mLevelMaps.begin()->second.begin();
+			if (! it->second.mIsLeaf){
+				this->operator++();
+			}
 		}
 
 		leaf_iterator(Orthtree & t, typename std::unordered_map<std::size_t, Node>::iterator iter)
@@ -187,19 +169,19 @@ public:
 		, it(iter) {};
 
 		// dereferencing
-		reference operator*(){ return *it.second;};
+		reference operator*(){ return *it;};
 
 		// preincrement 
 		self_type operator++(){
-
+			it++;
 			while (lit != tree.mLevelMaps.end()){
 				while (it != lit->second.end()){
-					it++;
 					if (it->second.mIsLeaf) return *this;
+					it++;				
 				}
-
 				// reached end of level
 				lit++;
+				it = lit->second.begin();
 			}
 
 			// have reached the end of all the cells
@@ -208,15 +190,15 @@ public:
 
 		// preincrement 
 		self_type operator++(int blah){
-
+			it++;
 			while (lit != tree.mLevelMaps.end()){
 				while (it != lit->second.end()){
-					it++;
 					if (it->second.mIsLeaf) return *this;
+					it++;				
 				}
-
 				// reached end of level
 				lit++;
+				it = lit->second.begin();
 			}
 
 			// have reached the end of all the cells
@@ -224,7 +206,7 @@ public:
 		}
 
 		// pointer
-		pointer operator->() {return it->second;};
+		pointer operator->() {return it.operator->();};
 
 		// inequality
 		bool operator!=(const self_type & leaf) const {return it != leaf.it;};
@@ -243,14 +225,6 @@ public:
 	
 	leaf_iterator leaf_begin(){return leaf_iterator(*this);};
 	leaf_iterator leaf_end(){auto p=mLevelMaps.end(); p--; return leaf_iterator(*this, p->second.end());};
-
-protected:
-
-	static const std::size_t 	sSize = Power<rfactor, dim>::value;	// the number of children possible
-
-	// these map an integer LEVEL (starting from 0) to another map that maps a KEY to a NODE
-	std::map<std::size_t, std::unordered_map<std::size_t, Node>> 		mLevelMaps; 		
-	std::map<std::size_t, std::unordered_map<std::size_t, Node>>		mBdryMaps;
 
 
 	// define some utility functions (can be specialized)
@@ -296,7 +270,14 @@ protected:
 		}
 		return off;
 	}
-	
+
+protected:
+
+	static const std::size_t 	sSize = Power<rfactor, dim>::value;	// the number of children possible
+
+	// these map an integer LEVEL (starting from 0) to another map that maps a KEY to a NODE
+	std::map<std::size_t, std::unordered_map<std::size_t, Node>> 		mLevelMaps; 		
+	std::map<std::size_t, std::unordered_map<std::size_t, Node>>		mBdryMaps;
 };
 
 
