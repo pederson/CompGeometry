@@ -155,6 +155,13 @@ GeneralPoint<dim, double> operator*(const GeneralPoint<dim, double> & pd, const 
 	return out;
 }
 
+template<std::size_t dim> 
+GeneralPoint<dim, int> operator%(const GeneralPoint<dim, int> & p, std::size_t m){
+	GeneralPoint<dim, int> out;
+	for (auto i=0; i<dim; i++) out.x[i] = p.x[i]%m;
+	return out;
+}
+
 
 // add template typedefs for special GeneralPoint types
 template<std::size_t dim>

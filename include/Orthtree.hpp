@@ -26,9 +26,6 @@ struct Power<Val,0> {
 
 
 
-// forward declare iterators
-// template<std::size_t dim, std::size_t rfactor, class ValueT> class leaf_iterator;
-
 
 template <	std::size_t dim,
 			std::size_t rfactor,
@@ -329,13 +326,99 @@ public:
 		return off;
 	}
 
+	// get the key that starts a given level
+	std::size_t getLevelStartingKey(std::size_t lvl) const {
+		std::size_t keystart = 1;	// starting at level 1
+		std::size_t lct = 1;
+		for (auto l=1; l<lvl; l++){
+			lct *= rfactor*dim;
+			keystart += lct;
+		}
+		return keystart;
+	}
+
+	// get a key from a offset on a given level
+	std::size_t getKeyFromLevelOffset(std::size_t lvl, IntPoint<dim> off) const {
+		// get starting key for the level
+		std::size_t keystart = getLevelStartingKey(lvl);
+
+		std::size_t ct = 1;
+		std::size_t tot =0;
+		IntPoint<dim> mult;
+		IntPoint<dim> dotter;
+		std::size_t rval = 1;
+		for (auto i=0; i<mult; i++){
+			mult[i] = rval;
+			rval *= rfactor;
+		}
+		dotter = off%rfactor;
+		tot += ct*IntPoint<dim>::dot(mult, dotter);
+		for (auto l=lvl; l>0; l++){
+			// increase ct
+			ct *= rfactor*dim;
+			// divide by rfactor
+			off = off/rfactor;
+			// take modulus
+			dotter = off%rfactor;
+			// accumulate dot products
+			tot += ct*IntPoint<dim>::dot(mult, dotter);
+		}
+
+		// add the start key and return;
+		return keystart + tot;
+	}
+
+	// get the neighboring key to 'key' on the minimum side
+	// along a dimension specified by 'd'
+	std::size_t getNeighborKeyMin(std::size_t key, std::size_t d) const {
+		// get the level of this key
+		std::size_t lvl = getLevel(key);
+		// get the level offset of this key
+		IntPoint<dim> loff = getLevelOffset(key);
+		// subtract 1 in the chosen dimension
+		loff[d]--;
+		// get the key from level offset
+		std::size_t neighbor = getKeyFromLevelOffset(lvl, loff);
+		return neighbor;
+	}
+
+	// get the neighboring key to 'key' on the maximum side
+	// along a dimension specified by 'd'
+	std::size_t getNeighborKeyMax(std::size_t key, std::size_t d) const {
+		// get the level of this key
+		std::size_t lvl = getLevel(key);
+		// get the level offset of this key
+		IntPoint<dim> loff = getLevelOffset(key);
+		// add 1 in the chosen dimension
+		loff[d]++;
+		// get the key from level offset
+		std::size_t neighbor = getKeyFromLevelOffset(lvl, loff);
+		return neighbor;
+	}
+
+	// set an existing key in the level map as a boundary.
+	// this will add the key to the boundary key map
+	void setKeyAsBoundary(std::size_t key) {
+		std::size_t lvl = getLevel(key);
+		mBdryMaps[lvl][key] = &mLevelMaps[lvl][key];
+	}
+
+	// build out a level boundary by going through all the points
+	// and adding boundary cells to the left/right if the neighbors
+	// on a given side don't exist
+	void buildLevelBoundary(std::size_t lvl) {
+		auto lit = level_iterator(lvl);
+	}
+
+	
+
 protected:
 
 	static const std::size_t 	sSize = Power<rfactor, dim>::value;	// the number of children possible
 
 	// these map an integer LEVEL (starting from 0) to another map that maps a KEY to a NODE
 	std::map<std::size_t, std::unordered_map<std::size_t, Node>> 		mLevelMaps; 		
-	std::map<std::size_t, std::unordered_map<std::size_t, Node>>		mBdryMaps;
+	std::map<std::size_t, std::unordered_map<std::size_t, Node *>>		mBdryMaps;
 };
 
 
