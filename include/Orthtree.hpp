@@ -227,6 +227,64 @@ public:
 	leaf_iterator leaf_end(){auto p=mLevelMaps.end(); p--; return leaf_iterator(*this, p->second.end());};
 
 
+
+	friend class level_iterator;
+	// iterate over key/node pairs for leaf nodes only 
+	class level_iterator{
+	public:
+		typedef level_iterator self_type;
+		typedef std::ptrdiff_t difference_type;
+	    typedef std::pair<const std::size_t, Node> value_type;
+	    typedef std::pair<const std::size_t, Node> & reference;
+	    typedef std::pair<const std::size_t, Node> * pointer;
+	    typedef std::forward_iterator_tag iterator_category;
+
+		// construction
+		level_iterator(Orthtree & t, std::size_t lvl)
+		: tree(t)
+		, it(t.mLevelMaps[lvl].begin()){};
+
+		level_iterator(Orthtree & t, std::size_t lvl, typename std::unordered_map<std::size_t, Node>::iterator iter)
+		: tree(t)
+		, it(iter){};
+
+		// dereferencing
+		reference operator*(){ return *it;};
+
+		// preincrement 
+		self_type operator++(){
+			it++;
+			// have reached the end of level
+			return *this;
+		}
+
+		// preincrement 
+		self_type operator++(int blah){
+			it++;
+			// have reached the end of level
+			return *this;
+		}
+
+		// pointer
+		pointer operator->() {return it.operator->();};
+
+		// inequality
+		bool operator!=(const self_type & leaf) const {return it != leaf.it;};
+
+		// equality
+		bool operator==(const self_type & leaf) const {return it == leaf.it;};
+
+
+	private:
+		typename std::unordered_map<std::size_t, Node>::iterator it;
+		Orthtree & tree;
+	};
+
+	
+	level_iterator level_begin(std::size_t lvl){return level_iterator(*this,lvl);};
+	level_iterator level_end(std::size_t lvl){return level_iterator(*this, lvl, mLevelMaps[lvl].end());};
+
+
 	// define some utility functions (can be specialized)
 	std::size_t getParentKey(std::size_t key) const {return (key-1)/sSize;};
 
