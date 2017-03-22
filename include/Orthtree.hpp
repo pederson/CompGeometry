@@ -4,6 +4,7 @@
 #include <map>
 #include <unordered_map>
 #include <memory>
+#include <list>
 
 #include "GeomUtils.hpp"
 
@@ -68,28 +69,22 @@ public:
 				  const PrototypeMap & pm, const RefineOracle & ro,
 				  std::size_t key=0){
 
-		// std::cout << "key: " << key << "  box: " << boundbox << std::endl;
-		// boundbox.print_summary(); 
-
 		// create node for key
 		std::size_t lvl = getLevel(key);
 		Node n; n.mIsLeaf = true; 
 		n.mVal = std::make_shared<ValueT>(pm.getValue(boundbox));
 		mLevelMaps[lvl][key] = n;
-		// std::cout << "checking refinement conditions" << std::endl;
 
 		// decide if refinement is necessary
 		if (lvl == lvlmax) return;
 		if (ro.isUniform(boundbox)) return;
 		mLevelMaps[lvl][key].mIsLeaf = false;
 
-		// std::cout << "got here" << std::endl;
 		// if refining, 
 		Point<dim> boxsize = 1.0/static_cast<double>(rfactor)*(boundbox.hi-boundbox.lo);
 		std::size_t kl = getLeftChildKey(key);
 		for (auto kc=kl; kc<kl+sSize; kc++){
 			IntPoint<dim> off = getOffsetWithinParent(kc);
-			// std::cout << "kc: " << kc << " offsetwithinparent: " << off << std::endl;
 			Point<dim> newlo = boundbox.lo+boxsize*off;
 			Box<dim> rbox(newlo, newlo+boxsize);
 			buildTree(lvlmax, rbox, pm, ro, kc);
@@ -186,14 +181,15 @@ public:
 				}
 				// reached end of level
 				lit++;
+
+				if (lit == tree.mLevelMaps.end()) break;
 				it = lit->second.begin();
 			}
-
 			// have reached the end of all the cells
-			return *this;
+			return tree.leaf_end();
 		}
 
-		// preincrement 
+		// postincrement 
 		self_type operator++(int blah){
 			it++;
 			while (lit != tree.mLevelMaps.end()){
@@ -203,11 +199,13 @@ public:
 				}
 				// reached end of level
 				lit++;
+
+				if (lit == tree.mLevelMaps.end()) break;
 				it = lit->second.begin();
 			}
 
 			// have reached the end of all the cells
-			return *this;
+			return tree.leaf_end();
 		}
 
 		// pointer
@@ -363,10 +361,6 @@ public:
 		dotter = off%rfactor;
 		tot += ct*IntPoint<dim>::dot(mult, dotter);
 
-		// std::cout << "mult: " << mult << std::endl;
-		// std::cout << "off: " << off << std::endl;
-		// std::cout << "tot: " << tot << std::endl;
-
 		for (auto l=lvl-1; l>0; l--){
 			// increase ct
 			ct *= sSize;
@@ -376,11 +370,6 @@ public:
 			dotter = off%rfactor;
 			// accumulate dot products
 			tot += ct*IntPoint<dim>::dot(mult, dotter);
-
-			// std::cout << "l: " << l << std::endl;
-			// std::cout << "off: " << off << std::endl;
-			// std::cout << "dotter: " << dotter << std::endl;
-			// std::cout << "tot: " << tot << std::endl;
 		}
 
 		// add the start key and return;
@@ -425,8 +414,33 @@ public:
 	// build out a level boundary by going through all the points
 	// and adding boundary cells to the left/right if the neighbors
 	// on a given side don't exist
-	void buildLevelBoundary(std::size_t lvl) {
-		auto lit = level_iterator(lvl);
+	void buildLevelBoundary(std::size_t lvl, const ValueT & proto) {
+		auto lmap = mLevelMaps[lvl];
+		std::list<std::size_t> bkeys;
+		// build list of cells to be added to level
+		for (auto lit = level_begin(lvl); lit!=level_end(lvl); lit++){
+			// check to see if each neighbor exists in the level map
+			std::size_t minKey, maxKey;
+			for (auto d=0; d<dim; d++){
+				// check min
+				minKey = getNeighborKeyMin(lit->first, d);
+				if (lmap.find(minKey) == lmap.end()) bkeys.push_back(minKey);
+				// check max
+				maxKey = getNeighborKeyMax(lit->first, d);
+				if (lmap.find(maxKey) == lmap.end()) bkeys.push_back(maxKey);
+			}
+		}
+
+		// push all keys into the appropriate level map and boundary map
+		Node n;
+		for (auto lsit = bkeys.begin(); lsit != bkeys.end(); lsit++){
+			// std::cout << "bkey: " << *lsit << std::endl;
+			n.mVal = std::make_shared<ValueT>(proto);
+			n.mIsLeaf = true;
+			mLevelMaps[lvl][*lsit] = n;
+
+			mBdryMaps[lvl][*lsit] = &(mLevelMaps[lvl][*lsit]);
+		}
 	}
 
 	
