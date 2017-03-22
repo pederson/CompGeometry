@@ -67,6 +67,13 @@ public:
 		return out;
 	}
 
+	// division
+	GeneralPoint operator/ (T val) const{
+		GeneralPoint out(*this);
+		for (auto i=0; i<dim; i++) out.x[i] = x[i]/val;
+		return out;
+	}
+
 	GeneralPoint normalize() const{
 		double magn = 0;
 		for (auto i=0; i<dim; i++) magn += x[i]*x[i];

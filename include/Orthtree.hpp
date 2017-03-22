@@ -40,14 +40,22 @@ public:
 
 
 	Orthtree(){
+		std::size_t k = 17;
 		std::cout << Power<3, 3>::value << std::endl;
 		std::cout << "Ref: " << rfactor << " Dim: " << dim << std::endl;
-		std::cout << "Parent(9): " << getParentKey(9) << std::endl;
-		std::cout << "LeftChild(1): " << getLeftChildKey(1) << std::endl;
-		std::cout << "Level(9): " << getLevel(9) << std::endl;
-		std::cout << "PosWithinParent(9): " << getPositionWithinParent(9) << std::endl;
-		std::cout << "OffsetWithinParent(9): " << getOffsetWithinParent(9) << std::endl;
-		std::cout << "LevelOffset(9): " << getLevelOffset(9) << std::endl;
+		std::cout << "k: " << k << std::endl;
+		std::cout << "Parent(k): " << getParentKey(k) << std::endl;
+		std::cout << "LeftChild(k): " << getLeftChildKey(k) << std::endl;
+		std::cout << "Level(k): " << getLevel(k) << std::endl;
+		std::cout << "PosWithinParent(k): " << getPositionWithinParent(k) << std::endl;
+		std::cout << "OffsetWithinParent(k): " << getOffsetWithinParent(k) << std::endl;
+		std::cout << "LevelOffset(k): " << getLevelOffset(k) << std::endl;
+		std::cout << "LevelStartingKey(2): " << getLevelStartingKey(2) << std::endl;
+		std::cout << "KeyFromLevelOffset(2, (1,2)): " << getKeyFromLevelOffset(2, IntPoint2(1,2)) << std::endl;
+		std::cout << "NeighborKeyMin(k, 0): " << getNeighborKeyMin(k, 0) << std::endl;
+		std::cout << "NeighborKeyMin(k, 1): " << getNeighborKeyMin(k, 1) << std::endl;
+		std::cout << "NeighborKeyMax(k, 0): " << getNeighborKeyMax(k, 0) << std::endl;
+		std::cout << "NeighborKeyMax(k, 1): " << getNeighborKeyMax(k, 1) << std::endl;
 		std::cout << std::endl; 
 	};
 
@@ -79,7 +87,7 @@ public:
 		// if refining, 
 		Point<dim> boxsize = 1.0/static_cast<double>(rfactor)*(boundbox.hi-boundbox.lo);
 		std::size_t kl = getLeftChildKey(key);
-		for (auto kc=kl; kc<kl+dim*rfactor; kc++){
+		for (auto kc=kl; kc<kl+sSize; kc++){
 			IntPoint<dim> off = getOffsetWithinParent(kc);
 			// std::cout << "kc: " << kc << " offsetwithinparent: " << off << std::endl;
 			Point<dim> newlo = boundbox.lo+boxsize*off;
@@ -331,7 +339,7 @@ public:
 		std::size_t keystart = 1;	// starting at level 1
 		std::size_t lct = 1;
 		for (auto l=1; l<lvl; l++){
-			lct *= rfactor*dim;
+			lct *= sSize;
 			keystart += lct;
 		}
 		return keystart;
@@ -347,21 +355,32 @@ public:
 		IntPoint<dim> mult;
 		IntPoint<dim> dotter;
 		std::size_t rval = 1;
-		for (auto i=0; i<mult; i++){
-			mult[i] = rval;
+		for (auto i=0; i<dim; i++){
+			mult.x[i] = rval;
 			rval *= rfactor;
 		}
+		
 		dotter = off%rfactor;
 		tot += ct*IntPoint<dim>::dot(mult, dotter);
-		for (auto l=lvl; l>0; l++){
+
+		// std::cout << "mult: " << mult << std::endl;
+		// std::cout << "off: " << off << std::endl;
+		// std::cout << "tot: " << tot << std::endl;
+
+		for (auto l=lvl-1; l>0; l--){
 			// increase ct
-			ct *= rfactor*dim;
+			ct *= sSize;
 			// divide by rfactor
-			off = off/rfactor;
+			off = off/static_cast<int>(rfactor);
 			// take modulus
 			dotter = off%rfactor;
 			// accumulate dot products
 			tot += ct*IntPoint<dim>::dot(mult, dotter);
+
+			// std::cout << "l: " << l << std::endl;
+			// std::cout << "off: " << off << std::endl;
+			// std::cout << "dotter: " << dotter << std::endl;
+			// std::cout << "tot: " << tot << std::endl;
 		}
 
 		// add the start key and return;
@@ -376,7 +395,7 @@ public:
 		// get the level offset of this key
 		IntPoint<dim> loff = getLevelOffset(key);
 		// subtract 1 in the chosen dimension
-		loff[d]--;
+		loff.x[d]--;
 		// get the key from level offset
 		std::size_t neighbor = getKeyFromLevelOffset(lvl, loff);
 		return neighbor;
@@ -390,7 +409,7 @@ public:
 		// get the level offset of this key
 		IntPoint<dim> loff = getLevelOffset(key);
 		// add 1 in the chosen dimension
-		loff[d]++;
+		loff.x[d]++;
 		// get the key from level offset
 		std::size_t neighbor = getKeyFromLevelOffset(lvl, loff);
 		return neighbor;
