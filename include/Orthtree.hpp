@@ -41,23 +41,23 @@ public:
 
 
 	Orthtree(){
-		std::size_t k = 17;
-		std::cout << Power<3, 3>::value << std::endl;
-		std::cout << "Ref: " << rfactor << " Dim: " << dim << std::endl;
-		std::cout << "k: " << k << std::endl;
-		std::cout << "Parent(k): " << getParentKey(k) << std::endl;
-		std::cout << "LeftChild(k): " << getLeftChildKey(k) << std::endl;
-		std::cout << "Level(k): " << getLevel(k) << std::endl;
-		std::cout << "PosWithinParent(k): " << getPositionWithinParent(k) << std::endl;
-		std::cout << "OffsetWithinParent(k): " << getOffsetWithinParent(k) << std::endl;
-		std::cout << "LevelOffset(k): " << getLevelOffset(k) << std::endl;
-		std::cout << "LevelStartingKey(2): " << getLevelStartingKey(2) << std::endl;
-		std::cout << "KeyFromLevelOffset(2, (1,2)): " << getKeyFromLevelOffset(2, IntPoint2(1,2)) << std::endl;
-		std::cout << "NeighborKeyMin(k, 0): " << getNeighborKeyMin(k, 0) << std::endl;
-		std::cout << "NeighborKeyMin(k, 1): " << getNeighborKeyMin(k, 1) << std::endl;
-		std::cout << "NeighborKeyMax(k, 0): " << getNeighborKeyMax(k, 0) << std::endl;
-		std::cout << "NeighborKeyMax(k, 1): " << getNeighborKeyMax(k, 1) << std::endl;
-		std::cout << std::endl; 
+		// std::size_t k = 17;
+		// std::cout << Power<3, 3>::value << std::endl;
+		// std::cout << "Ref: " << rfactor << " Dim: " << dim << std::endl;
+		// std::cout << "k: " << k << std::endl;
+		// std::cout << "Parent(k): " << getParentKey(k) << std::endl;
+		// std::cout << "LeftChild(k): " << getLeftChildKey(k) << std::endl;
+		// std::cout << "Level(k): " << getLevel(k) << std::endl;
+		// std::cout << "PosWithinParent(k): " << getPositionWithinParent(k) << std::endl;
+		// std::cout << "OffsetWithinParent(k): " << getOffsetWithinParent(k) << std::endl;
+		// std::cout << "LevelOffset(k): " << getLevelOffset(k) << std::endl;
+		// std::cout << "LevelStartingKey(2): " << getLevelStartingKey(2) << std::endl;
+		// std::cout << "KeyFromLevelOffset(2, (1,2)): " << getKeyFromLevelOffset(2, IntPoint2(1,2)) << std::endl;
+		// std::cout << "NeighborKeyMin(k, 0): " << getNeighborKeyMin(k, 0) << std::endl;
+		// std::cout << "NeighborKeyMin(k, 1): " << getNeighborKeyMin(k, 1) << std::endl;
+		// std::cout << "NeighborKeyMax(k, 0): " << getNeighborKeyMax(k, 0) << std::endl;
+		// std::cout << "NeighborKeyMax(k, 1): " << getNeighborKeyMax(k, 1) << std::endl;
+		// std::cout << std::endl; 
 	};
 
 	// define some construction functions
@@ -286,6 +286,80 @@ public:
 	
 	level_iterator level_begin(std::size_t lvl){return level_iterator(*this,lvl);};
 	level_iterator level_end(std::size_t lvl){return level_iterator(*this, lvl, mLevelMaps[lvl].end());};
+
+
+
+	friend class boundary_iterator;
+	// iterate over key/node pairs for leaf nodes only 
+	class boundary_iterator{
+	public:
+		typedef boundary_iterator self_type;
+		typedef std::ptrdiff_t difference_type;
+	    typedef std::pair<const std::size_t, Node> value_type;
+	    typedef std::pair<const std::size_t, Node> & reference;
+	    typedef std::pair<const std::size_t, Node> * pointer;
+	    typedef std::forward_iterator_tag iterator_category;
+
+		// construction
+		boundary_iterator(Orthtree & t, std::size_t lvl)
+		: tree(t)
+		, level(lvl)
+		, bit(t.mBdryMaps[lvl].begin()){
+			if (bit == tree.mBdryMaps[level].end()) bit = tree.mBdryMaps[level].end();
+			else it = tree.mLevelMaps[level].find(bit->first);
+		};
+
+		boundary_iterator(Orthtree & t, std::size_t lvl, typename std::unordered_map<std::size_t, Node *>::iterator iter)
+		: tree(t)
+		, level(lvl)
+		, bit(iter){
+			if (bit == tree.mBdryMaps[level].end()) bit = tree.mBdryMaps[level].end();
+			else it = tree.mLevelMaps[level].find(bit->first);
+		};
+
+		// dereferencing
+		reference operator*(){ return *it;};
+
+		// preincrement 
+		self_type operator++(){
+			bit++;
+			if (bit == tree.mBdryMaps[level].end()) return tree.boundary_end(level);
+
+			it = tree.mLevelMaps[level].find(bit->first);
+			return *this;
+		}
+
+		// preincrement 
+		self_type operator++(int blah){
+			bit++;
+			if (bit == tree.mBdryMaps[level].end()) return tree.boundary_end(level);
+
+			it = tree.mLevelMaps[level].find(bit->first);
+			return *this;
+		}
+
+		// pointer
+		pointer operator->() {return it.operator->();};
+
+		// inequality
+		bool operator!=(const self_type & leaf) const {return bit != leaf.bit;};
+
+		// equality
+		bool operator==(const self_type & leaf) const {return bit == leaf.bit;};
+
+
+	private:
+		std::size_t level;
+		typename std::unordered_map<std::size_t, Node>::iterator it;
+		typename std::unordered_map<std::size_t, Node *>::iterator bit;
+		Orthtree & tree;
+	};
+
+	
+	boundary_iterator boundary_begin(std::size_t lvl){return boundary_iterator(*this,lvl);};
+	boundary_iterator boundary_end(std::size_t lvl){return boundary_iterator(*this, lvl, mBdryMaps[lvl].end());};
+
+
 
 
 	// define some utility functions (can be specialized)
