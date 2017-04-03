@@ -101,6 +101,11 @@ public:
 		mLevelMaps[lvl].at(key).mVal = std::shared_ptr<ValueT>(v);
 	}
 
+
+	Node * getCell(std::size_t key, std::size_t lvl){
+		return &mLevelMaps[lvl][key];
+	}
+
 	// split parent key, and endow all children
 	// with a copy of the parent value
 	void refineCell(std::size_t key) {
@@ -133,8 +138,10 @@ public:
 	}
 
 	void print_summary(std::ostream & os = std::cout) const {
+		using comptype = std::pair<const std::size_t, Node>;
 		for (auto lit=mLevelMaps.begin(); lit!=mLevelMaps.end(); lit++){
-			os << "Level (" << lit->first << ") --> " << lit->second.size() << std::endl;
+			auto minmax = std::minmax_element(lit->second.begin(), lit->second.end(), [](comptype p1, comptype p2)->bool{return p1.first < p2.first;});
+			os << "Level (" << lit->first << ") --> " << lit->second.size() << " bdry(" << (mBdryMaps.find(lit->first) == mBdryMaps.end()? 0 : mBdryMaps.at(lit->first).size()) << ")" << "\t\tmin: " << minmax.first->first << " max: " << minmax.second->first  << std::endl;
 		}
 	}
 
@@ -231,8 +238,10 @@ public:
 
 
 
-	friend class level_iterator;
+
+	template<std::size_t lvl> friend class level_iterator;
 	// iterate over key/node pairs for leaf nodes only 
+	template<std::size_t lvl> 
 	class level_iterator{
 	public:
 		typedef level_iterator self_type;
@@ -243,11 +252,11 @@ public:
 	    typedef std::forward_iterator_tag iterator_category;
 
 		// construction
-		level_iterator(Orthtree & t, std::size_t lvl)
+		level_iterator(Orthtree & t)
 		: tree(t)
 		, it(t.mLevelMaps[lvl].begin()){};
 
-		level_iterator(Orthtree & t, std::size_t lvl, typename std::unordered_map<std::size_t, Node>::iterator iter)
+		level_iterator(Orthtree & t, typename std::unordered_map<std::size_t, Node>::iterator iter)
 		: tree(t)
 		, it(iter){};
 
@@ -283,14 +292,16 @@ public:
 		Orthtree & tree;
 	};
 
-	
-	level_iterator level_begin(std::size_t lvl){return level_iterator(*this,lvl);};
-	level_iterator level_end(std::size_t lvl){return level_iterator(*this, lvl, mLevelMaps[lvl].end());};
+	template<std::size_t lvl>
+	level_iterator<lvl> level_begin(){return level_iterator<lvl>(*this);};
+	template<std::size_t lvl>
+	level_iterator<lvl> level_end(){return level_iterator<lvl>(*this, mLevelMaps[lvl].end());};
 
 
 
-	friend class boundary_iterator;
+	template<std::size_t lvl> friend class boundary_iterator;
 	// iterate over key/node pairs for leaf nodes only 
+	template<std::size_t lvl>
 	class boundary_iterator{
 	public:
 		typedef boundary_iterator self_type;
@@ -301,20 +312,18 @@ public:
 	    typedef std::forward_iterator_tag iterator_category;
 
 		// construction
-		boundary_iterator(Orthtree & t, std::size_t lvl)
+		boundary_iterator(Orthtree & t)
 		: tree(t)
-		, level(lvl)
 		, bit(t.mBdryMaps[lvl].begin()){
-			if (bit == tree.mBdryMaps[level].end()) bit = tree.mBdryMaps[level].end();
-			else it = tree.mLevelMaps[level].find(bit->first);
+			if (bit == tree.mBdryMaps[lvl].end()) bit = tree.mBdryMaps[lvl].end();
+			else it = tree.mLevelMaps[lvl].find(bit->first);
 		};
 
-		boundary_iterator(Orthtree & t, std::size_t lvl, typename std::unordered_map<std::size_t, Node *>::iterator iter)
+		boundary_iterator(Orthtree & t, typename std::unordered_map<std::size_t, Node *>::iterator iter)
 		: tree(t)
-		, level(lvl)
 		, bit(iter){
-			if (bit == tree.mBdryMaps[level].end()) bit = tree.mBdryMaps[level].end();
-			else it = tree.mLevelMaps[level].find(bit->first);
+			if (bit == tree.mBdryMaps[lvl].end()) bit = tree.mBdryMaps[lvl].end();
+			else it = tree.mLevelMaps[lvl].find(bit->first);
 		};
 
 		// dereferencing
@@ -323,18 +332,17 @@ public:
 		// preincrement 
 		self_type operator++(){
 			bit++;
-			if (bit == tree.mBdryMaps[level].end()) return tree.boundary_end(level);
+			if (bit == tree.mBdryMaps[lvl].end()) return tree.boundary_end<lvl>();
 
-			it = tree.mLevelMaps[level].find(bit->first);
+			it = tree.mLevelMaps[lvl].find(bit->first);
 			return *this;
 		}
 
 		// preincrement 
 		self_type operator++(int blah){
 			bit++;
-			if (bit == tree.mBdryMaps[level].end()) return tree.boundary_end(level);
-
-			it = tree.mLevelMaps[level].find(bit->first);
+			if (bit == tree.mBdryMaps[lvl].end()) return tree.boundary_end<lvl>();
+			it = tree.mLevelMaps[lvl].find(bit->first);
 			return *this;
 		}
 
@@ -349,15 +357,123 @@ public:
 
 
 	private:
-		std::size_t level;
 		typename std::unordered_map<std::size_t, Node>::iterator it;
 		typename std::unordered_map<std::size_t, Node *>::iterator bit;
 		Orthtree & tree;
 	};
 
+	template<std::size_t lvl>
+	boundary_iterator<lvl> boundary_begin(){return boundary_iterator<lvl>(*this);};
+	template<std::size_t lvl>
+	boundary_iterator<lvl> boundary_end(){return boundary_iterator<lvl>(*this, mBdryMaps[lvl].end());};
+
+
+
+
+	struct node_stencil{
+		std::pair<const std::size_t, Node>		*center;
+		std::array<std::pair<std::size_t, Node *>, dim> 				neighb_hi;
+		std::array<std::pair<std::size_t, Node *>, dim>				neighb_lo;	
+	};
 	
-	boundary_iterator boundary_begin(std::size_t lvl){return boundary_iterator(*this,lvl);};
-	boundary_iterator boundary_end(std::size_t lvl){return boundary_iterator(*this, lvl, mBdryMaps[lvl].end());};
+	template<std::size_t lvl> friend class level_stencil_iterator;
+	// iterate over key/node pairs for leaf nodes only 
+	template<std::size_t lvl>
+	class level_stencil_iterator{
+	public:
+		typedef level_stencil_iterator self_type;
+		typedef std::ptrdiff_t difference_type;
+	    typedef node_stencil value_type;
+	    typedef node_stencil & reference;
+	    typedef node_stencil * pointer;
+	    typedef std::forward_iterator_tag iterator_category;
+
+		// construction
+		level_stencil_iterator(Orthtree & t)
+		: tree(t)
+		, stencil_void(true)
+		, it(t.mLevelMaps[lvl].begin()){};
+
+		level_stencil_iterator(Orthtree & t, typename std::unordered_map<std::size_t, Node>::iterator iter)
+		: tree(t)
+		, stencil_void(true)
+		, it(iter){};
+
+		// dereferencing
+		reference operator*(){if (stencil_void) fill_stencil(); return sten;};
+
+		// preincrement 
+		self_type operator++(){
+			it++;
+			stencil_void = true;
+			// have reached the end of level
+			return *this;
+		}
+
+		// preincrement 
+		self_type operator++(int blah){
+			it++;
+			stencil_void = true;
+			// have reached the end of level
+			return *this;
+		}
+
+		// pointer
+		pointer operator->() {if (stencil_void) fill_stencil(); return &sten;};
+
+		// inequality
+		bool operator!=(const self_type & leaf) const {return it != leaf.it;};
+
+		// equality
+		bool operator==(const self_type & leaf) const {return it == leaf.it;};
+
+
+		void fill_stencil(){
+			// std::cout << "filling stencil" << std::endl;
+			// fill the center
+			sten.center = it.operator->();
+			IntPoint<dim> off = tree.getLevelOffset(it->first);
+			std::size_t lvlmax = pow(rfactor,lvl)-1;
+			// get neighbors on the high side of each dimension
+			for (auto i=0; i<dim; i++){
+				sten.neighb_lo[i].first = 0;
+				sten.neighb_hi[i].first = 0;
+				sten.neighb_lo[i].second = nullptr;
+				sten.neighb_hi[i].second = nullptr;
+			}
+			for (auto i=0; i<dim; i++){
+				if (off.x[i] == lvlmax) continue;
+				std::size_t nkey = tree.getNeighborKeyMax(it->first, i);
+				sten.neighb_hi[i].first = nkey;
+				auto nit = tree.mLevelMaps[lvl].find(nkey);
+				if (nit != tree.mLevelMaps[lvl].end()) sten.neighb_hi[i].second = &nit->second;
+			}
+			// get neighbors on the low side of each dimension
+			for (auto i=0; i<dim; i++){
+				if (off.x[i] == 0) continue;
+				std::size_t nkey = tree.getNeighborKeyMin(it->first, i);
+				sten.neighb_lo[i].first = nkey;
+				auto nit = tree.mLevelMaps[lvl].find(nkey);
+				if (nit != tree.mLevelMaps[lvl].end()) sten.neighb_lo[i].second = &nit->second;
+			}
+			stencil_void = false;
+			// std::cout << "filled stencil" << std::endl;
+		}
+
+		node_stencil	sten;
+
+	private:
+		typename std::unordered_map<std::size_t, Node>::iterator it;
+		Orthtree & tree;
+		bool stencil_void;
+	};
+
+	template<std::size_t lvl>
+	level_stencil_iterator<lvl> level_stencil_begin(){return level_stencil_iterator<lvl>(*this);};
+	template<std::size_t lvl>
+	level_stencil_iterator<lvl> level_stencil_end(){return level_stencil_iterator<lvl>(*this, mLevelMaps[lvl].end());};
+
+
 
 
 
@@ -393,28 +509,38 @@ public:
 	IntPoint<dim> getLevelOffset(std::size_t key) const {
 
 		IntPoint<dim> off;
+		// key -= getLevelStartingKey(getLevel(key));
 		for (auto i=0; i<dim; i++) off.x[i] = 0;
 		std::size_t mult = 1;
 		std::size_t pkey;
 		while (key>0) {
 			// get the offset within parent
+			// std::cout << "key: " << key << " offsetWithinParent: " << getOffsetWithinParent(key) <<std::endl;
 			off = off + getOffsetWithinParent(key)*mult;
 			// begin anew with parent key
 			key = getParentKey(key);
 			mult *= rfactor;
+
+			// std::cout << "new key: " << key << std::endl;
 		}
 		return off;
 	}
 
 	// get the key that starts a given level
 	std::size_t getLevelStartingKey(std::size_t lvl) const {
-		std::size_t keystart = 1;	// starting at level 1
+		std::size_t keystart = 0;	// starting at level 1
 		std::size_t lct = 1;
-		for (auto l=1; l<lvl; l++){
-			lct *= sSize;
+		for (auto l=0; l<lvl; l++){
 			keystart += lct;
+			lct *= sSize;
 		}
 		return keystart;
+	}
+
+	// get the key that starts a given level
+	std::size_t getLevelEndingKey(std::size_t lvl) const {
+		return getLevelStartingKey(lvl+1)-1;
+		// return keystart;
 	}
 
 	// get a key from a offset on a given level
@@ -485,14 +611,86 @@ public:
 		mBdryMaps[lvl][key] = &mLevelMaps[lvl][key];
 	}
 
+
+	// for a given level, if a node is on the boundary 
+	// it will be turned into a boundary node
+	template <std::size_t lvl>
+	void annexLevelBoundary() {
+		auto lmap = mLevelMaps[lvl];
+		std::list<std::size_t> bkeys;
+		auto l = level_begin<lvl>();
+		// build list of cells to be added to level
+		for (auto lit = level_begin<lvl>(); lit!=level_end<lvl>(); lit++){
+			// check to see if each neighbor exists in the level map
+			std::size_t key = lit->first;
+			std::size_t lmax = pow(rfactor, lvl) - 1;//Power<rfactor, lvl>::value - 1;
+			IntPoint<dim> lvlind = getLevelOffset(key);
+
+			// if any of the indices is 0 or lmax, it is a boundary point
+			bool bdryfound = false;
+			for (auto d=0; d<dim; d++){
+				// check min
+				if (lvlind.x[d] == 0){
+					bdryfound = true;
+					bkeys.push_back(key);
+					break;
+				}
+				if (lvlind.x[d] == lmax){
+					bdryfound = true;
+					bkeys.push_back(key);
+					break;
+				}
+			}
+
+			if (bdryfound) continue;
+
+
+			// if the cell is not a boundary cell, check neighbors	
+			std::size_t minKey, maxKey;
+			for (auto d=0; d<dim; d++){
+				// check min
+				minKey = getNeighborKeyMin(lit->first, d);
+				if (lmap.find(minKey) == lmap.end()){
+					bkeys.push_back(key);
+					break;
+				}
+				// check max
+				maxKey = getNeighborKeyMax(lit->first, d);
+				if (lmap.find(maxKey) == lmap.end()){
+					bkeys.push_back(key);
+					break;
+				}
+			}		
+		}
+
+		// now add all the bkeys as boundary nodes
+		// push all keys into the appropriate level map and boundary map
+		// std::cout << "YEEHAW" << std::endl;
+		for (auto lsit = bkeys.begin(); lsit != bkeys.end(); lsit++){
+			// std::cout << "annexing boundary key: " << *lsit << " offset: " << getLevelOffset(*lsit) << std::endl;
+			mBdryMaps[lvl][*lsit] = &(mLevelMaps[lvl][*lsit]);
+			mLevelMaps[lvl][*lsit].mIsLeaf = true;
+		}
+	}
+
+
+	template <std::size_t lvl>
+	void reassignLevelBoundary(const ValueT & val){
+		// iterate through the level boundary and replace values
+		for (auto it=boundary_begin<lvl>(); it != boundary_end<lvl>(); it++){
+			it->second.mVal = std::make_shared<ValueT>(val);
+		}
+	}
+
 	// build out a level boundary by going through all the points
 	// and adding boundary cells to the left/right if the neighbors
 	// on a given side don't exist
-	void buildLevelBoundary(std::size_t lvl, const ValueT & proto) {
+	template <std::size_t lvl>
+	void buildLevelBoundary(const ValueT & proto) {
 		auto lmap = mLevelMaps[lvl];
 		std::list<std::size_t> bkeys;
 		// build list of cells to be added to level
-		for (auto lit = level_begin(lvl); lit!=level_end(lvl); lit++){
+		for (auto lit = level_begin<lvl>(); lit!=level_end<lvl>(); lit++){
 			// check to see if each neighbor exists in the level map
 			std::size_t minKey, maxKey;
 			for (auto d=0; d<dim; d++){
@@ -506,15 +704,22 @@ public:
 		}
 
 		// push all keys into the appropriate level map and boundary map
-		Node n;
+		
 		for (auto lsit = bkeys.begin(); lsit != bkeys.end(); lsit++){
-			// std::cout << "bkey: " << *lsit << std::endl;
+			// std::cout << "building bkey: " << *lsit << " offset: " << getLevelOffset(*lsit) << std::endl;
+			Node n;
 			n.mVal = std::make_shared<ValueT>(proto);
 			n.mIsLeaf = true;
-			mLevelMaps[lvl][*lsit] = n;
+			mLevelMaps[lvl][*lsit] = std::move(n);
 
 			mBdryMaps[lvl][*lsit] = &(mLevelMaps[lvl][*lsit]);
 		}
+
+		// // print out the pointers
+		// for (auto lsit = mBdryMaps[lvl].begin(); lsit != mBdryMaps[lvl].end(); lsit++){
+		// 	// std::cout << "building bkey: " << *lsit << " offset: " << getLevelOffset(*lsit) << std::endl;
+		// 	std::cout << "bdry key: " << lsit->first << " bdry address: " << (lsit->second) << " isLeaf? " << lsit->second->mIsLeaf << std::endl;
+		// }
 	}
 
 	
