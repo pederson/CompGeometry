@@ -667,18 +667,20 @@ public:
 		// push all keys into the appropriate level map and boundary map
 		// std::cout << "YEEHAW" << std::endl;
 		for (auto lsit = bkeys.begin(); lsit != bkeys.end(); lsit++){
-			// std::cout << "annexing boundary key: " << *lsit << " offset: " << getLevelOffset(*lsit) << std::endl;
-			mBdryMaps[lvl][*lsit] = &(mLevelMaps[lvl][*lsit]);
-			mLevelMaps[lvl][*lsit].mIsLeaf = true;
+			// std::cout << "annexing boundary key: " << *lsit << " address: " << &(mLevelMaps[lvl][*lsit]) << " offset: " << getLevelOffset(*lsit) << std::endl;
+			mBdryMaps[lvl].insert({*lsit, &(mLevelMaps[lvl][*lsit])});
+			mLevelMaps[lvl][(*lsit)].mIsLeaf = true;
 		}
 	}
 
 
-	template <std::size_t lvl>
-	void reassignLevelBoundary(const ValueT & val){
+	template <std::size_t lvl,
+			  class PrototypeMap>
+	void reassignLevelBoundary(const PrototypeMap & pm){
 		// iterate through the level boundary and replace values
 		for (auto it=boundary_begin<lvl>(); it != boundary_end<lvl>(); it++){
-			it->second.mVal = std::make_shared<ValueT>(val);
+			it->second.mVal = std::make_shared<ValueT>(pm.getPrototype());
+			// std::cout << "addr: " << &val << " addr_new: " << it->second.mVal.get()->get() << std::endl;
 		}
 	}
 
