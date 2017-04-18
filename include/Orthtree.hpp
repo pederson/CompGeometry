@@ -612,6 +612,13 @@ public:
 	}
 
 
+	// return whether the given key exists as a boundary cell
+	bool isKeyBoundary(std::size_t key) {
+		std::size_t lvl = getLevel(key);
+		return !(mBdryMaps[lvl].find(key) == mBdryMaps[lvl].end());
+	}
+
+
 	// for a given level, if a node is on the boundary 
 	// it will be turned into a boundary node
 	template <std::size_t lvl>
