@@ -399,6 +399,11 @@ public:
 		, stencil_void(true)
 		, it(iter){};
 
+		level_stencil_iterator(Orthtree & t, std::size_t key)
+		: tree(t)
+		, stencil_void(true)
+		, it(t.mLevelMaps[lvl].find(key)){};
+
 		// dereferencing
 		reference operator*(){if (stencil_void) fill_stencil(); return sten;};
 
@@ -694,8 +699,9 @@ public:
 	// build out a level boundary by going through all the points
 	// and adding boundary cells to the left/right if the neighbors
 	// on a given side don't exist
-	template <std::size_t lvl>
-	void buildLevelBoundary(const ValueT & proto) {
+	template <std::size_t lvl,
+			  class PrototypeMap>
+	void buildLevelBoundary(const PrototypeMap & pm) {
 		auto lmap = mLevelMaps[lvl];
 		std::list<std::size_t> bkeys;
 		// build list of cells to be added to level
@@ -717,7 +723,7 @@ public:
 		for (auto lsit = bkeys.begin(); lsit != bkeys.end(); lsit++){
 			// std::cout << "building bkey: " << *lsit << " offset: " << getLevelOffset(*lsit) << std::endl;
 			Node n;
-			n.mVal = std::make_shared<ValueT>(proto);
+			n.mVal = std::make_shared<ValueT>(pm.getPrototype());
 			n.mIsLeaf = true;
 			mLevelMaps[lvl][*lsit] = std::move(n);
 
