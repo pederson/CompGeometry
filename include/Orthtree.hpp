@@ -40,6 +40,18 @@ public:
 	};
 
 
+protected:
+
+	static const std::size_t 	sSize = Power<rfactor, dim>::value;	// the number of children possible
+
+	// these map an integer LEVEL (starting from 0) to another map that maps a KEY to a NODE
+	std::map<std::size_t, std::unordered_map<std::size_t, Node>> 		mLevelMaps; 		
+	std::map<std::size_t, std::unordered_map<std::size_t, Node *>>		mBdryMaps;
+
+
+public:
+
+
 	Orthtree(){
 		// std::size_t k = 17;
 		// std::cout << Power<3, 3>::value << std::endl;
@@ -738,14 +750,6 @@ public:
 	}
 
 	
-
-protected:
-
-	static const std::size_t 	sSize = Power<rfactor, dim>::value;	// the number of children possible
-
-	// these map an integer LEVEL (starting from 0) to another map that maps a KEY to a NODE
-	std::map<std::size_t, std::unordered_map<std::size_t, Node>> 		mLevelMaps; 		
-	std::map<std::size_t, std::unordered_map<std::size_t, Node *>>		mBdryMaps;
 };
 
 
