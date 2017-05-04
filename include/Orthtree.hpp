@@ -114,7 +114,7 @@ public:
 
 	static const std::size_t 	sSize = Power<rfactor, dim>::value;	// the number of children possible
 
-	static std::size_t decode(KeyT key) {
+	static KeyT decode(KeyT key) {
 		return (key-1)/sSize;
 	};
 };
@@ -128,7 +128,7 @@ public:
 
 	static const std::size_t 	sSize = Power<rfactor, dim>::value;	// the number of children possible
 
-	static std::size_t decode(KeyT key) {
+	static KeyT decode(KeyT key) {
 		return key*sSize + 1;
 	};
 };
@@ -165,6 +165,12 @@ public:
 // 	};
 // };
 
+template<class KeyT>
+class NullIndexExtractor{
+public:
+	static std::size_t extract(KeyT key) {return key;};
+};
+
 
 template<class KeyT>
 class NullSubdomainDecoder{
@@ -189,6 +195,7 @@ template <	std::size_t dim,
 			class LevelDecoder = BruteForceLevelDecoder<dim,rfactor,KeyT>,
 			class ParentDecoder = BruteForceParentDecoder<dim,rfactor,KeyT>,
 			class LeftChildDecoder = BruteForceLeftChildDecoder<dim,rfactor,KeyT>,
+			class IndexExtractor = NullIndexExtractor<KeyT>,
 			// class NeighborDecoder = BruteForceNeighborDecoder<dim,rfactor,KeyT>,
 			class SubdomainDecoder = NullSubdomainDecoder<KeyT>,
 			std::size_t lvlmax = 16>
@@ -211,8 +218,8 @@ protected:
 	std::map<std::size_t, std::map<std::size_t, std::unordered_map<KeyT, Node>>> 		mKeyMaps; 		
 	
 	// some convenience values created at compile time
-	std::array<std::size_t, lvlmax+1>			mLvlStartKeys;//={createStartingKeys<dim,rfactor,lvlmax>()};
-	std::array<std::size_t, lvlmax+1>			mLvlEndKeys;//={createStartingKeys<dim,rfactor,lvlmax>()};
+	std::array<std::size_t, lvlmax+1>			mLvlStartInds;//={createStartingKeys<dim,rfactor,lvlmax>()};
+	std::array<std::size_t, lvlmax+1>			mLvlEndInds;//={createStartingKeys<dim,rfactor,lvlmax>()};
 
 	// these map an integer LEVEL (starting from 0) to another map that maps a 
 	// SUBDOMAIN (any integer) to a list of keys contained in the subdomain
@@ -223,8 +230,8 @@ public:
 
 
 	Orthtree()
-	: mLvlStartKeys(createStartingKeys<dim,rfactor,lvlmax+1>())
-	, mLvlEndKeys(createEndingKeys<dim,rfactor,lvlmax+1>())
+	: mLvlStartInds(createStartingKeys<dim,rfactor,lvlmax+1>())
+	, mLvlEndInds(createEndingKeys<dim,rfactor,lvlmax+1>())
 	{
 		KeyT k = 17;
 		std::cout << Power<3, 3>::value << std::endl;
@@ -236,9 +243,8 @@ public:
 		// std::cout << "PosWithinParent(k): " << getPositionWithinParent(k) << std::endl;
 		// std::cout << "OffsetWithinParent(k): " << getOffsetWithinParent(k) << std::endl;
 		// std::cout << "LevelOffset(k): " << getLevelOffset(k) << std::endl;
-		// for (auto i=0; i<=lvlmax; i++) std::cout << "LevelStartingKey(" << i << "): " << lkeys[i] << std::endl;
-		for (auto i=0; i<=lvlmax; i++) std::cout << "LevelStartingKey(" << i << "): " << mLvlStartKeys[i] << std::endl;
-		for (auto i=0; i<=lvlmax; i++) std::cout << "LevelEndingKey(" << i << "): " << mLvlEndKeys[i] << std::endl;
+		for (auto i=0; i<=lvlmax; i++) std::cout << "LevelStartingInd(" << i << "): " << mLvlStartInds[i] << std::endl;
+		for (auto i=0; i<=lvlmax; i++) std::cout << "LevelEndingInd(" << i << "): " << mLvlEndInds[i] << std::endl;
 		// std::cout << "KeyFromLevelOffset(2, (1,2)): " << getKeyFromLevelOffset(2, IntPoint2(1,2)) << std::endl;
 		// std::cout << "NeighborKeyMin(k, 0): " << getNeighborKeyMin(k, 0) << std::endl;
 		// std::cout << "NeighborKeyMin(k, 1): " << getNeighborKeyMin(k, 1) << std::endl;
@@ -672,26 +678,17 @@ public:
 
 
 	// // define some utility functions (can be specialized)
-	// std::size_t getParentKey(std::size_t key) const {return (key-1)/sSize;};
 	std::size_t getParentKey(KeyT key) const {return ParentDecoder::decode(key);};
 
-
-	// std::size_t getLeftChildKey(std::size_t key) const {return key*sSize + 1;};
 	std::size_t getLeftChildKey(KeyT key) const {return LeftChildDecoder::decode(key);};
-
-
-	// std::size_t getLevel(std::size_t key) const {
-	// 	std::size_t lvl=0;
-	// 	while (key>0){
-	// 		lvl++;
-	// 		key = (key-1)/sSize;
-	// 	}
-	// 	return lvl;
-	// }
 
 	std::size_t getLevel(KeyT key) const {return LevelDecoder::decode(key);};
 	
 	// std::size_t getPositionWithinParent(std::size_t key) const {return (key-1)%sSize;};
+	std::size_t getPositionWithinParent(KeyT key) const {
+		std::size_t k = IndexExtractor::extract(key);
+		return (k-1)%sSize;
+	};
 	
 	// IntPoint<dim> getOffsetWithinParent(std::size_t key) const {
 	// 	IntPoint<dim> off;
@@ -701,6 +698,18 @@ public:
 	// 		off.x[i] = key%rfactor; 
 	// 		key -= off.x[i];
 	// 		key /= rfactor;
+	// 	}
+	// 	return off;
+	// }
+
+	// IntPoint<dim> getOffsetWithinParent(KeyT key) const {
+	// 	IntPoint<dim> off;
+	// 	std::size_t k = getPositionWithinParent(key);
+	// 	for (auto i=0; i<dim; i++) off.x[i] = 0;
+	// 	for (auto i=0; i<dim; i++) {
+	// 		off.x[i] = k%rfactor; 
+	// 		k -= off.x[i];
+	// 		k /= rfactor;
 	// 	}
 	// 	return off;
 	// }
@@ -726,30 +735,16 @@ public:
 	// }
 
 	// // get the key that starts a given level
-	// std::size_t getLevelStartingKey(std::size_t lvl) const {
-	// 	std::size_t keystart = 0;	// starting at level 1
-	// 	std::size_t lct = 1;
-	// 	for (auto l=0; l<lvl; l++){
-	// 		keystart += lct;
-	// 		lct *= sSize;
-	// 	}
-	// 	return keystart;
-	// }
-
-	std::size_t getLevelStartingKey(std::size_t lvl) const {return mLvlStartKeys[lvl];};
+	std::size_t getLevelStartingIndex(std::size_t lvl) const {return mLvlStartInds[lvl];};
 
 	// // get the key that starts a given level
-	// std::size_t getLevelEndingKey(std::size_t lvl) const {
-	// 	return getLevelStartingKey(lvl+1)-1;
-	// 	// return keystart;
-	// }
-
-	std::size_t getLevelEndingKey(std::size_t lvl) const {return mLvlEndKeys[lvl];};
+	std::size_t getLevelEndingIndex(std::size_t lvl) const {return mLvlEndInds[lvl];};
 
 	// // get a key from a offset on a given level
 	// std::size_t getKeyFromLevelOffset(std::size_t lvl, IntPoint<dim> off) const {
 	// 	// get starting key for the level
 	// 	std::size_t keystart = getLevelStartingKey(lvl);
+
 
 	// 	std::size_t ct = 1;
 	// 	std::size_t tot =0;

@@ -7,7 +7,7 @@ using namespace csg;
 
 
 // compile this with command:
-// 			clang++ -std=c++11 -I./ cgtest.cpp -o cgtest		
+// 			clang++ -std=c++14 -I./ cgtest.cpp -o cgtest		
 
 int main(int argc, char * argv[])
 {
