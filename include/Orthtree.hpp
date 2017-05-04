@@ -87,15 +87,22 @@ constexpr std::array<std::size_t, lvl> createEndingKeys(){
 }
 
 
+
+
+// Default decoder assumes that the KeyT is an integral type
+// that solely contains the global index info (no level or subdomain info)
 template<std::size_t dim,
 		 std::size_t rfactor,
 		 class KeyT>
-class BruteForceLevelDecoder{
+class BruteForceDecoder{
 public:
+	static_assert(std::is_integral<KeyT>::value,"Integral type required for default Orthtree decoder");
 
 	static const std::size_t 	sSize = Power<rfactor, dim>::value;	// the number of children possible
 
-	static std::size_t decode(KeyT key) {
+	static constexpr std::size_t decodeIndex(KeyT key) {return key;};
+
+	static constexpr std::size_t decodeLevel(KeyT key) {
 		std::size_t lvl=0;
 		while (key>0){
 			lvl++;
@@ -103,80 +110,155 @@ public:
 		};
 		return lvl;
 	};
-};
 
+	static constexpr std::size_t decodeSubdomain(KeyT key) {return 0;};
 
-template<std::size_t dim,
-		 std::size_t rfactor,
-		 class KeyT>
-class BruteForceParentDecoder{
-public:
-
-	static const std::size_t 	sSize = Power<rfactor, dim>::value;	// the number of children possible
-
-	static KeyT decode(KeyT key) {
+	static constexpr KeyT getParentKey(KeyT key) {
 		return (key-1)/sSize;
 	};
-};
 
-
-template<std::size_t dim,
-		 std::size_t rfactor,
-		 class KeyT>
-class BruteForceLeftChildDecoder{
-public:
-
-	static const std::size_t 	sSize = Power<rfactor, dim>::value;	// the number of children possible
-
-	static KeyT decode(KeyT key) {
-		return key*sSize + 1;
+	static constexpr KeyT getChildKey(KeyT key, std::size_t siblingIdx) {
+		return key*sSize + 1 + siblingIdx;
 	};
-};
 
 
-// template<std::size_t dim,
-// 		 std::size_t rfactor,
-// 		 class KeyT>
-// class BruteForceNeighborDecoder{
-// public:
+	// get the neighboring key to 'key' on the maximum side
+	// along a dimension specified by 'd'
+	static constexpr KeyT getNeighborKeyMax(KeyT key, std::size_t d) {
+		// get the level of this key
+		std::size_t lvl = decodeLevel(key);
+		// get the level offset of this key
+		IntPoint<dim> loff = getOffsetWithinLevel(key);
+		// add 1 in the chosen dimension
+		loff.x[d]++;
+		// get the key from level offset
+		return getKeyFromLevelOffset(lvl, loff);
+	};
 
-// 	static const std::size_t 	sSize = Power<rfactor, dim>::value;	// the number of children possible
+	// get the neighboring key to 'key' on the minimum side
+	// along a dimension specified by 'd'
+	static constexpr KeyT getNeighborKeyMin(KeyT key, std::size_t d) {
+		// get the level of this key
+		std::size_t lvl = decodeLevel(key);
+		// get the level offset of this key
+		IntPoint<dim> loff = getLevelOffset(key);
+		// subtract 1 in the chosen dimension
+		loff.x[d]--;
+		// get the key from level offset
+		return getKeyFromLevelOffset(lvl, loff);;
+	}
 
-// 	static std::size_t getNeighborMax(KeyT key, std::size_t d){
+// protected:
 
-// 	};
 
-// 	// get the neighboring key to 'key' on the maximum side
-// 	// along a dimension specified by 'd'
-// 	std::size_t getNeighborKeyMax(std::size_t key, std::size_t d) const {
-// 		// get the level of this key
-// 		std::size_t lvl = getLevel(key);
-// 		// get the level offset of this key
-// 		IntPoint<dim> loff = getLevelOffset(key);
-// 		// add 1 in the chosen dimension
-// 		loff.x[d]++;
-// 		// get the key from level offset
-// 		std::size_t neighbor = getKeyFromLevelOffset(lvl, loff);
-// 		return neighbor;
-// 	}
+	static constexpr IntPoint<dim> getLevelOffset(KeyT key) {
 
-// 	static std::size_t getNeighborMin(KeyT key, std::size_t d){
+		IntPoint<dim> off;
+		// key -= getLevelStartingKey(getLevel(key));
+		for (auto i=0; i<dim; i++) off.x[i] = 0;
+		std::size_t mult = 1;
+		// std::size_t pkey;
+		while (key>0) {
+			// get the offset within parent
+			// std::cout << "key: " << key << " offsetWithinParent: " << getOffsetWithinParent(key) <<std::endl;
+			off = off + getOffsetWithinParent(key)*mult;
+			// begin anew with parent key
+			key = getParentKey(key);
+			mult *= rfactor;
+
+			// std::cout << "new key: " << key << std::endl;
+		}
+		return off;
+	}
+
+
+	static constexpr IntPoint<dim> getOffsetWithinParent(KeyT key) {
+		IntPoint<dim> off;
+		std::size_t k = getSiblingIndex(key);
+		for (auto i=0; i<dim; i++) off.x[i] = 0;
+		for (auto i=0; i<dim; i++) {
+			off.x[i] = k%rfactor; 
+			k -= off.x[i];
+			k /= rfactor;
+		}
+		return off;
+	}
+
+
+	static constexpr std::size_t getSiblingIndex(KeyT key) {return (key-1)%sSize;};
+
+
+	static constexpr IntPoint<dim> getOffsetWithinLevel(KeyT key) {
+
+		IntPoint<dim> off;
+		// key -= getLevelStartingKey(getLevel(key));
+		for (auto i=0; i<dim; i++) off.x[i] = 0;
+		std::size_t mult = 1;
+		// std::size_t pkey;
+		while (key>0) {
+			// get the offset within parent
+			// std::cout << "key: " << key << " offsetWithinParent: " << getOffsetWithinParent(key) <<std::endl;
+			off = off + getOffsetWithinParent(key)*mult;
+			// begin anew with parent key
+			key = getParentKey(key);
+			mult *= rfactor;
+
+			// std::cout << "new key: " << key << std::endl;
+		}
+		return off;
+	}
+
+
+	// get a key from a offset on a given level
+	static constexpr KeyT getKeyFromLevelOffset(std::size_t lvl, IntPoint<dim> off) {
+		// get starting key for the level
+		// std::size_t keystart = mLvlStartInds[lvl];
+		std::size_t keystart = getLevelStartingIndex(lvl);
+
+
+		std::size_t ct = 1;
+		std::size_t tot =0;
+		IntPoint<dim> mult;
+		IntPoint<dim> dotter;
+		std::size_t rval = 1;
+		for (auto i=0; i<dim; i++){
+			mult.x[i] = rval;
+			rval *= rfactor;
+		}
 		
-// 	};
-// };
+		dotter = off%rfactor;
+		tot += ct*IntPoint<dim>::dot(mult, dotter);
 
-template<class KeyT>
-class NullIndexExtractor{
-public:
-	static std::size_t extract(KeyT key) {return key;};
+		for (auto l=lvl-1; l>0; l--){
+			// increase ct
+			ct *= sSize;
+			// divide by rfactor
+			off = off/static_cast<int>(rfactor);
+			// take modulus
+			dotter = off%rfactor;
+			// accumulate dot products
+			tot += ct*IntPoint<dim>::dot(mult, dotter);
+		}
+
+		// add the start key and return;
+		return keystart + tot;
+	}
+
+
+	static constexpr KeyT getLevelStartingIndex(std::size_t lvl){
+		if (lvl==0) return 0;
+
+		return pow(sSize,lvl-1)+getLevelStartingIndex(lvl-1);
+	}
 };
 
 
-template<class KeyT>
-class NullSubdomainDecoder{
+template <class KeyT>
+class NullSubdomainMap{
 public:
-	static std::size_t decode(KeyT key) {return 0;};
+	std::size_t getSubdomain(KeyT key){return 0;};
 };
+
 
 
 
@@ -192,12 +274,12 @@ template <	std::size_t dim,
 			std::size_t rfactor,
 			class ValueT,
 			class KeyT = std::size_t,
-			class LevelDecoder = BruteForceLevelDecoder<dim,rfactor,KeyT>,
-			class ParentDecoder = BruteForceParentDecoder<dim,rfactor,KeyT>,
-			class LeftChildDecoder = BruteForceLeftChildDecoder<dim,rfactor,KeyT>,
-			class IndexExtractor = NullIndexExtractor<KeyT>,
-			// class NeighborDecoder = BruteForceNeighborDecoder<dim,rfactor,KeyT>,
-			class SubdomainDecoder = NullSubdomainDecoder<KeyT>,
+			class LevelDecoder = BruteForceDecoder<dim,rfactor,KeyT>,
+			class ParentDecoder = BruteForceDecoder<dim,rfactor,KeyT>,
+			class ChildDecoder = BruteForceDecoder<dim,rfactor,KeyT>,
+			class NeighborDecoder = BruteForceDecoder<dim,rfactor,KeyT>,
+			class IndexDecoder = BruteForceDecoder<dim,rfactor,KeyT>,
+			class SubdomainDecoder = BruteForceDecoder<dim,rfactor,KeyT>,
 			std::size_t lvlmax = 16>
 class Orthtree{
 public:
@@ -221,11 +303,6 @@ protected:
 	std::array<std::size_t, lvlmax+1>			mLvlStartInds;//={createStartingKeys<dim,rfactor,lvlmax>()};
 	std::array<std::size_t, lvlmax+1>			mLvlEndInds;//={createStartingKeys<dim,rfactor,lvlmax>()};
 
-	// these map an integer LEVEL (starting from 0) to another map that maps a 
-	// SUBDOMAIN (any integer) to a list of keys contained in the subdomain
-	// std::map<std::size_t, std::unordered_map<std::size_t, std::unordered_map<std::size_t, Node *>>>		mSubDomainMaps;
-
-
 public:
 
 
@@ -246,189 +323,222 @@ public:
 		for (auto i=0; i<=lvlmax; i++) std::cout << "LevelStartingInd(" << i << "): " << mLvlStartInds[i] << std::endl;
 		for (auto i=0; i<=lvlmax; i++) std::cout << "LevelEndingInd(" << i << "): " << mLvlEndInds[i] << std::endl;
 		// std::cout << "KeyFromLevelOffset(2, (1,2)): " << getKeyFromLevelOffset(2, IntPoint2(1,2)) << std::endl;
-		// std::cout << "NeighborKeyMin(k, 0): " << getNeighborKeyMin(k, 0) << std::endl;
-		// std::cout << "NeighborKeyMin(k, 1): " << getNeighborKeyMin(k, 1) << std::endl;
-		// std::cout << "NeighborKeyMax(k, 0): " << getNeighborKeyMax(k, 0) << std::endl;
-		// std::cout << "NeighborKeyMax(k, 1): " << getNeighborKeyMax(k, 1) << std::endl;
+		std::cout << "NeighborKeyMin(k, 0): " << getNeighborKeyMin(k, 0) << std::endl;
+		std::cout << "NeighborKeyMin(k, 1): " << getNeighborKeyMin(k, 1) << std::endl;
+		std::cout << "NeighborKeyMax(k, 0): " << getNeighborKeyMax(k, 0) << std::endl;
+		std::cout << "NeighborKeyMax(k, 1): " << getNeighborKeyMax(k, 1) << std::endl;
 		std::cout << std::endl; 
 	};
 
 
-	// define some construction functions
+	//********** define some construction functions
 
-	// // build tree using an indicator function that outputs an int for a given point,
-	// // then use a map to a prototype Value to fill the tree
-	// template <class PrototypeMap, class RefineOracle>
-	// void buildTree(std::size_t lvlmax, Box<dim> boundbox, 
-	// 			  const PrototypeMap & pm, const RefineOracle & ro,
-	// 			  std::size_t key=0){
+	// build tree using an indicator function that outputs an int for a given point,
+	// then use a map to a prototype Value to fill the tree
+	template <class PrototypeMap, 
+			  class RefineOracle, 
+			  class SubdomainMap=NullSubdomainMap<KeyT>>
+	void buildTree(std::size_t lvlstop, 
+				  const PrototypeMap & pm, const RefineOracle & ro, const SubdomainMap & sm,
+				  KeyT key, std::size_t lvl){
 
-	// 	// create node for key
-	// 	std::size_t lvl = getLevel(key);
-	// 	Node n; n.mIsLeaf = true; 
-	// 	n.mVal = std::make_shared<ValueT>(pm.getValue(boundbox));
-	// 	mLevelMaps[lvl][key] = n;
+		// create node for key
+		Node n; n.mIsLeaf = true; 
+		n.mVal = pm.getValue(key);
+		std::size_t subd = sm.getSubdomain(key);
+		mKeyMaps[lvl][subd][key] = n;
 
-	// 	// decide if refinement is necessary
-	// 	if (lvl == lvlmax) return;
-	// 	if (ro.isUniform(boundbox)) return;
-	// 	mLevelMaps[lvl][key].mIsLeaf = false;
+		// decide if refinement is necessary
+		if (lvl == lvlstop) return;
+		if (ro.isUniform(key)) return;
+		mKeyMaps[lvl][subd][key].mIsLeaf = false;
 
-	// 	// if refining, 
-	// 	Point<dim> boxsize = 1.0/static_cast<double>(rfactor)*(boundbox.hi-boundbox.lo);
-	// 	std::size_t kl = getLeftChildKey(key);
-	// 	for (auto kc=kl; kc<kl+sSize; kc++){
-	// 		IntPoint<dim> off = getOffsetWithinParent(kc);
-	// 		Point<dim> newlo = boundbox.lo+boxsize*off;
-	// 		Box<dim> rbox(newlo, newlo+boxsize);
-	// 		buildTree(lvlmax, rbox, pm, ro, kc);
-	// 	}
-	// }
+		// if refining, 
+		for (auto so=0; so<sSize; so++){
+			KeyT kc = ChildDecoder::getChildKey(key, so);
+			buildTree(lvlstop, pm, ro, sm, kc, lvl+1);
+		}
+	}
 
-	// random access
+	//********** random access
 
-	// // set a value to a pre-existing key
-	// void setCellValue(std::size_t key, const ValueT & v){
-	// 	// find level
-	// 	std::size_t lvl = getLevel(key);
-	// 	// insert node value
-	// 	mLevelMaps[lvl].at(key).mVal = std::shared_ptr<ValueT>(v);
-	// }
 
+	// set a value to a pre-existing key
+	void setCellValue(KeyT key, std::size_t lvl, std::size_t subd, const ValueT & v){
+		// insert node value
+		mKeyMaps[lvl][subd].at(key).mVal(v);
+	}
+
+	// set a value to a pre-existing key
+	void setCellValue(KeyT key, const ValueT & v){
+		// insert node value
+		mKeyMaps[LevelDecoder::decodeLevel(key)][SubdomainDecoder::decodeSubdomain(key)].at(key).mVal(v);
+	}
 
 	// Node * getCell(std::size_t key, std::size_t lvl){
 	// 	return &mLevelMaps[lvl][key];
 	// }
 
-	// // split parent key, and endow all children
-	// // with a copy of the parent value
-	// void refineCell(std::size_t key) {
-	// 	std::size_t lvl = getLevel(key);
-	// 	if (!mLevelMaps[lvl][key].mIsLeaf){
-	// 		std::cerr << "Orthtree: Cell is already refined!" << std::endl;
-	// 		throw -1;
-	// 	}
-	// 	std::size_t kl = getLeftChildKey(key);
-	// 	Node n = mLevelMaps[lvl].at(key);
-	// 	for (auto kc=kl; kc<kl+dim*rfactor; kc++){
-	// 		mLevelMaps[lvl+1][kc] = n;
-	// 	}
-	// 	mLevelMaps[lvl][key].mIsLeaf = false;
-	// }
-
-	// // delete all child cells of a given parent key
-	// void pruneChildren(std::size_t key) {
-	// 	std::size_t lvl = getLevel(key);
-	// 	if (mLevelMaps[lvl][key].mIsLeaf){
-	// 		std::cerr << "Orthtree: Cell is already a leaf!" << std::endl;
-	// 		throw -1;
-	// 	}
-	// 	std::size_t kl = getLeftChildKey(key);
-	// 	for (auto kc=kl; kc<kl+dim*rfactor; kc++){
-	// 		if (!mLevelMaps[lvl+1][kc].mIsLeaf) pruneChildren(kc);
-	// 		mLevelMaps[lvl+1].remove(kc);
-	// 	}
-	// 	mLevelMaps[lvl][key].mIsLeaf = true;
-	// }
-
-	// void print_summary(std::ostream & os = std::cout) const {
-	// 	using comptype = std::pair<const std::size_t, Node>;
-	// 	for (auto lit=mLevelMaps.begin(); lit!=mLevelMaps.end(); lit++){
-	// 		auto minmax = std::minmax_element(lit->second.begin(), lit->second.end(), [](comptype p1, comptype p2)->bool{return p1.first < p2.first;});
-	// 		os << "Level (" << lit->first << ") --> " << lit->second.size() << " bdry(" << (mBdryMaps.find(lit->first) == mBdryMaps.end()? 0 : mBdryMaps.at(lit->first).size()) << ")" << "\t\tmin: " << minmax.first->first << " max: " << minmax.second->first  << std::endl;
-	// 	}
-	// }
-
-	// // expose iterators
-	// friend class leaf_iterator;
-	// // iterate over key/node pairs for leaf nodes only 
-	// class leaf_iterator{
-	// public:
-	// 	typedef leaf_iterator self_type;
-	// 	typedef std::ptrdiff_t difference_type;
-	//     typedef std::pair<const std::size_t, Node> value_type;
-	//     typedef std::pair<const std::size_t, Node> & reference;
-	//     typedef std::pair<const std::size_t, Node> * pointer;
-	//     typedef std::forward_iterator_tag iterator_category;
-
-	// 	// construction
-	// 	leaf_iterator(Orthtree & t)
-	// 	: tree(t)
-	// 	, level(0)
-	// 	, lit(t.mLevelMaps.begin())
-	// 	, it((t.mLevelMaps.begin())->second.begin()){
-	// 		it = tree.mLevelMaps.begin()->second.begin();
-	// 		if (! it->second.mIsLeaf){
-	// 			this->operator++();
-	// 		}
-	// 	}
-
-	// 	leaf_iterator(Orthtree & t, typename std::unordered_map<std::size_t, Node>::iterator iter)
-	// 	: tree(t)
-	// 	, level(0)
-	// 	, lit(t.mLevelMaps.begin())
-	// 	, it(iter) {};
-
-	// 	// dereferencing
-	// 	reference operator*(){ return *it;};
-
-	// 	// preincrement 
-	// 	self_type operator++(){
-	// 		it++;
-	// 		while (lit != tree.mLevelMaps.end()){
-	// 			while (it != lit->second.end()){
-	// 				if (it->second.mIsLeaf) return *this;
-	// 				it++;				
-	// 			}
-	// 			// reached end of level
-	// 			lit++;
-
-	// 			if (lit == tree.mLevelMaps.end()) break;
-	// 			it = lit->second.begin();
-	// 		}
-	// 		// have reached the end of all the cells
-	// 		return tree.leaf_end();
-	// 	}
-
-	// 	// postincrement 
-	// 	self_type operator++(int blah){
-	// 		it++;
-	// 		while (lit != tree.mLevelMaps.end()){
-	// 			while (it != lit->second.end()){
-	// 				if (it->second.mIsLeaf) return *this;
-	// 				it++;				
-	// 			}
-	// 			// reached end of level
-	// 			lit++;
-
-	// 			if (lit == tree.mLevelMaps.end()) break;
-	// 			it = lit->second.begin();
-	// 		}
-
-	// 		// have reached the end of all the cells
-	// 		return tree.leaf_end();
-	// 	}
-
-	// 	// pointer
-	// 	pointer operator->() {return it.operator->();};
-
-	// 	// inequality
-	// 	bool operator!=(const self_type & leaf) const {return it != leaf.it;};
-
-	// 	// equality
-	// 	bool operator==(const self_type & leaf) const {return it == leaf.it;};
+	Node * getCell(std::size_t key, std::size_t lvl, std::size_t subd){
+		return &mKeyMaps[lvl][subd][key];
+	}
 
 
-	// private:
-	// 	std::size_t level;
-	// 	typename std::map<std::size_t, std::unordered_map<std::size_t, Node>>::iterator lit;
-	// 	typename std::unordered_map<std::size_t, Node>::iterator it;
-	// 	Orthtree & tree;
-	// };
+	// split parent key, and endow all children
+	// with a copy of the parent value
+	void refineCell(KeyT key) {
+		std::size_t lvl = LevelDecoder::decodeLevel(key);
+		std::size_t subd = SubdomainDecoder::decodeSubdomain(key);
+		if (!mKeyMaps[lvl][subd][key].mIsLeaf){
+			std::cerr << "Orthtree: Cell is already refined!" << std::endl;
+			throw -1;
+		}
+		Node n = mKeyMaps[lvl][subd].at(key);
+		for (auto so=0; so<sSize; so++){
+			KeyT kc = ChildDecoder::getChildKey(key, so);
+			std::size_t sd = SubdomainDecoder::decodeSubdomain(kc);
+			mKeyMaps[lvl+1][sd][kc] = n;
+		}
+		mKeyMaps[lvl][subd][key].mIsLeaf = false;
+	}
+
+
+	// delete all child cells of a given parent key
+	void pruneChildren(KeyT key) {
+		std::size_t lvl = LevelDecoder::decodeLevel(key);
+		std::size_t subd = SubdomainDecoder::decodeSubdomain(key);
+		if (mKeyMaps[LevelDecoder::decodeLevel(key)][SubdomainDecoder::decodeSubdomain(key)][key].mIsLeaf){
+			std::cerr << "Orthtree: Cell is already a leaf!" << std::endl;
+			throw -1;
+		}
+
+		for (auto so=0; so<sSize; so++){
+			KeyT kc = ChildDecoder::getChildKey(key, so);
+			std::size_t sd = SubdomainDecoder::decodeSubdomain(kc);
+			if (!mKeyMaps[lvl+1][sd][kc].mIsLeaf) pruneChildren(kc);
+			mKeyMaps[lvl+1][sd].remove(kc);
+		}
+		mKeyMaps[lvl][subd][key].mIsLeaf = true;
+	}
+
+	void print_summary(std::ostream & os = std::cout) const {
+		// using comptype = std::pair<const std::size_t, Node>;
+		for (auto lit=mKeyMaps.begin(); lit!=mKeyMaps.end(); lit++){
+			auto ntot=0;
+
+			for (auto sit=lit->second.begin(); sit!=lit->second.end(); sit++){
+				// auto minmax = std::minmax_element(lit->second.begin(), lit->second.end(), [](comptype p1, comptype p2)->bool{return p1.first < p2.first;});
+				ntot+=sit->second.size();
+			}
+
+			os << "Level (" << lit->first << ") --> " << ntot;
+			for (auto sit=lit->second.begin(); sit!=lit->second.end(); sit++){
+				os << " subdom(" << sit->first << ")->" << sit->second.size();
+			}
+
+			os << std::endl;
+
+		}
+	}
+
+	// expose iterators
+	friend class leaf_iterator;
+	// iterate over key/node pairs for leaf nodes only 
+	class leaf_iterator{
+	public:
+		typedef leaf_iterator self_type;
+		typedef std::ptrdiff_t difference_type;
+	    typedef std::pair<const KeyT, Node> value_type;
+	    typedef std::pair<const KeyT, Node> & reference;
+	    typedef std::pair<const KeyT, Node> * pointer;
+	    typedef std::forward_iterator_tag iterator_category;
+
+		// construction
+		leaf_iterator(Orthtree & t)
+		: tree(t)
+		, level(0)
+		, lit(t.mKeyMaps.begin())
+		, sit((t.mKeyMaps.begin())->second.begin())
+		, it(((t.mKeyMaps.begin())->second.begin())->second.begin()){
+			it = tree.mKeyMaps.begin()->second.begin()->second.begin();
+			if (! it->second.mIsLeaf){
+				this->operator++();
+			}
+		}
+
+		leaf_iterator(Orthtree & t, typename std::unordered_map<KeyT, Node>::iterator iter)
+		: tree(t)
+		, level(0)
+		, lit(t.mKeyMaps.begin())
+		, sit((t.mKeyMaps.begin())->second.begin())
+		, it(iter) {};
+
+		// dereferencing
+		reference operator*(){ return *it;};
+
+		// preincrement 
+		self_type operator++(){
+			it++;
+			while (lit != tree.mKeyMaps.end()){
+				while (sit != lit->second.end()){
+					while (it != sit->second.end()){
+						if (it->second.mIsLeaf) return *this;
+						it++;				
+					}
+					sit++;
+				}
+				// reached end of level
+				lit++;
+
+				if (lit == tree.mKeyMaps.end()) break;
+				it = lit->second.begin()->second.begin();
+			}
+			// have reached the end of all the cells
+			return tree.leaf_end();
+		}
+
+		// postincrement 
+		self_type operator++(int blah){
+			it++;
+			while (lit != tree.mKeyMaps.end()){
+				while (sit != lit->second.end()){
+					while (it != sit->second.end()){
+						if (it->second.mIsLeaf) return *this;
+						it++;				
+					}
+					sit++;
+				}
+				// reached end of level
+				lit++;
+
+				if (lit == tree.mKeyMaps.end()) break;
+				it = lit->second.begin()->second.begin();
+			}
+			// have reached the end of all the cells
+			return tree.leaf_end();
+		}
+
+		// pointer
+		pointer operator->() {return it.operator->();};
+
+		// inequality
+		bool operator!=(const self_type & leaf) const {return it != leaf.it;};
+
+		// equality
+		bool operator==(const self_type & leaf) const {return it == leaf.it;};
+
+
+	private:
+		std::size_t level;
+		typename std::map<std::size_t, std::map<std::size_t, std::unordered_map<KeyT, Node>>>::iterator lit;
+		typename std::map<std::size_t, std::unordered_map<KeyT, Node>>::iterator sit;
+		typename std::unordered_map<KeyT, Node>::iterator it;
+		Orthtree & tree;
+	};
 
 	
-	// leaf_iterator leaf_begin(){return leaf_iterator(*this);};
-	// leaf_iterator leaf_end(){auto p=mLevelMaps.end(); p--; return leaf_iterator(*this, p->second.end());};
+	leaf_iterator leaf_begin(){return leaf_iterator(*this);};
+	leaf_iterator leaf_end(){auto p=mKeyMaps.end(); p--; return leaf_iterator(*this, (--(p->second.end()))->second.end());};
 
 
 
@@ -678,61 +788,13 @@ public:
 
 
 	// // define some utility functions (can be specialized)
-	std::size_t getParentKey(KeyT key) const {return ParentDecoder::decode(key);};
+	KeyT getParentKey(KeyT key) const {return ParentDecoder::getParentKey(key);};
 
-	std::size_t getLeftChildKey(KeyT key) const {return LeftChildDecoder::decode(key);};
+	KeyT getLeftChildKey(KeyT key) const {return ChildDecoder::getChildKey(key,0);};
 
-	std::size_t getLevel(KeyT key) const {return LevelDecoder::decode(key);};
+	std::size_t getLevel(KeyT key) const {return LevelDecoder::decodeLevel(key);};
 	
-	// std::size_t getPositionWithinParent(std::size_t key) const {return (key-1)%sSize;};
-	std::size_t getPositionWithinParent(KeyT key) const {
-		std::size_t k = IndexExtractor::extract(key);
-		return (k-1)%sSize;
-	};
-	
-	// IntPoint<dim> getOffsetWithinParent(std::size_t key) const {
-	// 	IntPoint<dim> off;
-	// 	key = getPositionWithinParent(key);
-	// 	for (auto i=0; i<dim; i++) off.x[i] = 0;
-	// 	for (auto i=0; i<dim; i++) {
-	// 		off.x[i] = key%rfactor; 
-	// 		key -= off.x[i];
-	// 		key /= rfactor;
-	// 	}
-	// 	return off;
-	// }
-
-	// IntPoint<dim> getOffsetWithinParent(KeyT key) const {
-	// 	IntPoint<dim> off;
-	// 	std::size_t k = getPositionWithinParent(key);
-	// 	for (auto i=0; i<dim; i++) off.x[i] = 0;
-	// 	for (auto i=0; i<dim; i++) {
-	// 		off.x[i] = k%rfactor; 
-	// 		k -= off.x[i];
-	// 		k /= rfactor;
-	// 	}
-	// 	return off;
-	// }
-	
-	// IntPoint<dim> getLevelOffset(std::size_t key) const {
-
-	// 	IntPoint<dim> off;
-	// 	// key -= getLevelStartingKey(getLevel(key));
-	// 	for (auto i=0; i<dim; i++) off.x[i] = 0;
-	// 	std::size_t mult = 1;
-	// 	std::size_t pkey;
-	// 	while (key>0) {
-	// 		// get the offset within parent
-	// 		// std::cout << "key: " << key << " offsetWithinParent: " << getOffsetWithinParent(key) <<std::endl;
-	// 		off = off + getOffsetWithinParent(key)*mult;
-	// 		// begin anew with parent key
-	// 		key = getParentKey(key);
-	// 		mult *= rfactor;
-
-	// 		// std::cout << "new key: " << key << std::endl;
-	// 	}
-	// 	return off;
-	// }
+	std::size_t getSubdomain(KeyT key) const {return SubdomainDecoder::decodeSubdomain(key);};
 
 	// // get the key that starts a given level
 	std::size_t getLevelStartingIndex(std::size_t lvl) const {return mLvlStartInds[lvl];};
@@ -740,80 +802,17 @@ public:
 	// // get the key that starts a given level
 	std::size_t getLevelEndingIndex(std::size_t lvl) const {return mLvlEndInds[lvl];};
 
-	// // get a key from a offset on a given level
-	// std::size_t getKeyFromLevelOffset(std::size_t lvl, IntPoint<dim> off) const {
-	// 	// get starting key for the level
-	// 	std::size_t keystart = getLevelStartingKey(lvl);
+	KeyT getNeighborKeyMin(KeyT key, std::size_t d) const {return NeighborDecoder::getNeighborKeyMin(key,d);};
+	
+	KeyT getNeighborKeyMax(KeyT key, std::size_t d) const {return NeighborDecoder::getNeighborKeyMax(key,d);};
 
 
-	// 	std::size_t ct = 1;
-	// 	std::size_t tot =0;
-	// 	IntPoint<dim> mult;
-	// 	IntPoint<dim> dotter;
-	// 	std::size_t rval = 1;
-	// 	for (auto i=0; i<dim; i++){
-	// 		mult.x[i] = rval;
-	// 		rval *= rfactor;
-	// 	}
-		
-	// 	dotter = off%rfactor;
-	// 	tot += ct*IntPoint<dim>::dot(mult, dotter);
-
-	// 	for (auto l=lvl-1; l>0; l--){
-	// 		// increase ct
-	// 		ct *= sSize;
-	// 		// divide by rfactor
-	// 		off = off/static_cast<int>(rfactor);
-	// 		// take modulus
-	// 		dotter = off%rfactor;
-	// 		// accumulate dot products
-	// 		tot += ct*IntPoint<dim>::dot(mult, dotter);
-	// 	}
-
-	// 	// add the start key and return;
-	// 	return keystart + tot;
-	// }
-
-	// // get the neighboring key to 'key' on the minimum side
-	// // along a dimension specified by 'd'
-	// std::size_t getNeighborKeyMin(std::size_t key, std::size_t d) const {
-	// 	// get the level of this key
-	// 	std::size_t lvl = getLevel(key);
-	// 	// get the level offset of this key
-	// 	IntPoint<dim> loff = getLevelOffset(key);
-	// 	// subtract 1 in the chosen dimension
-	// 	loff.x[d]--;
-	// 	// get the key from level offset
-	// 	std::size_t neighbor = getKeyFromLevelOffset(lvl, loff);
-	// 	return neighbor;
-	// }
-
-	// // get the neighboring key to 'key' on the maximum side
-	// // along a dimension specified by 'd'
-	// std::size_t getNeighborKeyMax(std::size_t key, std::size_t d) const {
-	// 	// get the level of this key
-	// 	std::size_t lvl = getLevel(key);
-	// 	// get the level offset of this key
-	// 	IntPoint<dim> loff = getLevelOffset(key);
-	// 	// add 1 in the chosen dimension
-	// 	loff.x[d]++;
-	// 	// get the key from level offset
-	// 	std::size_t neighbor = getKeyFromLevelOffset(lvl, loff);
-	// 	return neighbor;
-	// }
 
 	// // set an existing key in the level map as a boundary.
 	// // this will add the key to the boundary key map
 	// void setKeyAsBoundary(std::size_t key) {
 	// 	std::size_t lvl = getLevel(key);
 	// 	mBdryMaps[lvl][key] = &mLevelMaps[lvl][key];
-	// }
-
-
-	// // return whether the given key exists as a boundary cell
-	// bool isKeyBoundary(std::size_t key) {
-	// 	std::size_t lvl = getLevel(key);
-	// 	return !(mBdryMaps[lvl].find(key) == mBdryMaps[lvl].end());
 	// }
 
 

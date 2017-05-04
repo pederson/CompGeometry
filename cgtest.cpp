@@ -230,49 +230,66 @@ int main(int argc, char * argv[])
 	Orthtree<2,3,int> tree3;
 	Quadtree<double> qtree;
 
-	// // build a quadtree of doubles corresponding to a cirlce centered at 0,0 with radius 1
-	// struct CircleThing{
-	// 	double rad = 1.0;
-	// 	Point2 cen = Point2(0,0);
+	// build a quadtree of doubles corresponding to a cirlce centered at 0,0 with radius 1
+	struct CircleThing{
+		double rad = 1.0;
+		Point2 cen = Point2(0,0);
+		Box<2> bounds = {Point2(-1,-1), Point2(1,1)};
 
-	// 	double getValue(Box<2> bx) const{
-	// 		Point2 p = 0.5*(bx.lo + bx.hi);
-	// 		return getValue(p);
-	// 	}
+		double getValue(Box<2> bx) const{
+			Point2 p = 0.5*(bx.lo + bx.hi);
+			return getValue(p);
+		}
 
-	// 	double getValue(const Point2 & p) const{
-	// 		if (Point2::distsq(p,cen) > rad*rad) return 0.0;
-	// 		return 1.0;
-	// 	}
+		double getValue(const Point2 & p) const{
+			if (Point2::distsq(p,cen) > rad*rad) return 0.0;
+			return 1.0;
+		}
 
-	// 	bool isUniform(Box<2> bx) const{
-	// 		Point2 tl = bx.lo; tl.x[1] = bx.hi.x[1];
-	// 		Point2 br = bx.hi; br.x[1] = bx.lo.x[1];
-	// 		Point2 c = 0.5*(bx.hi+bx.lo);
+		bool isUniform(Box<2> bx) const{
+			Point2 tl = bx.lo; tl.x[1] = bx.hi.x[1];
+			Point2 br = bx.hi; br.x[1] = bx.lo.x[1];
+			Point2 c = 0.5*(bx.hi+bx.lo);
 
-	// 		// cout << c << tl << br << endl;
-	// 		// cout << getValue(tl) << "  " << getValue(c) << endl;
-	// 		if (getValue(tl) == getValue(br) &&
-	// 			getValue(br) == getValue(bx.hi) &&
-	// 			getValue(bx.hi) == getValue(bx.lo) &&
-	// 			getValue(bx.lo) == getValue(c)) return true;
-	// 		return false;
-	// 	}
-	// };
+			// cout << c << tl << br << endl;
+			// cout << getValue(tl) << "  " << getValue(c) << endl;
+			if (getValue(tl) == getValue(br) &&
+				getValue(br) == getValue(bx.hi) &&
+				getValue(bx.hi) == getValue(bx.lo) &&
+				getValue(bx.lo) == getValue(c)) return true;
+			return false;
+		}
 
-	// CircleThing c1;
-	// Box<2> bounds(Point2(-1,-1), Point2(1,1));
-	// qtree.buildTree(5, bounds, c1, c1);
-	// qtree.print_summary();
+		bool isUniform(int key) const{return isUniform(getBox(key));};
+
+		double getValue(int key) const{return getValue(getBox(key));};
+
+		std::size_t getSubdomain(int key) const{return 0;};
+
+		Box<2> getBox(int key) const{
+			auto lvl = BruteForceDecoder<2,2,int>::decodeLevel(key);
+			double rfactor = pow(2.0,lvl);
+			Point<2> boxsize = 1.0/static_cast<double>(rfactor)*(bounds.hi-bounds.lo);
+			IntPoint<2> off = BruteForceDecoder<2,2,int>::getOffsetWithinLevel(key);
+			Point<2> newlo = bounds.lo+boxsize*off;
+			Box<2> rbox(newlo, newlo+boxsize);
+			return rbox;
+		}
+	};
+
+	CircleThing c1;
+	Box<2> bounds(Point2(-1,-1), Point2(1,1));
+	qtree.buildTree(5, c1, c1, c1, 0, 0);
+	qtree.print_summary();
 
 
-	// // iterate over leaves
-	// int ctr=0;
-	// for (auto it=qtree.leaf_begin(); it!=qtree.leaf_end(); it++){
-	// 	// cout << ctr << endl;
-	// 	ctr++;
-	// }
-	// cout << "leaf count: " << ctr << endl;
+	// iterate over leaves
+	int ctr=0;
+	for (auto it=qtree.leaf_begin(); it!=qtree.leaf_end(); it++){
+		// cout << ctr << endl;
+		ctr++;
+	}
+	cout << "leaf count: " << ctr << endl;
 
 	return 0;
 }
