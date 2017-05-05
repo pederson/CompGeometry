@@ -285,8 +285,12 @@ int main(int argc, char * argv[])
 
 	// iterate over leaves
 	int ctr=0;
-	for (auto it=qtree.leaf_begin(); it!=qtree.leaf_end(); it++){
+	// for (auto it=qtree.leaf_begin(); it!=qtree.leaf_end(); it++){
+	// for (auto it=qtree.begin(); it!=qtree.end(); it++){
+	// for (auto it=qtree.level_begin(5); it!=qtree.level_end(5); it++){
+	for (auto it=qtree.subdomain_begin(5,0); it!=qtree.subdomain_end(5,0); it++){
 		// cout << ctr << endl;
+		std::cout << "ctr: " << ctr << " key: " << it->first << std::endl;
 		ctr++;
 	}
 	cout << "leaf count: " << ctr << endl;

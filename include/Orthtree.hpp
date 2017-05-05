@@ -191,7 +191,7 @@ public:
 	static constexpr IntPoint<dim> getOffsetWithinLevel(KeyT key) {
 
 		IntPoint<dim> off;
-		// key -= getLevelStartingKey(getLevel(key));
+		// key -= getLevelStartingIndex(decodeLevel(key));
 		for (auto i=0; i<dim; i++) off.x[i] = 0;
 		std::size_t mult = 1;
 		// std::size_t pkey;
@@ -441,7 +441,106 @@ public:
 		}
 	}
 
-	// expose iterators
+	//********** expose iterators
+
+	friend class iterator;
+	// iterate over key/node pairs for all nodes 
+	class iterator{
+	public:
+		typedef iterator self_type;
+		typedef std::ptrdiff_t difference_type;
+	    typedef std::pair<const KeyT, Node> value_type;
+	    typedef std::pair<const KeyT, Node> & reference;
+	    typedef std::pair<const KeyT, Node> * pointer;
+	    typedef std::forward_iterator_tag iterator_category;
+
+		// construction
+		iterator(Orthtree & t)
+		: tree(t)
+		, lit(t.mKeyMaps.begin())
+		, sit((t.mKeyMaps.begin())->second.begin())
+		, it(((t.mKeyMaps.begin())->second.begin())->second.begin()){};
+
+		iterator(Orthtree & t, typename std::unordered_map<KeyT, Node>::iterator iter)
+		: tree(t)
+		, lit(t.mKeyMaps.begin())
+		, sit((t.mKeyMaps.begin())->second.begin())
+		, it(iter) {};
+
+		// dereferencing
+		reference operator*(){ return *it;};
+
+		// preincrement 
+		self_type operator++(){
+			it++;
+			while (lit != tree.mKeyMaps.end()){
+				while (sit != lit->second.end()){
+					if (it != sit->second.end()){
+						return *this;				
+					}
+					sit++;
+				}
+				// reached end of level
+				lit++;
+				sit = lit->second.begin();
+
+				if (lit == tree.mKeyMaps.end()) break;
+				it = sit->second.begin();
+			}
+			// have reached the end of all the cells
+			return tree.end();
+		}
+
+		// postincrement 
+		self_type operator++(int blah){
+			it++;
+			while (lit != tree.mKeyMaps.end()){
+				while (sit != lit->second.end()){
+					if (it != sit->second.end()){
+						return *this;				
+					}
+					// reached end of subdomain
+					sit++;
+				}
+				// reached end of level
+				lit++;
+				sit = lit->second.begin();
+
+				if (lit == tree.mKeyMaps.end()) break;
+				it = sit->second.begin();
+			}
+			// have reached the end of all the cells
+			return tree.end();
+		}
+
+		// pointer
+		pointer operator->() {return it.operator->();};
+
+		// inequality
+		bool operator!=(const self_type & leaf) const {return it != leaf.it;};
+
+		// equality
+		bool operator==(const self_type & leaf) const {return it == leaf.it;};
+
+
+	private:
+		// std::size_t level;
+		typename std::map<std::size_t, std::map<std::size_t, std::unordered_map<KeyT, Node>>>::iterator lit;
+		typename std::map<std::size_t, std::unordered_map<KeyT, Node>>::iterator sit;
+		typename std::unordered_map<KeyT, Node>::iterator it;
+		Orthtree & tree;
+	};
+
+	
+	iterator begin(){return iterator(*this);};
+	iterator end(){auto p=mKeyMaps.end(); p--; return iterator(*this, (--(p->second.end()))->second.end());};
+
+
+
+
+
+
+
 	friend class leaf_iterator;
 	// iterate over key/node pairs for leaf nodes only 
 	class leaf_iterator{
@@ -456,19 +555,20 @@ public:
 		// construction
 		leaf_iterator(Orthtree & t)
 		: tree(t)
-		, level(0)
 		, lit(t.mKeyMaps.begin())
 		, sit((t.mKeyMaps.begin())->second.begin())
 		, it(((t.mKeyMaps.begin())->second.begin())->second.begin()){
 			it = tree.mKeyMaps.begin()->second.begin()->second.begin();
+			std::cout << "constructing iterator" << std::endl;
 			if (! it->second.mIsLeaf){
+				std::cout << "here" << std::endl;
 				this->operator++();
 			}
+			std::cout << "constructed iterator" << std::endl;
 		}
 
 		leaf_iterator(Orthtree & t, typename std::unordered_map<KeyT, Node>::iterator iter)
 		: tree(t)
-		, level(0)
 		, lit(t.mKeyMaps.begin())
 		, sit((t.mKeyMaps.begin())->second.begin())
 		, it(iter) {};
@@ -489,9 +589,10 @@ public:
 				}
 				// reached end of level
 				lit++;
+				sit = lit->second.begin();
 
 				if (lit == tree.mKeyMaps.end()) break;
-				it = lit->second.begin()->second.begin();
+				it = sit->second.begin();
 			}
 			// have reached the end of all the cells
 			return tree.leaf_end();
@@ -510,9 +611,10 @@ public:
 				}
 				// reached end of level
 				lit++;
+				sit = lit->second.begin();
 
 				if (lit == tree.mKeyMaps.end()) break;
-				it = lit->second.begin()->second.begin();
+				it = sit->second.begin();
 			}
 			// have reached the end of all the cells
 			return tree.leaf_end();
@@ -529,7 +631,7 @@ public:
 
 
 	private:
-		std::size_t level;
+		// std::size_t level;
 		typename std::map<std::size_t, std::map<std::size_t, std::unordered_map<KeyT, Node>>>::iterator lit;
 		typename std::map<std::size_t, std::unordered_map<KeyT, Node>>::iterator sit;
 		typename std::unordered_map<KeyT, Node>::iterator it;
@@ -543,133 +645,144 @@ public:
 
 
 
-	// template<std::size_t lvl> friend class level_iterator;
-	// // iterate over key/node pairs for leaf nodes only 
-	// template<std::size_t lvl> 
-	// class level_iterator{
-	// public:
-	// 	typedef level_iterator self_type;
-	// 	typedef std::ptrdiff_t difference_type;
-	//     typedef std::pair<const std::size_t, Node> value_type;
-	//     typedef std::pair<const std::size_t, Node> & reference;
-	//     typedef std::pair<const std::size_t, Node> * pointer;
-	//     typedef std::forward_iterator_tag iterator_category;
+	friend class level_iterator;
+	// iterate over key/node pairs for a given level 
+	class level_iterator{
+	public:
+		typedef level_iterator self_type;
+		typedef std::ptrdiff_t difference_type;
+	    typedef std::pair<const KeyT, Node> value_type;
+	    typedef std::pair<const KeyT, Node> & reference;
+	    typedef std::pair<const KeyT, Node> * pointer;
+	    typedef std::forward_iterator_tag iterator_category;
 
-	// 	// construction
-	// 	level_iterator(Orthtree & t)
-	// 	: tree(t)
-	// 	, it(t.mLevelMaps[lvl].begin()){};
+		// construction
+		level_iterator(Orthtree & t, std::size_t level)
+		: tree(t)
+		, lvl(level)
+		, sit(t.mKeyMaps[lvl].begin())
+		, it(t.mKeyMaps[lvl].begin()->second.begin()){};
 
-	// 	level_iterator(Orthtree & t, typename std::unordered_map<std::size_t, Node>::iterator iter)
-	// 	: tree(t)
-	// 	, it(iter){};
+		level_iterator(Orthtree & t, std::size_t level, typename std::unordered_map<KeyT, Node>::iterator iter)
+		: tree(t)
+		, lvl(level)
+		, sit(t.mKeyMaps[lvl].begin())
+		, it(iter){};
 
-	// 	// dereferencing
-	// 	reference operator*(){ return *it;};
+		// dereferencing
+		reference operator*(){ return *it;};
 
-	// 	// preincrement 
-	// 	self_type operator++(){
-	// 		it++;
-	// 		// have reached the end of level
-	// 		return *this;
-	// 	}
+		// preincrement 
+		self_type operator++(){
+			// it++;
+			// // have reached the end of level
+			// return *this;
 
-	// 	// preincrement 
-	// 	self_type operator++(int blah){
-	// 		it++;
-	// 		// have reached the end of level
-	// 		return *this;
-	// 	}
+			it++;
 
-	// 	// pointer
-	// 	pointer operator->() {return it.operator->();};
+			while (sit != tree.mKeyMaps[lvl].end()){
+				if (it != sit->second.end()){
+					return *this;				
+				}
+				sit++;
+			}
+			// reached end of level
+			return tree.level_end(lvl);
+		}
 
-	// 	// inequality
-	// 	bool operator!=(const self_type & leaf) const {return it != leaf.it;};
+		// preincrement 
+		self_type operator++(int blah){
+			// it++;
+			// // have reached the end of level
+			// return *this;
 
-	// 	// equality
-	// 	bool operator==(const self_type & leaf) const {return it == leaf.it;};
+			it++;
 
+			while (sit != tree.mKeyMaps[lvl].end()){
+				if (it != sit->second.end()){
+					return *this;				
+				}
+				sit++;
+			}
+			// reached end of level
+			return tree.level_end(lvl);
+		}
 
-	// private:
-	// 	typename std::unordered_map<std::size_t, Node>::iterator it;
-	// 	Orthtree & tree;
-	// };
+		// pointer
+		pointer operator->() {return it.operator->();};
 
-	// template<std::size_t lvl>
-	// level_iterator<lvl> level_begin(){return level_iterator<lvl>(*this);};
-	// template<std::size_t lvl>
-	// level_iterator<lvl> level_end(){return level_iterator<lvl>(*this, mLevelMaps[lvl].end());};
+		// inequality
+		bool operator!=(const self_type & leaf) const {return it != leaf.it;};
 
-
-
-	// template<std::size_t lvl> friend class boundary_iterator;
-	// // iterate over key/node pairs for leaf nodes only 
-	// template<std::size_t lvl>
-	// class boundary_iterator{
-	// public:
-	// 	typedef boundary_iterator self_type;
-	// 	typedef std::ptrdiff_t difference_type;
-	//     typedef std::pair<const std::size_t, Node> value_type;
-	//     typedef std::pair<const std::size_t, Node> & reference;
-	//     typedef std::pair<const std::size_t, Node> * pointer;
-	//     typedef std::forward_iterator_tag iterator_category;
-
-	// 	// construction
-	// 	boundary_iterator(Orthtree & t)
-	// 	: tree(t)
-	// 	, bit(t.mBdryMaps[lvl].begin()){
-	// 		if (bit == tree.mBdryMaps[lvl].end()) bit = tree.mBdryMaps[lvl].end();
-	// 		else it = tree.mLevelMaps[lvl].find(bit->first);
-	// 	};
-
-	// 	boundary_iterator(Orthtree & t, typename std::unordered_map<std::size_t, Node *>::iterator iter)
-	// 	: tree(t)
-	// 	, bit(iter){
-	// 		if (bit == tree.mBdryMaps[lvl].end()) bit = tree.mBdryMaps[lvl].end();
-	// 		else it = tree.mLevelMaps[lvl].find(bit->first);
-	// 	};
-
-	// 	// dereferencing
-	// 	reference operator*(){ return *it;};
-
-	// 	// preincrement 
-	// 	self_type operator++(){
-	// 		bit++;
-	// 		if (bit == tree.mBdryMaps[lvl].end()) return tree.boundary_end<lvl>();
-
-	// 		it = tree.mLevelMaps[lvl].find(bit->first);
-	// 		return *this;
-	// 	}
-
-	// 	// preincrement 
-	// 	self_type operator++(int blah){
-	// 		bit++;
-	// 		if (bit == tree.mBdryMaps[lvl].end()) return tree.boundary_end<lvl>();
-	// 		it = tree.mLevelMaps[lvl].find(bit->first);
-	// 		return *this;
-	// 	}
-
-	// 	// pointer
-	// 	pointer operator->() {return it.operator->();};
-
-	// 	// inequality
-	// 	bool operator!=(const self_type & leaf) const {return bit != leaf.bit;};
-
-	// 	// equality
-	// 	bool operator==(const self_type & leaf) const {return bit == leaf.bit;};
+		// equality
+		bool operator==(const self_type & leaf) const {return it == leaf.it;};
 
 
-	// private:
-	// 	typename std::unordered_map<std::size_t, Node>::iterator it;
-	// 	typename std::unordered_map<std::size_t, Node *>::iterator bit;
-	// 	Orthtree & tree;
-	// };
+	private:
+		std::size_t lvl;
+		typename std::map<std::size_t, std::unordered_map<KeyT, Node>>::iterator sit;
+		typename std::unordered_map<KeyT, Node>::iterator it;
+		Orthtree & tree;
+	};
 
-	// template<std::size_t lvl>
-	// boundary_iterator<lvl> boundary_begin(){return boundary_iterator<lvl>(*this);};
-	// template<std::size_t lvl>
-	// boundary_iterator<lvl> boundary_end(){return boundary_iterator<lvl>(*this, mBdryMaps[lvl].end());};
+	level_iterator level_begin(std::size_t level){return level_iterator(*this, level);};
+	level_iterator level_end(std::size_t level){return level_iterator(*this, level, (--(mKeyMaps[level].end()))->second.end());};
+
+
+
+	friend class subdomain_iterator;
+	// iterate over key/node pairs for leaf nodes only 
+	class subdomain_iterator{
+	public:
+		typedef subdomain_iterator self_type;
+		typedef std::ptrdiff_t difference_type;
+	    typedef std::pair<const KeyT, Node> value_type;
+	    typedef std::pair<const KeyT, Node> & reference;
+	    typedef std::pair<const KeyT, Node> * pointer;
+	    typedef std::forward_iterator_tag iterator_category;
+
+		// construction
+		subdomain_iterator(Orthtree & t, std::size_t level, std::size_t sd)
+		: tree(t)
+		, it(t.mKeyMaps[level][sd].begin()){};
+
+		subdomain_iterator(Orthtree & t, std::size_t level, std::size_t sd, typename std::unordered_map<KeyT, Node>::iterator iter)
+		: tree(t)
+		, it(iter){};
+
+		// dereferencing
+		reference operator*(){ return *it;};
+
+		// preincrement 
+		self_type operator++(){
+			it++;
+			return *this;
+		}
+
+		// preincrement 
+		self_type operator++(int blah){
+			it++;
+			return *this;
+		}
+
+		// pointer
+		pointer operator->() {return it.operator->();};
+
+		// inequality
+		bool operator!=(const self_type & leaf) const {return it != leaf.it;};
+
+		// equality
+		bool operator==(const self_type & leaf) const {return it == leaf.it;};
+
+
+	private:
+		typename std::unordered_map<KeyT, Node>::iterator it;
+		Orthtree & tree;
+	};
+
+
+	subdomain_iterator subdomain_begin(std::size_t level, std::size_t sd){return subdomain_iterator(*this, level, sd);};
+	subdomain_iterator subdomain_end(std::size_t level, std::size_t sd){return subdomain_iterator(*this, level, sd, mKeyMaps[level][sd].end());};
 
 
 
