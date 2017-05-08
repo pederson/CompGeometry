@@ -379,9 +379,10 @@ public:
 	// 	return &mLevelMaps[lvl][key];
 	// }
 
-	Node * getCell(std::size_t key, std::size_t lvl, std::size_t subd){
-		return &mKeyMaps[lvl][subd][key];
-	}
+	// Node * getCell(std::size_t key, std::size_t lvl, std::size_t subd){
+	// 	return &mKeyMaps[lvl][subd][key];
+	// }
+
 
 
 	// split parent key, and endow all children
@@ -524,7 +525,6 @@ public:
 
 
 	private:
-		// std::size_t level;
 		typename std::map<std::size_t, std::map<std::size_t, std::unordered_map<KeyT, Node>>>::iterator lit;
 		typename std::map<std::size_t, std::unordered_map<KeyT, Node>>::iterator sit;
 		typename std::unordered_map<KeyT, Node>::iterator it;
@@ -535,7 +535,13 @@ public:
 	iterator begin(){return iterator(*this);};
 	iterator end(){auto p=mKeyMaps.end(); p--; return iterator(*this, (--(p->second.end()))->second.end());};
 
+	iterator find(KeyT key, std::size_t lvl, std::size_t subd){
+		return iterator(*this,mKeyMaps[lvl][subd].find(key));
+	}
 
+	iterator find(KeyT key, std::size_t lvl){
+		return iterator(*this,mKeyMaps[lvl][SubdomainDecoder::decodeSubdomain(key)][key]);
+	}
 
 
 
@@ -558,13 +564,9 @@ public:
 		, lit(t.mKeyMaps.begin())
 		, sit((t.mKeyMaps.begin())->second.begin())
 		, it(((t.mKeyMaps.begin())->second.begin())->second.begin()){
-			it = tree.mKeyMaps.begin()->second.begin()->second.begin();
-			std::cout << "constructing iterator" << std::endl;
 			if (! it->second.mIsLeaf){
-				std::cout << "here" << std::endl;
 				this->operator++();
 			}
-			std::cout << "constructed iterator" << std::endl;
 		}
 
 		leaf_iterator(Orthtree & t, typename std::unordered_map<KeyT, Node>::iterator iter)
@@ -928,6 +930,14 @@ public:
 	// 	mBdryMaps[lvl][key] = &mLevelMaps[lvl][key];
 	// }
 
+	// // set an existing key in the level map as a boundary.
+	// // this will add the key to the boundary key map
+	// void changeKeySubdomain(KeyT key, std::size_t lvl, std::size_t subd) {
+	// 	std::size_t old_subd = SubdomainDecoder::decodeSubdomain(key);
+	// 	mKeyMaps[lvl][subd][key] = &mKeyMaps[lvl][old_subd][key];
+	// 	mKeyMaps[lvl][old_subd].remove(key);
+	// }
+
 
 	// // for a given level, if a node is on the boundary 
 	// // it will be turned into a boundary node
@@ -1000,6 +1010,16 @@ public:
 	// 		// std::cout << "addr: " << &val << " addr_new: " << it->second.mVal.get()->get() << std::endl;
 	// 	}
 	// }
+
+	template <class PrototypeMap>
+	void reassignLevelSubdomain(std::size_t lvl,
+								const PrototypeMap & pm){
+		// iterate through the level boundary and replace values
+		for (auto it=boundary_begin<lvl>(); it != boundary_end<lvl>(); it++){
+			it->second.mVal = std::make_shared<ValueT>(pm.getPrototype());
+			// std::cout << "addr: " << &val << " addr_new: " << it->second.mVal.get()->get() << std::endl;
+		}
+	}
 
 	// // build out a level boundary by going through all the points
 	// // and adding boundary cells to the left/right if the neighbors
