@@ -228,13 +228,48 @@ int main(int argc, char * argv[])
 
 	// trees 
 	Orthtree<2,3,int> tree3;
+	std::size_t k = 17;
+	cout << "k: " << k << endl;
+	cout << "Parent(k): " << tree3.getParentKey(k) << endl;
+	cout << "LeftChild(k): " << tree3.getChildKey(k,0) << endl;
+	cout << "Level(k): " << tree3.getLevel(k) << endl;
+	cout << "PosWithinParent(k): " << tree3.getSiblingIndex(k) << endl;
+	cout << "OffsetWithinParent(k): " << tree3.getOffsetWithinParent(k) << endl;
+	cout << "LevelOffset(k): " << tree3.getLevelOffset(k) << endl;
+	// for (auto i=0; i<=lvlmax; i++) cout << "LevelStartingInd(" << i << "): " << mLvlStartInds[i] << endl;
+	// for (auto i=0; i<=lvlmax; i++) cout << "LevelEndingInd(" << i << "): " << mLvlEndInds[i] << endl;
+	cout << "KeyFromLevelOffset(2, (1,2)): " << tree3.getKeyFromLevelOffset(2, IntPoint2(1,2)) << endl;
+	cout << "NeighborKeyMin(k, 0): " << tree3.getNeighborKeyMin(k, 0) << endl;
+	cout << "NeighborKeyMin(k, 1): " << tree3.getNeighborKeyMin(k, 1) << endl;
+	cout << "NeighborKeyMax(k, 0): " << tree3.getNeighborKeyMax(k, 0) << endl;
+	cout << "NeighborKeyMax(k, 1): " << tree3.getNeighborKeyMax(k, 1) << endl;
+	cout << endl; 
+
+
+
 	Quadtree<double> qtree;
+	cout << "k: " << k << endl;
+	cout << "Parent(k): " << qtree.getParentKey(k) << endl;
+	cout << "LeftChild(k): " << qtree.getChildKey(k,0) << endl;
+	cout << "Level(k): " << qtree.getLevel(k) << endl;
+	cout << "PosWithinParent(k): " << qtree.getSiblingIndex(k) << endl;
+	cout << "OffsetWithinParent(k): " << qtree.getOffsetWithinParent(k) << endl;
+	cout << "LevelOffset(k): " << qtree.getLevelOffset(k) << endl;
+	// for (auto i=0; i<=lvlmax; i++) cout << "LevelStartingInd(" << i << "): " << mLvlStartInds[i] << endl;
+	// for (auto i=0; i<=lvlmax; i++) cout << "LevelEndingInd(" << i << "): " << mLvlEndInds[i] << endl;
+	cout << "KeyFromLevelOffset(2, (1,2)): " << qtree.getKeyFromLevelOffset(2, IntPoint2(1,2)) << endl;
+	cout << "NeighborKeyMin(k, 0): " << qtree.getNeighborKeyMin(k, 0) << endl;
+	cout << "NeighborKeyMin(k, 1): " << qtree.getNeighborKeyMin(k, 1) << endl;
+	cout << "NeighborKeyMax(k, 0): " << qtree.getNeighborKeyMax(k, 0) << endl;
+	cout << "NeighborKeyMax(k, 1): " << qtree.getNeighborKeyMax(k, 1) << endl;
+	cout << endl; 
 
 	// build a quadtree of doubles corresponding to a cirlce centered at 0,0 with radius 1
 	struct CircleThing{
 		double rad = 1.0;
 		Point2 cen = Point2(0,0);
 		Box<2> bounds = {Point2(-1,-1), Point2(1,1)};
+		IntegralKeyDecoder<2,2,int> icd;
 
 		double getValue(Box<2> bx) const{
 			Point2 p = 0.5*(bx.lo + bx.hi);
@@ -267,10 +302,10 @@ int main(int argc, char * argv[])
 		std::size_t getSubdomain(int key) const{return 0;};
 
 		Box<2> getBox(int key) const{
-			auto lvl = BruteForceDecoder<2,2,int>::decodeLevel(key);
+			auto lvl = icd.getLevel(key);
 			double rfactor = pow(2.0,lvl);
 			Point<2> boxsize = 1.0/static_cast<double>(rfactor)*(bounds.hi-bounds.lo);
-			IntPoint<2> off = BruteForceDecoder<2,2,int>::getOffsetWithinLevel(key);
+			IntPoint<2> off = icd.getOffsetWithinLevel(key);
 			Point<2> newlo = bounds.lo+boxsize*off;
 			Box<2> rbox(newlo, newlo+boxsize);
 			return rbox;
@@ -279,16 +314,16 @@ int main(int argc, char * argv[])
 
 	CircleThing c1;
 	Box<2> bounds(Point2(-1,-1), Point2(1,1));
-	qtree.buildTree(5, c1, c1, c1, 0, 0);
-	qtree.print_summary();
+	qtree.buildTree(5, c1, c1, 0, 0);
+	// qtree.print_summary();
 
 
 	// iterate over leaves
 	int ctr=0;
-	// for (auto it=qtree.leaf_begin(); it!=qtree.leaf_end(); it++){
+	for (auto it=qtree.leaf_begin(); it!=qtree.leaf_end(); it++){
 	// for (auto it=qtree.begin(); it!=qtree.end(); it++){
 	// for (auto it=qtree.level_begin(5); it!=qtree.level_end(5); it++){
-	for (auto it=qtree.subdomain_begin(5,0); it!=qtree.subdomain_end(5,0); it++){
+	// for (auto it=qtree.subdomain_begin(5,0); it!=qtree.subdomain_end(5,0); it++){
 		// cout << ctr << endl;
 		std::cout << "ctr: " << ctr << " key: " << it->first << std::endl;
 		ctr++;
