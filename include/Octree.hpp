@@ -17,6 +17,6 @@ using Octree = typename OctreeTypedef<ValueT>::type;
 
 // partial template specializations would go here
 
-}
+}// end namespace csg
 
 #endif
