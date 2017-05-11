@@ -103,6 +103,9 @@ struct DefaultNode{
 	ValueT  		mVal;
 	bool 			mIsLeaf;
 
+	DefaultNode() {};
+	DefaultNode(ValueT & v, bool islf): mVal(v), mIsLeaf(islf) {};
+
 	ValueT & getValue() {return mVal;};
 	bool & isLeaf() {return mIsLeaf;};
 };
@@ -153,6 +156,9 @@ public:
 	constexpr KeyT getChildKey(KeyT key, std::size_t siblingIdx) const {
 		return key*sSize + 1 + siblingIdx;
 	};
+
+	constexpr std::size_t getSiblingIndex(KeyT key) const {return (key-1)%sSize;};
+
 
 
 	// get the neighboring key to 'key' on the maximum side
@@ -226,9 +232,6 @@ public:
 		}
 		return off;
 	}
-
-
-	constexpr std::size_t getSiblingIndex(KeyT key) const {return (key-1)%sSize;};
 
 
 	constexpr IntPoint<dim> getOffsetWithinLevel(KeyT key) const{
@@ -545,6 +548,9 @@ class Orthtree : public KeyDecoderRing<dim,rfactor,KeyT>, public ContainerT<KeyT
 public:
 	typedef KeyDecoderRing<dim,rfactor,KeyT> KeyDecoder;
 	typedef ContainerT<KeyT, NodeT> Container;
+	typedef ValueT ValueType;
+	typedef KeyT KeyType;
+	typedef NodeT NodeType;
 
 protected:
 
