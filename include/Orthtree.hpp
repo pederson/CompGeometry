@@ -790,7 +790,6 @@ public:
 
 		// postincrement 
 		self_type operator++(int blah){
-			std::cout << "operator++" << std::endl;
 			cit++;
 			while (cit != tree.end()){
 				if (cit->second.isLeaf()) return *this;				
@@ -816,8 +815,8 @@ public:
 	};
 
 	
-	leaf_iterator leaf_begin(){std::cout << "lbegin" << std::endl; return leaf_iterator(*this);};
-	leaf_iterator leaf_end(){std::cout << "lend" << std::endl; return leaf_iterator(*this, Container::end());};
+	leaf_iterator leaf_begin(){return leaf_iterator(*this);};
+	leaf_iterator leaf_end(){return leaf_iterator(*this, Container::end());};
 
 	template <typename Arg1, typename... Args>
 	leaf_iterator leaf_begin(Arg1 arg1, Args... args){return leaf_iterator(*this, Container::begin(arg1, args...));};
@@ -958,6 +957,130 @@ public:
 	template <typename... Args>
 	boundary_iterator<Args...> boundary_end(Args... args){return boundary_iterator<Args...>(*this, Container::end(args...), args...);};
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	template <typename... Args> friend class interior_iterator;
+	// iterate over key/node pairs for all boundary nodes
+	template <typename... Args>
+	class interior_iterator{
+	public:
+		typedef interior_iterator 								self_type;
+		typedef typename Container::iterator::difference_type 	difference_type;
+	    typedef typename Container::iterator::value_type 		value_type;
+	    typedef typename Container::iterator::reference 		reference;
+	    typedef typename Container::iterator::pointer 			pointer;
+	    typedef typename Container::iterator::iterator_category iterator_category;
+
+		// construction
+		interior_iterator(Orthtree & t, Args... a)
+		: tree(t)
+		, args(a...)
+		, it(t.begin(a...)){
+			if (t.isBoundary(it->first, a...)){
+				this->operator++();
+			};
+		};
+
+		interior_iterator(Orthtree & t, typename Container::iterator iter, Args... a)
+		: tree(t)
+		, args(a...)
+		, it(iter){
+			if (it == t.end(a...)) return;
+			if (t.isBoundary(it->first, a...)){
+				this->operator++();
+			};
+		};
+
+		// dereferencing
+		reference operator*(){ return *it;};
+
+		// preincrement 
+		self_type operator++(){
+			it++;
+			while (it != endImpl(args, Inds{})){
+				if (!isBoundaryImpl(it->first, args, Inds{})) return *this;				
+				it++;
+			}
+			// have reached the end of all the cells
+			// return tree.boundary_end(args);
+			return boundaryEndImpl(args, Inds{});
+		}
+
+		// postincrement 
+		self_type operator++(int blah){
+			it++;
+			while (it != endImpl(args, Inds{})){
+				if (!isBoundaryImpl(it->first, args, Inds{})) return *this;				
+				it++;
+			}
+			// have reached the end of all the cells
+			// return tree.boundary_end(args);
+			return boundaryEndImpl(args, Inds{});
+		}
+
+		// pointer
+		pointer operator->() {return it.operator->();};
+
+		// inequality
+		bool operator!=(const self_type & leaf) const {return it != leaf.it;};
+
+		// equality
+		bool operator==(const self_type & leaf) const {return it == leaf.it;};
+
+
+	private:
+		typename Container::iterator it;
+		Orthtree & tree;
+		typename ConvertToTuple<VariadicTypedef<Args...>>::type args;
+		typedef std::make_index_sequence<std::tuple_size<decltype(args)>::value> Inds;
+
+
+
+
+		template<typename Tuple, std::size_t... I>
+		bool isBoundaryImpl(std::size_t key, Tuple && t, std::index_sequence<I...>){
+			return tree.isBoundary(key, std::get<I>(t)...);
+		}
+
+		template<typename Tuple, std::size_t... I>
+		typename Container::iterator endImpl(Tuple && t, std::index_sequence<I...>){
+			return tree.end(std::get<I>(t)...);
+		}
+
+
+		template<typename Tuple, std::size_t... I>
+		decltype(auto) boundaryEndImpl(Tuple && t, std::index_sequence<I...>){
+			return tree.interior_end(std::get<I>(t)...);
+		}
+	};
+
+	template <typename... Args>
+	interior_iterator<Args...> interior_begin(Args... args){return interior_iterator<Args...>(*this,args...);};
+	template <typename... Args>
+	interior_iterator<Args...> interior_end(Args... args){return interior_iterator<Args...>(*this, Container::end(args...), args...);};
 
 
 
