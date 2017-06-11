@@ -7,6 +7,8 @@
 #include <list>
 #include <array>
 #include <utility>
+#include <tuple>
+
 
 #include "GeomUtils.hpp"
 
@@ -85,6 +87,57 @@ template<std::size_t dim,
 constexpr std::array<std::size_t, lvl> createEndingKeys(){
 	return buildEndingKeysArray<dim,rfactor,lvl>(std::make_index_sequence<lvl>{});
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+// define a variadic template conversion to tuple
+// ... used for the boundary_iterator
+template <typename... Args>
+struct VariadicTypedef
+{
+    // this single type represents a collection of types,
+    // as the template arguments it took to define it
+};
+
+template <typename... Args>
+struct ConvertToTuple
+{
+    // base case, nothing special,
+    // just use the arguments directly
+    // however they need to be used
+    typedef std::tuple<Args...> type;
+};
+
+template <typename... Args>
+struct ConvertToTuple<VariadicTypedef<Args...>>
+{
+    // expand the variadic_typedef back into
+    // its arguments, via specialization
+    // (doesn't rely on functionality to be provided
+    // by the variadic_typedef struct itself, generic)
+    typedef typename ConvertToTuple<Args...>::type type;
+};
+
+
+
+
+
+
+
+
+
 
 
 
@@ -407,8 +460,14 @@ struct LevelContainer{
 	iterator begin(){return iterator(*this);};
 	iterator end(){auto p=mKeyMaps.end(); p--; return iterator(*this, p->first, p->second.end());};
 
-
-
+	// begin/end with level specified
+	iterator begin(std::size_t lvl){return iterator(*this, lvl, mKeyMaps[lvl].begin());}
+	iterator end(std::size_t lvl){
+		auto it = mKeyMaps.find(lvl);
+		it++;
+		if (it == mKeyMaps.end()) return iterator(*this, lvl, mKeyMaps[lvl].end());
+		return iterator(*this, lvl, mKeyMaps[lvl+1].begin());
+	}
 
 
 	friend class level_iterator;
@@ -472,6 +531,18 @@ struct LevelContainer{
 
 	iterator find(KeyT key, std::size_t lvl){
 		return iterator(*this,lvl,mKeyMaps[lvl].find(key));
+	}
+
+
+
+	iterator find(KeyT key){
+		auto it = mKeyMaps.begin();
+		while(it != mKeyMaps.end()){
+			auto sit = it->second.find(key);
+			if (sit != it->second.end()) return iterator(*this, it->first, sit);
+			it++;
+		}
+		return end();
 	}
 
 
@@ -546,11 +617,11 @@ template <	std::size_t dim,
 			std::size_t lvlmax = 16>
 class Orthtree : public KeyDecoderRing<dim,rfactor,KeyT>, public ContainerT<KeyT, NodeT>{
 public:
-	typedef KeyDecoderRing<dim,rfactor,KeyT> KeyDecoder;
-	typedef ContainerT<KeyT, NodeT> Container;
-	typedef ValueT ValueType;
-	typedef KeyT KeyType;
-	typedef NodeT NodeType;
+	typedef KeyDecoderRing<dim,rfactor,KeyT> 	KeyDecoder;
+	typedef ContainerT<KeyT, NodeT> 			Container;
+	typedef ValueT 								ValueType;
+	typedef KeyT 								KeyType;
+	typedef NodeT 								NodeType;
 
 protected:
 
@@ -579,17 +650,24 @@ public:
 				  const RefineOracle & ro,
 				  KeyT key, std::size_t lvl){
 
+		// std:: cout << "build_key: " << key << std::endl;
 		// create node for key
 		NodeT n; n.isLeaf() = true; 
 		n.getValue() = pm.getValue(key);
+		// std::cout << "before insert ------" ;
 		Container::insert(key, lvl, n);
+		// std::cout << "after insert " << std::endl;
 
 		// decide if refinement is necessary
+		// std::cout << "before isUniform ------" ;
 		if (lvl == lvlstop) return;
 		if (ro.isUniform(key)) return;
+		// std::cout << "after isUniform" << std::endl;
 
 		// mKeyMaps[lvl][subd][key].mIsLeaf = false;
+		// std::cout << "before find ------" ;
 		Container::find(key,lvl)->second.isLeaf() = false;
+		// std::cout << "after find" << std::endl;
 
 		// if refining, 
 		for (auto so=0; so<sSize; so++){
@@ -658,16 +736,24 @@ public:
 	// }
 
 
+
+
+
+
+
+
+
+
 	friend class leaf_iterator;
 	// iterate over key/node pairs for all nodes 
 	class leaf_iterator{
 	public:
-		typedef leaf_iterator self_type;
-		typedef std::ptrdiff_t difference_type;
-	    typedef std::pair<const KeyT, NodeT> value_type;
-	    typedef std::pair<const KeyT, NodeT> & reference;
-	    typedef std::pair<const KeyT, NodeT> * pointer;
-	    typedef std::forward_iterator_tag iterator_category;
+		typedef leaf_iterator 									self_type;
+		typedef typename Container::iterator::difference_type 	difference_type;
+	    typedef typename Container::iterator::value_type 		value_type;
+	    typedef typename Container::iterator::reference 		reference;
+	    typedef typename Container::iterator::pointer 			pointer;
+	    typedef typename Container::iterator::iterator_category iterator_category;
 
 		// construction
 		leaf_iterator(Orthtree & t)
@@ -680,13 +766,19 @@ public:
 
 		leaf_iterator(Orthtree & t, typename Container::iterator iter)
 		: tree(t)
-		, cit(iter){};
+		, cit(iter){
+			if (cit == tree.end()) return;
+			if (! cit->second.isLeaf()){
+				this->operator++();
+			};
+		};
 
 		// dereferencing
 		reference operator*(){ return *cit;};
 
 		// preincrement 
 		self_type operator++(){
+			std::cout << "operator++" << std::endl;
 			cit++;
 			while (cit != tree.end()){
 				if (cit->second.isLeaf()) return *this;				
@@ -698,6 +790,7 @@ public:
 
 		// postincrement 
 		self_type operator++(int blah){
+			std::cout << "operator++" << std::endl;
 			cit++;
 			while (cit != tree.end()){
 				if (cit->second.isLeaf()) return *this;				
@@ -723,53 +816,79 @@ public:
 	};
 
 	
-	leaf_iterator leaf_begin(){return leaf_iterator(*this);};
-	leaf_iterator leaf_end(){return leaf_iterator(*this, Container::end());};
+	leaf_iterator leaf_begin(){std::cout << "lbegin" << std::endl; return leaf_iterator(*this);};
+	leaf_iterator leaf_end(){std::cout << "lend" << std::endl; return leaf_iterator(*this, Container::end());};
+
+	template <typename Arg1, typename... Args>
+	leaf_iterator leaf_begin(Arg1 arg1, Args... args){return leaf_iterator(*this, Container::begin(arg1, args...));};
+
+	template <typename Arg1, typename... Args>
+	leaf_iterator leaf_end(Arg1 arg1, Args... args){return leaf_iterator(*this, Container::end(arg1, args...));};
 
 
 
 
 
 
-	bool isBoundary(KeyT key, std::size_t lvl){
+
+
+
+
+
+
+
+
+
+
+
+
+
+	template <typename... Args>
+	bool isBoundary(KeyT key, Args... args){
 		if (KeyDecoder::isBoundary(key)) return true;
 
 		for (auto d=0; d<dim; d++){
 			KeyT neighb = KeyDecoder::getNeighborKeyMin(key,d);
-			if (Container::find(neighb, lvl) == Container::end()) return true;
+			if (Container::find(neighb, args...) == Container::end()) return true;
 		}
 		for (auto d=0; d<dim; d++){
 			KeyT neighb = KeyDecoder::getNeighborKeyMax(key,d);
-			if (Container::find(neighb, lvl) == Container::end()) return true;
+			if (Container::find(neighb, args...) == Container::end()) return true;
 		}
 		return false;
 	}
 
-	friend class boundary_iterator;
+	template <typename... Args> friend class boundary_iterator;
 	// iterate over key/node pairs for all boundary nodes
+	template <typename... Args>
 	class boundary_iterator{
 	public:
-		typedef boundary_iterator self_type;
-		typedef std::ptrdiff_t difference_type;
-	    typedef std::pair<const KeyT, NodeT> value_type;
-	    typedef std::pair<const KeyT, NodeT> & reference;
-	    typedef std::pair<const KeyT, NodeT> * pointer;
-	    typedef std::forward_iterator_tag iterator_category;
+		typedef boundary_iterator 								self_type;
+		typedef typename Container::iterator::difference_type 	difference_type;
+	    typedef typename Container::iterator::value_type 		value_type;
+	    typedef typename Container::iterator::reference 		reference;
+	    typedef typename Container::iterator::pointer 			pointer;
+	    typedef typename Container::iterator::iterator_category iterator_category;
 
 		// construction
-		boundary_iterator(Orthtree & t, std::size_t level)
+		boundary_iterator(Orthtree & t, Args... a)
 		: tree(t)
-		, lvl(level)
-		, it(t.level_begin(level)){
-			if (! t.isBoundary(it->first, lvl)){
+		, args(a...)
+		, it(t.begin(a...)){
+			if (! t.isBoundary(it->first, a...)){
 				this->operator++();
 			};
 		};
 
-		boundary_iterator(Orthtree & t, std::size_t level, typename Container::level_iterator iter)
+		boundary_iterator(Orthtree & t, typename Container::iterator iter, Args... a)
 		: tree(t)
-		, lvl(level)
-		, it(iter){};
+		, args(a...)
+		, it(iter){
+			if (it == t.end(a...)) return;
+			if (! t.isBoundary(it->first, a...)){
+				this->operator++();
+			};
+		};
 
 		// dereferencing
 		reference operator*(){ return *it;};
@@ -777,23 +896,25 @@ public:
 		// preincrement 
 		self_type operator++(){
 			it++;
-			while (it != tree.level_end(lvl)){
-				if (tree.isBoundary(it->first,lvl)) return *this;				
+			while (it != endImpl(args, Inds{})){
+				if (isBoundaryImpl(it->first, args, Inds{})) return *this;				
 				it++;
 			}
 			// have reached the end of all the cells
-			return tree.boundary_end(lvl);
+			// return tree.boundary_end(args);
+			return boundaryEndImpl(args, Inds{});
 		}
 
 		// postincrement 
 		self_type operator++(int blah){
 			it++;
-			while (it != tree.level_end(lvl)){
-				if (tree.isBoundary(it->first,lvl)) return *this;				
+			while (it != endImpl(args, Inds{})){
+				if (isBoundaryImpl(it->first, args, Inds{})) return *this;				
 				it++;
 			}
 			// have reached the end of all the cells
-			return tree.boundary_end(lvl);
+			// return tree.boundary_end(args);
+			return boundaryEndImpl(args, Inds{});
 		}
 
 		// pointer
@@ -807,14 +928,35 @@ public:
 
 
 	private:
-		typename Container::level_iterator it;
+		typename Container::iterator it;
 		Orthtree & tree;
-		std::size_t lvl;
+		typename ConvertToTuple<VariadicTypedef<Args...>>::type args;
+		typedef std::make_index_sequence<std::tuple_size<decltype(args)>::value> Inds;
+
+
+
+
+		template<typename Tuple, std::size_t... I>
+		bool isBoundaryImpl(std::size_t key, Tuple && t, std::index_sequence<I...>){
+			return tree.isBoundary(key, std::get<I>(t)...);
+		}
+
+		template<typename Tuple, std::size_t... I>
+		typename Container::iterator endImpl(Tuple && t, std::index_sequence<I...>){
+			return tree.end(std::get<I>(t)...);
+		}
+
+
+		template<typename Tuple, std::size_t... I>
+		decltype(auto) boundaryEndImpl(Tuple && t, std::index_sequence<I...>){
+			return tree.boundary_end(std::get<I>(t)...);
+		}
 	};
 
-	
-	boundary_iterator boundary_begin(std::size_t lvl){return boundary_iterator(*this,lvl);};
-	boundary_iterator boundary_end(std::size_t lvl){return boundary_iterator(*this, lvl, Container::level_end(lvl));};
+	template <typename... Args>
+	boundary_iterator<Args...> boundary_begin(Args... args){return boundary_iterator<Args...>(*this,args...);};
+	template <typename... Args>
+	boundary_iterator<Args...> boundary_end(Args... args){return boundary_iterator<Args...>(*this, Container::end(args...), args...);};
 
 
 
