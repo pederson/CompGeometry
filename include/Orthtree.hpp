@@ -886,11 +886,11 @@ public:
 
 		for (auto d=0; d<dim; d++){
 			KeyT neighb = KeyDecoder::getNeighborKeyMin(key,d);
-			if (Container::find(neighb, args...) == Container::end()) return true;
+			if (Container::find(neighb, args...) == Container::end(args...)) return true;
 		}
 		for (auto d=0; d<dim; d++){
 			KeyT neighb = KeyDecoder::getNeighborKeyMax(key,d);
-			if (Container::find(neighb, args...) == Container::end()) return true;
+			if (Container::find(neighb, args...) == Container::end(args...)) return true;
 		}
 		return false;
 	}
@@ -912,6 +912,7 @@ public:
 		: tree(&t)
 		, args(a...)
 		, it(t.begin(a...)){
+			if (it == t.end(a...)) return;
 			if (! t.isBoundary(it->first, a...)){
 				this->operator++();
 			};
@@ -927,7 +928,16 @@ public:
 			};
 		};
 
+		boundary_iterator(const boundary_iterator & bit)
+		: tree(bit.tree)
+		, args(bit.args)
+		, it(bit.it){};
 
+		boundary_iterator & operator=(const boundary_iterator & bit){
+			boundary_iterator b(bit);
+			std::swap(b,*this);
+			return *this;
+		}
 
 		// dereferencing
 		reference operator*(){ return *it;};
@@ -1054,6 +1064,18 @@ public:
 			};
 		};
 
+
+		interior_iterator(const interior_iterator & iit)
+		: tree(iit.tree)
+		, args(iit.args)
+		, it(iit.it){};
+
+		interior_iterator & operator=(const interior_iterator & iit){
+			interior_iterator i(iit);
+			std::swap(i,*this);
+			return *this;
+		}
+
 		// dereferencing
 		reference operator*(){ return *it;};
 
@@ -1118,7 +1140,7 @@ public:
 	};
 
 	template <typename... Args>
-	interior_iterator<Args...> interior_begin(Args... args){return interior_iterator<Args...>(*this,args...);};
+	interior_iterator<Args...> interior_begin(Args... args){return interior_iterator<Args...>(*this, Container::begin(args...), args...);};
 	template <typename... Args>
 	interior_iterator<Args...> interior_end(Args... args){return interior_iterator<Args...>(*this, Container::end(args...), args...);};
 
