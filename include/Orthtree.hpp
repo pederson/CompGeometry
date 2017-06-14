@@ -401,6 +401,18 @@ struct LevelContainer{
 		, lit(t.mKeyMaps.find(lvl))
 		, it(iter) {};
 
+
+		iterator(const iterator & cit)
+		: cont(cit.cont)
+		, lit(cit.lit)
+		, it(cit.it) {};
+
+		iterator & operator=(const iterator & cit){
+			iterator i(cit);
+			std::swap(i,*this);
+			return *this;
+		}
+
 		// dereferencing
 		reference operator*(){ return *it;};
 
@@ -457,7 +469,7 @@ struct LevelContainer{
 	};
 
 	
-	iterator begin(){return iterator(*this);};
+	iterator begin(){return iterator(*this,0,mKeyMaps[0].begin());};
 	iterator end(){auto p=mKeyMaps.end(); p--; return iterator(*this, p->first, p->second.end());};
 
 	// begin/end with level specified
@@ -465,8 +477,11 @@ struct LevelContainer{
 	iterator end(std::size_t lvl){
 		auto it = mKeyMaps.find(lvl);
 		it++;
-		if (it == mKeyMaps.end()) return iterator(*this, lvl, mKeyMaps[lvl].end());
-		return iterator(*this, lvl, mKeyMaps[lvl+1].begin());
+		if (it == mKeyMaps.end()){
+			// std::cout << "returning regular end" << std::endl;
+			return end();
+		}// iterator(*this, lvl, mKeyMaps[lvl].end());
+		return iterator(*this, lvl+1, mKeyMaps[lvl+1].begin());
 	}
 
 
@@ -530,7 +545,9 @@ struct LevelContainer{
 
 
 	iterator find(KeyT key, std::size_t lvl){
-		return iterator(*this,lvl,mKeyMaps[lvl].find(key));
+		auto it = mKeyMaps[lvl].find(key);
+		if (it == mKeyMaps[lvl].end()) return end(lvl);
+		return iterator(*this,lvl,it);
 	}
 
 
@@ -552,6 +569,12 @@ struct LevelContainer{
 	void insert(const KeyT & key, std::size_t lvl, MappedT & val){
 		mKeyMaps[lvl][key] = val;
 	};
+
+
+	std::pair<iterator, bool> insert(const std::pair<const KeyT, MappedT> & p, std::size_t lvl){
+		auto out = mKeyMaps[lvl].insert(p);
+		return std::make_pair(iterator(*this, lvl, out.first), out.second);
+	}
 
 	void erase(const KeyT & key, std::size_t lvl){mKeyMaps[lvl].erase(key);};
 
@@ -655,9 +678,12 @@ public:
 		NodeT n; n.isLeaf() = true; 
 		n.getValue() = pm.getValue(key);
 		// std::cout << "before insert ------" ;
+		// auto pr = std::pair<const KeyT, NodeT>(key,n);
+		// auto suc = Container::insert(std::make_pair(key,n), lvl);
 		Container::insert(key, lvl, n);
 		// std::cout << "after insert " << std::endl;
 
+		// std::cout << "insertion was " << (suc.second ? "success" : "failure") << std::endl;
 		// decide if refinement is necessary
 		// std::cout << "before isUniform ------" ;
 		if (lvl == lvlstop) return;
@@ -666,6 +692,7 @@ public:
 
 		// mKeyMaps[lvl][subd][key].mIsLeaf = false;
 		// std::cout << "before find ------" ;
+		// suc.first->second.isLeaf() = false;
 		Container::find(key,lvl)->second.isLeaf() = false;
 		// std::cout << "after find" << std::endl;
 
@@ -757,46 +784,57 @@ public:
 
 		// construction
 		leaf_iterator(Orthtree & t)
-		: tree(t)
+		: tree(&t)
 		, cit(t.begin()){
+			if (cit == tree->end()) return;
 			if (! cit->second.isLeaf()){
 				this->operator++();
 			};
 		};
 
 		leaf_iterator(Orthtree & t, typename Container::iterator iter)
-		: tree(t)
+		: tree(&t)
 		, cit(iter){
-			if (cit == tree.end()) return;
+			if (cit == tree->end()) return;
 			if (! cit->second.isLeaf()){
 				this->operator++();
 			};
 		};
+
+		leaf_iterator(const leaf_iterator & lit)
+		: tree(lit.tree)
+		, cit(lit.cit){};
+
+		leaf_iterator & operator=(const leaf_iterator & lit){
+			leaf_iterator l(lit);
+			std::swap(l, *this);
+			return *this;
+		}
 
 		// dereferencing
 		reference operator*(){ return *cit;};
 
 		// preincrement 
 		self_type operator++(){
-			std::cout << "operator++" << std::endl;
+			// std::cout << "operator++" << std::endl;
 			cit++;
-			while (cit != tree.end()){
+			while (cit != tree->end()){
 				if (cit->second.isLeaf()) return *this;				
 				cit++;
 			}
 			// have reached the end of all the cells
-			return tree.leaf_end();
+			return tree->leaf_end();
 		}
 
 		// postincrement 
 		self_type operator++(int blah){
 			cit++;
-			while (cit != tree.end()){
+			while (cit != tree->end()){
 				if (cit->second.isLeaf()) return *this;				
 				cit++;
 			}
 			// have reached the end of all the cells
-			return tree.leaf_end();
+			return tree->leaf_end();
 		}
 
 		// pointer
@@ -811,11 +849,11 @@ public:
 
 	private:
 		typename Container::iterator cit;
-		Orthtree & tree;
+		Orthtree * tree;
 	};
 
 	
-	leaf_iterator leaf_begin(){return leaf_iterator(*this);};
+	leaf_iterator leaf_begin(){return leaf_iterator(*this, Container::begin());};
 	leaf_iterator leaf_end(){return leaf_iterator(*this, Container::end());};
 
 	template <typename Arg1, typename... Args>
@@ -871,7 +909,7 @@ public:
 
 		// construction
 		boundary_iterator(Orthtree & t, Args... a)
-		: tree(t)
+		: tree(&t)
 		, args(a...)
 		, it(t.begin(a...)){
 			if (! t.isBoundary(it->first, a...)){
@@ -880,7 +918,7 @@ public:
 		};
 
 		boundary_iterator(Orthtree & t, typename Container::iterator iter, Args... a)
-		: tree(t)
+		: tree(&t)
 		, args(a...)
 		, it(iter){
 			if (it == t.end(a...)) return;
@@ -888,6 +926,8 @@ public:
 				this->operator++();
 			};
 		};
+
+
 
 		// dereferencing
 		reference operator*(){ return *it;};
@@ -928,7 +968,7 @@ public:
 
 	private:
 		typename Container::iterator it;
-		Orthtree & tree;
+		Orthtree * tree;
 		typename ConvertToTuple<VariadicTypedef<Args...>>::type args;
 		typedef std::make_index_sequence<std::tuple_size<decltype(args)>::value> Inds;
 
@@ -937,23 +977,23 @@ public:
 
 		template<typename Tuple, std::size_t... I>
 		bool isBoundaryImpl(std::size_t key, Tuple && t, std::index_sequence<I...>){
-			return tree.isBoundary(key, std::get<I>(t)...);
+			return tree->isBoundary(key, std::get<I>(t)...);
 		}
 
 		template<typename Tuple, std::size_t... I>
 		typename Container::iterator endImpl(Tuple && t, std::index_sequence<I...>){
-			return tree.end(std::get<I>(t)...);
+			return tree->end(std::get<I>(t)...);
 		}
 
 
 		template<typename Tuple, std::size_t... I>
 		decltype(auto) boundaryEndImpl(Tuple && t, std::index_sequence<I...>){
-			return tree.boundary_end(std::get<I>(t)...);
+			return tree->boundary_end(std::get<I>(t)...);
 		}
 	};
 
 	template <typename... Args>
-	boundary_iterator<Args...> boundary_begin(Args... args){return boundary_iterator<Args...>(*this,args...);};
+	boundary_iterator<Args...> boundary_begin(Args... args){return boundary_iterator<Args...>(*this, Container::begin(args...), args...);};
 	template <typename... Args>
 	boundary_iterator<Args...> boundary_end(Args... args){return boundary_iterator<Args...>(*this, Container::end(args...), args...);};
 
