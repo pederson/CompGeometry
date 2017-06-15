@@ -678,9 +678,9 @@ public:
 		NodeT n; n.isLeaf() = true; 
 		n.getValue() = pm.getValue(key);
 		// std::cout << "before insert ------" ;
-		// auto pr = std::pair<const KeyT, NodeT>(key,n);
-		// auto suc = Container::insert(std::make_pair(key,n), lvl);
-		Container::insert(key, lvl, n);
+		auto pr = std::pair<const KeyT, NodeT>(key,n);
+		auto suc = Container::insert(pr, lvl);
+		// Container::insert(key, lvl, n);
 		// std::cout << "after insert " << std::endl;
 
 		// std::cout << "insertion was " << (suc.second ? "success" : "failure") << std::endl;
@@ -692,8 +692,8 @@ public:
 
 		// mKeyMaps[lvl][subd][key].mIsLeaf = false;
 		// std::cout << "before find ------" ;
-		// suc.first->second.isLeaf() = false;
-		Container::find(key,lvl)->second.isLeaf() = false;
+		suc.first->second.isLeaf() = false;
+		// Container::find(key,lvl)->second.isLeaf() = false;
 		// std::cout << "after find" << std::endl;
 
 		// if refining, 
@@ -807,7 +807,9 @@ public:
 
 		leaf_iterator & operator=(const leaf_iterator & lit){
 			leaf_iterator l(lit);
-			std::swap(l, *this);
+			// std::swap(l, *this);
+			std::swap(l.tree, tree);
+			std::swap(l.cit, cit);
 			return *this;
 		}
 
@@ -911,8 +913,9 @@ public:
 		boundary_iterator(Orthtree & t, Args... a)
 		: tree(&t)
 		, args(a...)
-		, it(t.begin(a...)){
-			if (it == t.end(a...)) return;
+		, it(t.begin(a...))
+		, endit(t.end(a...)){
+			if (it == endit) return;
 			if (! t.isBoundary(it->first, a...)){
 				this->operator++();
 			};
@@ -921,8 +924,9 @@ public:
 		boundary_iterator(Orthtree & t, typename Container::iterator iter, Args... a)
 		: tree(&t)
 		, args(a...)
-		, it(iter){
-			if (it == t.end(a...)) return;
+		, it(iter)
+		, endit(t.end(a...)){
+			if (it == endit) return;
 			if (! t.isBoundary(it->first, a...)){
 				this->operator++();
 			};
@@ -931,11 +935,15 @@ public:
 		boundary_iterator(const boundary_iterator & bit)
 		: tree(bit.tree)
 		, args(bit.args)
-		, it(bit.it){};
+		, it(bit.it)
+		, endit(bit.endit){};
 
 		boundary_iterator & operator=(const boundary_iterator & bit){
 			boundary_iterator b(bit);
-			std::swap(b,*this);
+			std::swap(b.tree, tree);
+			std::swap(b.args, args);
+			std::swap(b.it, it);
+			std::swap(b.endit, endit);
 			return *this;
 		}
 
@@ -945,7 +953,7 @@ public:
 		// preincrement 
 		self_type operator++(){
 			it++;
-			while (it != endImpl(args, Inds{})){
+			while (it != endit){
 				if (isBoundaryImpl(it->first, args, Inds{})) return *this;				
 				it++;
 			}
@@ -957,7 +965,7 @@ public:
 		// postincrement 
 		self_type operator++(int blah){
 			it++;
-			while (it != endImpl(args, Inds{})){
+			while (it != endit){
 				if (isBoundaryImpl(it->first, args, Inds{})) return *this;				
 				it++;
 			}
@@ -981,7 +989,7 @@ public:
 		Orthtree * tree;
 		typename ConvertToTuple<VariadicTypedef<Args...>>::type args;
 		typedef std::make_index_sequence<std::tuple_size<decltype(args)>::value> Inds;
-
+		typename Container::iterator endit;
 
 
 
@@ -1048,7 +1056,9 @@ public:
 		interior_iterator(Orthtree & t, Args... a)
 		: tree(t)
 		, args(a...)
-		, it(t.begin(a...)){
+		, it(t.begin(a...))
+		, endit(t.end(a...)){
+			if (it == endit) return;
 			if (t.isBoundary(it->first, a...)){
 				this->operator++();
 			};
@@ -1057,8 +1067,9 @@ public:
 		interior_iterator(Orthtree & t, typename Container::iterator iter, Args... a)
 		: tree(t)
 		, args(a...)
-		, it(iter){
-			if (it == t.end(a...)) return;
+		, it(iter)
+		, endit(t.end(a...)){
+			if (it == endit) return;
 			if (t.isBoundary(it->first, a...)){
 				this->operator++();
 			};
@@ -1068,11 +1079,15 @@ public:
 		interior_iterator(const interior_iterator & iit)
 		: tree(iit.tree)
 		, args(iit.args)
-		, it(iit.it){};
+		, it(iit.it)
+		, endit(iit.endit){};
 
 		interior_iterator & operator=(const interior_iterator & iit){
 			interior_iterator i(iit);
-			std::swap(i,*this);
+			std::swap(i.tree, tree);
+			std::swap(i.args, args);
+			std::swap(i.it, it);
+			std::swap(i.endit, endit);
 			return *this;
 		}
 
@@ -1082,7 +1097,7 @@ public:
 		// preincrement 
 		self_type operator++(){
 			it++;
-			while (it != endImpl(args, Inds{})){
+			while (it != endit){
 				if (!isBoundaryImpl(it->first, args, Inds{})) return *this;				
 				it++;
 			}
@@ -1094,7 +1109,7 @@ public:
 		// postincrement 
 		self_type operator++(int blah){
 			it++;
-			while (it != endImpl(args, Inds{})){
+			while (it != endit){
 				if (!isBoundaryImpl(it->first, args, Inds{})) return *this;				
 				it++;
 			}
@@ -1118,7 +1133,7 @@ public:
 		Orthtree & tree;
 		typename ConvertToTuple<VariadicTypedef<Args...>>::type args;
 		typedef std::make_index_sequence<std::tuple_size<decltype(args)>::value> Inds;
-
+		typename Container::iterator endit;
 
 
 
