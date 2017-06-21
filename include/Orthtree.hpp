@@ -667,10 +667,12 @@ public:
 	// build tree using an indicator function that outputs an int for a given point,
 	// then use a map to a prototype Value to fill the tree
 	template <class PrototypeMap, 
-			  class RefineOracle>
+			  class RefineOracle,
+			  class ContainerInserter>
 	void buildTree(std::size_t lvlstop, 
 				  const PrototypeMap & pm, 
 				  const RefineOracle & ro,
+				  const ContainerInserter & ci,
 				  KeyT key, std::size_t lvl){
 
 		// std:: cout << "build_key: " << key << std::endl;
@@ -679,7 +681,7 @@ public:
 		n.getValue() = pm.getValue(key);
 		// std::cout << "before insert ------" ;
 		auto pr = std::pair<const KeyT, NodeT>(key,n);
-		auto suc = Container::insert(pr, lvl);
+		auto suc = ci.insert(*this,pr);
 		// Container::insert(key, lvl, n);
 		// std::cout << "after insert " << std::endl;
 
@@ -699,7 +701,7 @@ public:
 		// if refining, 
 		for (auto so=0; so<sSize; so++){
 			KeyT kc = KeyDecoder::getChildKey(key, so);
-			buildTree(lvlstop, pm, ro, kc, lvl+1);
+			buildTree(lvlstop, pm, ro, ci, kc, lvl+1);
 		}
 	}
 
@@ -926,6 +928,7 @@ public:
 		, args(a...)
 		, it(iter)
 		, endit(t.end(a...)){
+			// std::cout << "boundary constructor it specified" << std::endl;
 			if (it == endit) return;
 			if (! t.isBoundary(it->first, a...)){
 				this->operator++();
@@ -952,18 +955,23 @@ public:
 
 		// preincrement 
 		self_type operator++(){
+			// std::cout << "boundary ++()" << std::endl;
 			it++;
 			while (it != endit){
 				if (isBoundaryImpl(it->first, args, Inds{})) return *this;				
+				// std::cout << "key[" << it->first << "] (level " << tree->getLevel(it->first) << ") is not boundary" << std::endl;
 				it++;
+				// std::cout << "it++() inside loop" << std::endl;
 			}
 			// have reached the end of all the cells
 			// return tree.boundary_end(args);
+			// std::cout << "reached ++() end" << std::endl;
 			return boundaryEndImpl(args, Inds{});
 		}
 
 		// postincrement 
 		self_type operator++(int blah){
+			// std::cout << "boundary ++(int)" << std::endl;
 			it++;
 			while (it != endit){
 				if (isBoundaryImpl(it->first, args, Inds{})) return *this;				
@@ -971,6 +979,7 @@ public:
 			}
 			// have reached the end of all the cells
 			// return tree.boundary_end(args);
+			// std::cout << "reached ++(int) end" << std::endl;
 			return boundaryEndImpl(args, Inds{});
 		}
 
@@ -1069,7 +1078,10 @@ public:
 		, args(a...)
 		, it(iter)
 		, endit(t.end(a...)){
-			if (it == endit) return;
+			if (it == endit){
+				// std::cout << "endit called" << std::endl;
+				return;
+			}
 			if (t.isBoundary(it->first, a...)){
 				this->operator++();
 			};
@@ -1103,7 +1115,7 @@ public:
 			}
 			// have reached the end of all the cells
 			// return tree.boundary_end(args);
-			return boundaryEndImpl(args, Inds{});
+			return interiorEndImpl(args, Inds{});
 		}
 
 		// postincrement 
@@ -1115,7 +1127,7 @@ public:
 			}
 			// have reached the end of all the cells
 			// return tree.boundary_end(args);
-			return boundaryEndImpl(args, Inds{});
+			return interiorEndImpl(args, Inds{});
 		}
 
 		// pointer
@@ -1149,7 +1161,7 @@ public:
 
 
 		template<typename Tuple, std::size_t... I>
-		decltype(auto) boundaryEndImpl(Tuple && t, std::index_sequence<I...>){
+		decltype(auto) interiorEndImpl(Tuple && t, std::index_sequence<I...>){
 			return tree.interior_end(std::get<I>(t)...);
 		}
 	};
