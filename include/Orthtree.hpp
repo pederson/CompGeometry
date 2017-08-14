@@ -187,7 +187,7 @@ class IntegralKeyDecoder{
 public:
 	static_assert(std::is_integral<KeyT>::value,"Integral type required for default Orthtree decoder");
 
-	const std::size_t 	sSize = Power<rfactor, dim>::value;	// the number of children possible
+	static const std::size_t 	sSize = Power<rfactor, dim>::value;	// the number of children possible
 
 	constexpr std::size_t getIndex(KeyT key) const {return key;};
 
