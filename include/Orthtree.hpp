@@ -187,7 +187,7 @@ class IntegralKeyDecoder{
 public:
 	static_assert(std::is_integral<KeyT>::value,"Integral type required for default Orthtree decoder");
 
-	const std::size_t 	sSize = Power<rfactor, dim>::value;	// the number of children possible
+	static const std::size_t 	sSize = Power<rfactor, dim>::value;	// the number of children possible
 
 	constexpr std::size_t getIndex(KeyT key) const {return key;};
 
@@ -727,22 +727,22 @@ public:
 	// }
 
 
-	// delete all child cells of a given parent key
-	void pruneChildren(KeyT key, std::size_t lvl) {
-		auto pk = Container::find(key,lvl);
-		if (pk->second.isLeaf()){
-			std::cerr << "Orthtree: Cell is already a leaf!" << std::endl;
-			throw -1;
-		}
+	// // delete all child cells of a given parent key
+	// void pruneChildren(KeyT key, std::size_t lvl) {
+	// 	auto pk = Container::find(key,lvl);
+	// 	if (pk->second.isLeaf()){
+	// 		std::cerr << "Orthtree: Cell is already a leaf!" << std::endl;
+	// 		throw -1;
+	// 	}
 
-		for (auto so=0; so<sSize; so++){
-			KeyT kc = KeyDecoder::getChildKey(key, so);
-			auto pc = Container::find(kc,lvl+1);
-			if (! pc->second.isLeaf()) pruneChildren(kc,lvl+1);
-			Container::erase(pc, lvl);
-		}
-		pk->second.isLeaf() = true;
-	}
+	// 	for (auto so=0; so<sSize; so++){
+	// 		KeyT kc = KeyDecoder::getChildKey(key, so);
+	// 		auto pc = Container::find(kc,lvl+1);
+	// 		if (! pc->second.isLeaf()) pruneChildren(kc,lvl+1);
+	// 		Container::erase(pc, lvl);
+	// 	}
+	// 	pk->second.isLeaf() = true;
+	// }
 
 	// void print_summary(std::ostream & os = std::cout) const {
 	// 	// using comptype = std::pair<const std::size_t, Node>;
@@ -1180,145 +1180,11 @@ public:
 
 	// // set an existing key in the level map as a boundary.
 	// // this will add the key to the boundary key map
-	// void setKeyAsBoundary(std::size_t key) {
-	// 	std::size_t lvl = getLevel(key);
-	// 	mBdryMaps[lvl][key] = &mLevelMaps[lvl][key];
-	// }
-
-	// // set an existing key in the level map as a boundary.
-	// // this will add the key to the boundary key map
 	// void changeKeySubdomain(KeyT key, std::size_t lvl, std::size_t subd) {
 	// 	std::size_t old_subd = SubdomainDecoder::decodeSubdomain(key);
 	// 	mKeyMaps[lvl][subd][key] = &mKeyMaps[lvl][old_subd][key];
 	// 	mKeyMaps[lvl][old_subd].remove(key);
-	// }
-
-
-	// // for a given level, if a node is on the boundary 
-	// // it will be turned into a boundary node
-	// template <std::size_t lvl>
-	// void annexLevelBoundary() {
-	// 	auto lmap = mLevelMaps[lvl];
-	// 	std::list<std::size_t> bkeys;
-	// 	auto l = level_begin<lvl>();
-	// 	// build list of cells to be added to level
-	// 	for (auto lit = level_begin<lvl>(); lit!=level_end<lvl>(); lit++){
-	// 		// check to see if each neighbor exists in the level map
-	// 		std::size_t key = lit->first;
-	// 		std::size_t lmax = pow(rfactor, lvl) - 1;//Power<rfactor, lvl>::value - 1;
-	// 		IntPoint<dim> lvlind = getLevelOffset(key);
-
-	// 		// if any of the indices is 0 or lmax, it is a boundary point
-	// 		bool bdryfound = false;
-	// 		for (auto d=0; d<dim; d++){
-	// 			// check min
-	// 			if (lvlind.x[d] == 0){
-	// 				bdryfound = true;
-	// 				bkeys.push_back(key);
-	// 				break;
-	// 			}
-	// 			if (lvlind.x[d] == lmax){
-	// 				bdryfound = true;
-	// 				bkeys.push_back(key);
-	// 				break;
-	// 			}
-	// 		}
-
-	// 		if (bdryfound) continue;
-
-
-	// 		// if the cell is not a boundary cell, check neighbors	
-	// 		std::size_t minKey, maxKey;
-	// 		for (auto d=0; d<dim; d++){
-	// 			// check min
-	// 			minKey = getNeighborKeyMin(lit->first, d);
-	// 			if (lmap.find(minKey) == lmap.end()){
-	// 				bkeys.push_back(key);
-	// 				break;
-	// 			}
-	// 			// check max
-	// 			maxKey = getNeighborKeyMax(lit->first, d);
-	// 			if (lmap.find(maxKey) == lmap.end()){
-	// 				bkeys.push_back(key);
-	// 				break;
-	// 			}
-	// 		}		
-	// 	}
-
-	// 	// now add all the bkeys as boundary nodes
-	// 	// push all keys into the appropriate level map and boundary map
-	// 	// std::cout << "YEEHAW" << std::endl;
-	// 	for (auto lsit = bkeys.begin(); lsit != bkeys.end(); lsit++){
-	// 		// std::cout << "annexing boundary key: " << *lsit << " address: " << &(mLevelMaps[lvl][*lsit]) << " offset: " << getLevelOffset(*lsit) << std::endl;
-	// 		mBdryMaps[lvl].insert({*lsit, &(mLevelMaps[lvl][*lsit])});
-	// 		mLevelMaps[lvl][(*lsit)].mIsLeaf = true;
-	// 	}
-	// }
-
-
-	// template <std::size_t lvl,
-	// 		  class PrototypeMap>
-	// void reassignLevelBoundary(const PrototypeMap & pm){
-	// 	// iterate through the level boundary and replace values
-	// 	for (auto it=boundary_begin<lvl>(); it != boundary_end<lvl>(); it++){
-	// 		it->second.mVal = std::make_shared<ValueT>(pm.getPrototype());
-	// 		// std::cout << "addr: " << &val << " addr_new: " << it->second.mVal.get()->get() << std::endl;
-	// 	}
-	// }
-
-	// template <class PrototypeMap>
-	// void reassignLevelSubdomain(std::size_t subd,
-	// 							std::size_t lvl,
-	// 							const PrototypeMap & pm){
-	// 	// iterate through the level boundary and replace values
-	// 	for (auto it=subdomain_begin(subd,lvl); it != subdomain_end(subd,lvl); it++){
-	// 		it->second.mVal = pm.getPrototype();
-	// 		// std::cout << "addr: " << &val << " addr_new: " << it->second.mVal.get()->get() << std::endl;
-	// 	}
-	// }
-
-	// // build out a level boundary by going through all the points
-	// // and adding boundary cells to the left/right if the neighbors
-	// // on a given side don't exist
-	// template <std::size_t lvl,
-	// 		  class PrototypeMap>
-	// void buildLevelBoundary(const PrototypeMap & pm) {
-	// 	auto lmap = mLevelMaps[lvl];
-	// 	std::list<std::size_t> bkeys;
-	// 	// build list of cells to be added to level
-	// 	for (auto lit = level_begin<lvl>(); lit!=level_end<lvl>(); lit++){
-	// 		// check to see if each neighbor exists in the level map
-	// 		std::size_t minKey, maxKey;
-	// 		for (auto d=0; d<dim; d++){
-	// 			// check min
-	// 			minKey = getNeighborKeyMin(lit->first, d);
-	// 			if (lmap.find(minKey) == lmap.end()) bkeys.push_back(minKey);
-	// 			// check max
-	// 			maxKey = getNeighborKeyMax(lit->first, d);
-	// 			if (lmap.find(maxKey) == lmap.end()) bkeys.push_back(maxKey);
-	// 		}
-	// 	}
-
-	// 	// push all keys into the appropriate level map and boundary map
-		
-	// 	for (auto lsit = bkeys.begin(); lsit != bkeys.end(); lsit++){
-	// 		// std::cout << "building bkey: " << *lsit << " offset: " << getLevelOffset(*lsit) << std::endl;
-	// 		Node n;
-	// 		n.mVal = std::make_shared<ValueT>(pm.getPrototype());
-	// 		n.mIsLeaf = true;
-	// 		mLevelMaps[lvl][*lsit] = std::move(n);
-
-	// 		mBdryMaps[lvl][*lsit] = &(mLevelMaps[lvl][*lsit]);
-	// 	}
-
-	// 	// // print out the pointers
-	// 	// for (auto lsit = mBdryMaps[lvl].begin(); lsit != mBdryMaps[lvl].end(); lsit++){
-	// 	// 	// std::cout << "building bkey: " << *lsit << " offset: " << getLevelOffset(*lsit) << std::endl;
-	// 	// 	std::cout << "bdry key: " << lsit->first << " bdry address: " << (lsit->second) << " isLeaf? " << lsit->second->mIsLeaf << std::endl;
-	// 	// }
-	// }
-
-	
+	// }	
 };
 
 
