@@ -41,6 +41,15 @@ public:
 
 	std::shared_ptr<CSGeometry3D> copy() const {return std::make_shared<CSGeometry3D>(*this);};
 
+	void push_back(std::shared_ptr<Primitive3D> obj, Operation op){
+		m_ldaughter = std::shared_ptr<CSGeometry3D>(new CSGeometry3D(*this));
+		m_rdaughter = std::shared_ptr<CSGeometry3D>(new CSGeometry3D(obj));
+		m_op 		= op;
+		m_isleaf 	= false;
+		m_leaf 		= nullptr;
+		m_flavor 	= -1;
+	}
+
 	void set_flavor(unsigned int flavor) {m_flavor = flavor;};
 
 	unsigned int get_flavor() const {return m_flavor;};
