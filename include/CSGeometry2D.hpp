@@ -17,6 +17,9 @@ public:
 	CSGeometry2D(const Primitive2D & leaf)
 	: m_isleaf(true), m_leaf(leaf.copy()), m_flavor(-1) {};
 
+	// CSGeometry2D(const CSGeometry2D & obj)
+	// : m_isleaf(true), m_leaf(leaf.copy()), m_flavor(-1) {};
+
 	CSGeometry2D(std::shared_ptr<Primitive2D> leaf)
 	: m_isleaf(true), m_leaf(leaf), m_flavor(-1) {};
 
@@ -41,6 +44,15 @@ public:
 	, m_ldaughter(std::shared_ptr<CSGeometry2D>(new CSGeometry2D(left))), m_rdaughter(std::shared_ptr<CSGeometry2D>(new CSGeometry2D(right))), m_op(op) {};
 
 	std::shared_ptr<CSGeometry2D> copy() const {return std::make_shared<CSGeometry2D>(*this);};
+
+	void push_back(std::shared_ptr<Primitive2D> obj, Operation op){
+		m_ldaughter = std::shared_ptr<CSGeometry2D>(new CSGeometry2D(*this));
+		m_rdaughter = std::shared_ptr<CSGeometry2D>(new CSGeometry2D(obj));
+		m_op 		= op;
+		m_isleaf 	= false;
+		m_leaf 		= nullptr;
+		m_flavor 	= -1;
+	}
 
 	void set_flavor(unsigned int flavor) {m_flavor = flavor;};
 
