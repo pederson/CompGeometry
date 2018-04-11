@@ -264,71 +264,17 @@ int main(int argc, char * argv[])
 	cout << "NeighborKeyMax(k, 1): " << qtree.getNeighborKeyMax(k, 1) << endl;
 	cout << endl; 
 
-	// build a quadtree of doubles corresponding to a cirlce centered at 0,0 with radius 1
-	struct CircleThing{
-		double rad = 1.0;
-		Point2 cen = Point2(0,0);
-		Box<2> bounds = {Point2(-1,-1), Point2(1,1)};
-		IntegralKeyDecoder<2,2,int> icd;
 
-		double getValue(Box<2> bx) const{
-			Point2 p = 0.5*(bx.lo + bx.hi);
-			return getValue(p);
-		}
-
-		double getValue(const Point2 & p) const{
-			if (Point2::distsq(p,cen) > rad*rad) return 0.0;
-			return 1.0;
-		}
-
-		bool isUniform(Box<2> bx) const{
-			Point2 tl = bx.lo; tl.x[1] = bx.hi.x[1];
-			Point2 br = bx.hi; br.x[1] = bx.lo.x[1];
-			Point2 c = 0.5*(bx.hi+bx.lo);
-
-			// cout << c << tl << br << endl;
-			// cout << getValue(tl) << "  " << getValue(c) << endl;
-			if (getValue(tl) == getValue(br) &&
-				getValue(br) == getValue(bx.hi) &&
-				getValue(bx.hi) == getValue(bx.lo) &&
-				getValue(bx.lo) == getValue(c)) return true;
-			return false;
-		}
-
-		bool isUniform(int key) const{return isUniform(getBox(key));};
-
-		double getValue(int key) const{return getValue(getBox(key));};
-
-		std::size_t getSubdomain(int key) const{return 0;};
-
-		Box<2> getBox(int key) const{
-			auto lvl = icd.getLevel(key);
-			double rfactor = pow(2.0,lvl);
-			Point<2> boxsize = 1.0/static_cast<double>(rfactor)*(bounds.hi-bounds.lo);
-			IntPoint<2> off = icd.getOffsetWithinLevel(key);
-			Point<2> newlo = bounds.lo+boxsize*off;
-			Box<2> rbox(newlo, newlo+boxsize);
-			return rbox;
-		}
-	};
-
-	CircleThing c1;
-	Box<2> bounds(Point2(-1,-1), Point2(1,1));
-	qtree.buildTree(5, c1, c1, 0, 0);
-	// qtree.print_summary();
+	CSGTree<Primitive2D> ctreep2d(Circle({0,0},0.5));
+	ctreep2d.push_back(Rectangle({0,0},{0.1, 0.5}), DIFFERENCE);
+	ctreep2d.push_back(Circle({0,0}, 0.05), DIFFERENCE);
+	ctreep2d.print_summary();
 
 
-	// iterate over leaves
-	int ctr=0;
-	for (auto it=qtree.leaf_begin(); it!=qtree.leaf_end(); it++){
-	// for (auto it=qtree.begin(); it!=qtree.end(); it++){
-	// for (auto it=qtree.level_begin(5); it!=qtree.level_end(5); it++){
-	// for (auto it=qtree.subdomain_begin(5,0); it!=qtree.subdomain_end(5,0); it++){
-		// cout << ctr << endl;
-		std::cout << "ctr: " << ctr << " key: " << it->first << std::endl;
-		ctr++;
-	}
-	cout << "leaf count: " << ctr << endl;
+
+	CSGTree<Primitive3D> ctreep3d(Sphere({0,0,0},0.5));
+	ctreep3d.push_back(Cylinder({0,0,1},{0,0,1},{1,0,0},0.3,1.0), XOR);
+	ctreep3d.print_summary();
 
 	return 0;
 }

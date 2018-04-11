@@ -1,70 +1,79 @@
-#ifndef _CSGEOMETRY2D_H
-#define _CSGEOMETRY2D_H
+#ifndef _CSGTREE_H
+#define _CSGTREE_H
 
 #include <memory>
 #include "GeomUtils.hpp"
-#include "Primitive2D.hpp"
 #include "Delaunay.hpp"
 
 namespace csg{
 
-class CSGeometry2D 
+template <class PrimitiveType>
+class CSGTree 
 {
 public:
 
-	// CSGeometry2D() {};
+	typedef PrimitiveType				LeafT;
 
-	CSGeometry2D(const Primitive2D & leaf)
-	: m_isleaf(true), m_leaf(leaf.copy()), m_flavor(-1) {};
 
-	// CSGeometry2D(const CSGeometry2D & obj)
-	// : m_isleaf(obj.m_isleaf), m_leaf(obj.m_leaf), m_flavor(-1) {};
+	CSGTree(const LeafT & leaf)
+	: m_isleaf(true), m_leaf(leaf.copy()) {};
 
-	CSGeometry2D(std::shared_ptr<Primitive2D> leaf)
-	: m_isleaf(true), m_leaf(leaf), m_flavor(-1) {};
+	// CSGTree(const CSGTree & obj)
+	// : m_isleaf(obj.m_isleaf), m_leaf(obj.m_leaf) {};
 
-	CSGeometry2D(const CSGeometry2D & left, const CSGeometry2D & right, Operation op)
-	: m_isleaf(false), m_leaf(nullptr), m_flavor(-1)
+	CSGTree(std::shared_ptr<LeafT> leaf)
+	: m_isleaf(true), m_leaf(leaf) {};
+
+	CSGTree(const CSGTree & left, const CSGTree & right, Operation op)
+	: m_isleaf(false), m_leaf(nullptr)
 	, m_ldaughter(left.copy()), m_rdaughter(right.copy()), m_op(op) {};
 
-	CSGeometry2D(std::shared_ptr<CSGeometry2D> left, std::shared_ptr<CSGeometry2D> right, Operation op)
-	: m_isleaf(false), m_leaf(nullptr), m_flavor(-1)
+	CSGTree(std::shared_ptr<CSGTree> left, std::shared_ptr<CSGTree> right, Operation op)
+	: m_isleaf(false), m_leaf(nullptr)
 	, m_ldaughter(left), m_rdaughter(right), m_op(op) {};
 
-	CSGeometry2D(std::shared_ptr<Primitive2D> left, std::shared_ptr<CSGeometry2D> right, Operation op)
-	: m_isleaf(false), m_leaf(nullptr), m_flavor(-1)
-	, m_ldaughter(std::shared_ptr<CSGeometry2D>(new CSGeometry2D(left))), m_rdaughter(right), m_op(op) {};
+	CSGTree(std::shared_ptr<LeafT> left, std::shared_ptr<CSGTree> right, Operation op)
+	: m_isleaf(false), m_leaf(nullptr)
+	, m_ldaughter(std::shared_ptr<CSGTree>(new CSGTree(left))), m_rdaughter(right), m_op(op) {};
 
-	CSGeometry2D(std::shared_ptr<CSGeometry2D> left, std::shared_ptr<Primitive2D> right, Operation op)
-	: m_isleaf(false), m_leaf(nullptr), m_flavor(-1)
-	, m_ldaughter(left), m_rdaughter(std::shared_ptr<CSGeometry2D>(new CSGeometry2D(right))), m_op(op) {};
+	CSGTree(std::shared_ptr<CSGTree> left, std::shared_ptr<LeafT> right, Operation op)
+	: m_isleaf(false), m_leaf(nullptr)
+	, m_ldaughter(left), m_rdaughter(std::shared_ptr<CSGTree>(new CSGTree(right))), m_op(op) {};
 
-	CSGeometry2D(std::shared_ptr<Primitive2D> left, std::shared_ptr<Primitive2D> right, Operation op)
-	: m_isleaf(false), m_leaf(nullptr), m_flavor(-1)
-	, m_ldaughter(std::shared_ptr<CSGeometry2D>(new CSGeometry2D(left))), m_rdaughter(std::shared_ptr<CSGeometry2D>(new CSGeometry2D(right))), m_op(op) {};
+	CSGTree(std::shared_ptr<LeafT> left, std::shared_ptr<LeafT> right, Operation op)
+	: m_isleaf(false), m_leaf(nullptr)
+	, m_ldaughter(std::shared_ptr<CSGTree>(new CSGTree(left))), m_rdaughter(std::shared_ptr<CSGTree>(new CSGTree(right))), m_op(op) {};
 
-	std::shared_ptr<CSGeometry2D> copy() const {return std::make_shared<CSGeometry2D>(*this);};
+	std::shared_ptr<CSGTree> copy() const {return std::make_shared<CSGTree>(*this);};
 
-	void push_back(std::shared_ptr<Primitive2D> obj, Operation op){
+	void push_back(std::shared_ptr<LeafT> obj, Operation op){
 		// auto cp = this->copy();
-		m_ldaughter = this->copy();//std::shared_ptr<CSGeometry2D>(new CSGeometry2D(*this));
-		m_rdaughter = std::make_shared<CSGeometry2D>(obj);
+		m_ldaughter = this->copy();//std::shared_ptr<CSGTree>(new CSGTree(*this));
+		m_rdaughter = std::make_shared<CSGTree>(obj);
 		m_op 		= op;
 		m_isleaf 	= false;
 		m_leaf 		= nullptr;
-		m_flavor 	= -1;
 	}
 
-	void set_flavor(unsigned int flavor) {m_flavor = flavor;};
-
-	unsigned int get_flavor() const {return m_flavor;};
-
-	Box<2> get_bounding_box() const{
-		if (m_isleaf) return m_leaf->get_bounding_box();
-
-		return Box<2>::bounding_box(m_ldaughter->get_bounding_box(), m_rdaughter->get_bounding_box());
+	void push_back(const LeafT & leaf, Operation op){
+		// auto cp = this->copy();
+		m_ldaughter = this->copy();//std::shared_ptr<CSGTree>(new CSGTree(*this));
+		m_rdaughter = std::make_shared<CSGTree>(leaf);
+		m_op 		= op;
+		m_isleaf 	= false;
+		m_leaf 		= nullptr;
 	}
 
+	// returns a bounding box
+	// - only compiles if the LeafT has a function "get_bounding_box()"
+	template <typename BoxType>
+	BoxType get_bounding_box() const{
+		if (m_isleaf) return m_leaf->get_bounding_box();\
+		return BoxType::bounding_box(m_ldaughter->get_bounding_box(), m_rdaughter->get_bounding_box());
+	}
+
+	// returns a Hull that outlines the object (2D Feature ONLY)
+	// - only compiles if the LeafT has a function "get_outline(int numpoints)"
 	std::vector<Hull<2>> get_outline(unsigned int npts) const {
 		if (m_isleaf) return m_leaf->get_outline(npts);
 
@@ -141,7 +150,8 @@ public:
 	}
 
 
-	// get only the points that define an outline of the geometry
+	// returns points that define an outline of the geometry (2D Feature ONLY)
+	// - only compiles if the LeafT has a function "get_outline(int numpoints)"
 	std::vector<Point<2>> get_outline_points(unsigned int npts) const {
 		std::vector<Hull<2>> hv = get_outline(npts);
 		std::vector<csg::Point<2>> pts;
@@ -150,7 +160,8 @@ public:
 	}
 
 
-	// get a triangulation of the object
+	// returns a triangulation of the geometry (2D Feature ONLY)
+	// - only compiles if the LeafT has a function "get_outline(int numpoints)"
 	Triangulation<2> get_triangulation(unsigned int npts) const {
 		// first get set of points that define the outline
 		Triangulation<2> tout;
@@ -189,17 +200,12 @@ public:
 		return tout;
 	}
 
-	void translate(const Point<2> & pt){
-		if (m_isleaf) return m_leaf->translate(pt);
 
-		m_ldaughter->translate(pt);
-		m_rdaughter->translate(pt);
-	}
 
-	// void rotate(const Point<2> & anchor, double degrees) = 0;
-	// virtual void rescale(const Point<2> & scalefactor) = 0;
-
-	bool contains_point(const Point<2> & pt) const{
+	// detects if the CSGTree contains the given point
+	// - only compiles if the LeafT has a function "contains_point(Point)"
+	template <typename PointType>
+	bool contains_point(const PointType & pt) const{
 		if (m_isleaf) return m_leaf->contains_point(pt);
 
 		bool lc = m_ldaughter->contains_point(pt);
@@ -221,7 +227,10 @@ public:
 		}
 	}
 
-	bool contains_box(const Box<2> & bx) const{
+	// detects if the CSGTree contains the given box
+	// - only compiles if the LeafT has a function "contains_box(Box)"
+	template <typename BoxType>
+	bool contains_box(const BoxType & bx) const{
 		if (m_isleaf) return m_leaf->contains_box(bx);
 
 		bool lc = m_ldaughter->contains_box(bx);
@@ -248,7 +257,10 @@ public:
 		}
 	}
 
-	bool collides_box(const Box<2> & bx) const{
+	// detects collisions between bounding boxes
+	// - only compiles if the LeafT has a function "collides_box(Box)"
+	template <typename BoxType>
+	bool collides_box(const BoxType & bx) const{
 		if (m_isleaf) return m_leaf->collides_box(bx);
 
 		bool lc = m_ldaughter->collides_box(bx);
@@ -274,6 +286,8 @@ public:
 		}
 	}
 
+	// prints an XML-style summary of the tree to an output stream
+	// - only compiles if the LeafT has a function "print_summary(ostream, num_tabs)"
 	void print_summary(std::ostream & os = std::cout, unsigned int level=0) const{
 		if (m_isleaf){
 			m_leaf->print_summary(os,level);
@@ -281,7 +295,7 @@ public:
 		}
 
 		for (auto i=0; i<level; i++) os << "\t" ;
-		os << "<CSGeometry2D> " << std::endl;
+		os << "<CSGTree> " << std::endl;
 		for (auto i=0; i<level; i++) os << "\t" ;
 
 		os << "<Operation>" ;
@@ -307,16 +321,15 @@ public:
 		os << "<Right> " << std::endl ; m_rdaughter->print_summary(os, level+1); os <<"</Right>" << std::endl;
 
 		for (auto i=0; i<level; i++) os << "\t" ;
-		os << "</CSGeometry2D> " << std::endl;
+		os << "</CSGTree> " << std::endl;
 	}
 
 private:
 	bool 							m_isleaf;
-	std::shared_ptr<Primitive2D> 	m_leaf;
-	unsigned int 					m_flavor;
+	std::shared_ptr<LeafT> 			m_leaf;
 
 
-	std::shared_ptr<CSGeometry2D> 	m_ldaughter, m_rdaughter;
+	std::shared_ptr<CSGTree> 		m_ldaughter, m_rdaughter;
 	Operation 						m_op;
 };
 

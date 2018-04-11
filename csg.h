@@ -11,5 +11,6 @@
 #include "include/Orthtree.hpp"
 #include "include/Quadtree.hpp"
 #include "include/Octree.hpp"
+#include "include/CSGTree.hpp"
 
 #endif
