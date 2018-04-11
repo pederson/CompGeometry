@@ -6,17 +6,50 @@
 
 namespace csg{
 
+
+template <class T, std::size_t dim>
+struct BoxCollision {};
+
+template <class T, std::size_t dim>
+struct BoxContainment {};
+
+template <class BoxType, class PointType>
+class PrimitiveGeometry{
+public:
+	typedef PrimitiveGeometry 			BaseT;
+	typedef BoxType						BoxT;
+	typedef PointType					PointT;
+
+	// copy to shared_ptr of base type
+	virtual std::shared_ptr<BaseT> copy() const = 0;
+
+	// get bounding box
+	virtual BoxT get_bounding_box() const = 0;
+
+	// // get outline
+	// virtual std::vector<Hull<2>> get_outline(unsigned int npts) const = 0;
+
+	// contains point
+	virtual bool contains_point(const PointT & pt) const = 0;
+
+	// contains box
+	virtual bool contains_box(const BoxT & bx) const = 0;
+
+	// collides with box
+	virtual bool collides_box(const BoxT & bx) const = 0;
+
+	virtual void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const = 0;
+};
+
 class Primitive2D 
 {
 public:
+	typedef Primitive2D 		BaseType;
 
 	virtual std::shared_ptr<Primitive2D> copy() const = 0;
 
 	virtual Box<2> get_bounding_box() const = 0;
 	virtual std::vector<Hull<2>> get_outline(unsigned int npts) const = 0;
-	virtual void translate(const Point<2> & pt) = 0;
-	// virtual void rotate(const Point<2> & anchor, double degrees) = 0;
-	// virtual void rescale(const Point<2> & scalefactor) = 0;
 
 	virtual bool contains_point(const Point<2> & pt) const = 0;
 
@@ -24,13 +57,13 @@ public:
 		return contains_point(bx.lo) && contains_point(bx.hi) &&
 			   contains_point(Point<2>(bx.lo.x[0], bx.hi.x[1])) &&
 			   contains_point(Point<2>(bx.hi.x[0], bx.lo.x[1]));
-	}
+	};
 
 	bool collides_box(const Box<2> & bx) const{
 		return contains_point(bx.lo) || contains_point(bx.hi) ||
 			   contains_point(Point<2>(bx.lo.x[0], bx.hi.x[1])) ||
 			   contains_point(Point<2>(bx.hi.x[0], bx.lo.x[1]));
-	}
+	};
 
 	virtual void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const = 0;
 };

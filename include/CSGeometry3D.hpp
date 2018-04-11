@@ -60,12 +60,12 @@ public:
 		return Box<3>::bounding_box(m_ldaughter->get_bounding_box(), m_rdaughter->get_bounding_box());
 	}
 
-	void translate(const Point<3> & pt){
-		if (m_isleaf) return m_leaf->translate(pt);
+	// void translate(const Point<3> & pt){
+	// 	if (m_isleaf) return m_leaf->translate(pt);
 
-		m_ldaughter->translate(pt);
-		m_rdaughter->translate(pt);
-	}
+	// 	m_ldaughter->translate(pt);
+	// 	m_rdaughter->translate(pt);
+	// }
 
 	// void rotate(const Point<3> & anchor, double degrees) = 0;
 	// virtual void rescale(const Point<3> & scalefactor) = 0;

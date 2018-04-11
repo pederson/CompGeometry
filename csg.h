@@ -12,5 +12,6 @@
 #include "include/Quadtree.hpp"
 #include "include/Octree.hpp"
 #include "include/CSGTree.hpp"
+#include "include/LinearTransformation.hpp"
 
 #endif

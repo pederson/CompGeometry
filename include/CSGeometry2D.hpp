@@ -189,12 +189,12 @@ public:
 		return tout;
 	}
 
-	void translate(const Point<2> & pt){
-		if (m_isleaf) return m_leaf->translate(pt);
+	// void translate(const Point<2> & pt){
+	// 	if (m_isleaf) return m_leaf->translate(pt);
 
-		m_ldaughter->translate(pt);
-		m_rdaughter->translate(pt);
-	}
+	// 	m_ldaughter->translate(pt);
+	// 	m_rdaughter->translate(pt);
+	// }
 
 	// void rotate(const Point<2> & anchor, double degrees) = 0;
 	// virtual void rescale(const Point<2> & scalefactor) = 0;

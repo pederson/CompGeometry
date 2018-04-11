@@ -68,7 +68,7 @@ public:
 	// - only compiles if the LeafT has a function "get_bounding_box()"
 	template <typename BoxType>
 	BoxType get_bounding_box() const{
-		if (m_isleaf) return m_leaf->get_bounding_box();\
+		if (m_isleaf) return m_leaf->get_bounding_box();
 		return BoxType::bounding_box(m_ldaughter->get_bounding_box(), m_rdaughter->get_bounding_box());
 	}
 

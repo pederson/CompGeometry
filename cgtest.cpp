@@ -276,5 +276,9 @@ int main(int argc, char * argv[])
 	ctreep3d.push_back(Cylinder({0,0,1},{0,0,1},{1,0,0},0.3,1.0), XOR);
 	ctreep3d.print_summary();
 
+
+	LinearTransformation<Primitive2D, Circle> ellip = shear_transformation(Circle({0,0},1),Point<2>(0.5,0));
+	ellip.print_summary();
+
 	return 0;
 }
