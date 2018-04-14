@@ -8,7 +8,7 @@ namespace csg{
 
 
 
-
+// shear map implemented as M = I + S, where I is diagonal and S is off-diagonals
 struct ShearMap2D{
 public:
 	typedef Point<2> 					PointT;
@@ -19,7 +19,7 @@ public:
 
 	PointT inverse_map(const PointT & p) const{
 		double det = (1-mL.x[0]*mL.x[1]);
-		return PointT(p.x[0]-p.x[1]*mL.x[0], p.x[1]-p.x[0]*mL.x[1]);
+		return 1.0/det*PointT(p.x[0]-p.x[1]*mL.x[0], p.x[1]-p.x[0]*mL.x[1]);
 	};
 
 	PointT forward_map(const PointT & p) const{
@@ -47,7 +47,7 @@ public:
 
 	PointT inverse_map(const PointT & p) const{
 		double det = (1-mL.x[0]*mL.x[1]*mL.x[2]);
-		return PointT(p.x[0]-p.x[1]*mL.x[0], p.x[1]-p.x[0]*mL.x[1], 0);
+		return 1.0/det*PointT(p.x[0]-p.x[1]*mL.x[0], p.x[1]-p.x[0]*mL.x[1], 0);
 	};
 
 	PointT forward_map(const PointT & p) const{
@@ -60,6 +60,85 @@ public:
 	}
 };
 
+
+
+
+
+
+
+// Dilatation map implemented as M = I + D, where I is identity and D is diagonal
+struct DilatationMap2D{
+public:
+	typedef Point<2> 					PointT;
+	typedef Box<2>						BoxT;
+	PointT 								mL;
+
+	DilatationMap2D(const PointT & p) : mL(p) {};
+
+	PointT inverse_map(const PointT & p) const{
+		double det = (1.0+mL.x[0])*(1.0+mL.x[1]);
+		return 1.0/det*PointT(p.x[0]*(1.0+mL.x[1]), p.x[1]*(1.0+mL.x[0]));
+	};
+
+	PointT forward_map(const PointT & p) const{
+		return PointT(p.x[0]*(1.0+mL.x[0]), p.x[1]*(1.0+mL.x[1]));
+	};
+
+	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<DilatationMapping>" << mL << "</DilatationMapping>" << std::endl;
+	}
+};
+
+
+
+// rotation map implemented as M = D+A, where A is antisymmetric and D is diagonal matrix
+struct RotationMap2D{
+public:
+	typedef Point<2> 					PointT;
+	typedef Box<2>						BoxT;
+	double 		mTheta;
+
+	RotationMap2D(double theta) : mTheta(theta) {};
+
+	PointT inverse_map(const PointT & p) const{
+		// double det = (1-mL.x[0]*mL.x[1]);
+		return PointT(cos(mTheta)*p.x[0]+sin(mTheta)*p.x[1], cos(mTheta)*p.x[1]-sin(mTheta)*p.x[0]);
+	};
+
+	PointT forward_map(const PointT & p) const{
+		return PointT(cos(mTheta)*p.x[0]-sin(mTheta)*p.x[1], cos(mTheta)*p.x[1]+sin(mTheta)*p.x[0]);
+	};
+
+	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<RoataionMapping>" << mTheta << "</RoataionMapping>" << std::endl;
+	}
+};
+
+
+// Translation map implemented as M = I  and t = T, where I is identity and T is a vector
+struct TranslationMap2D{
+public:
+	typedef Point<2> 					PointT;
+	typedef Box<2>						BoxT;
+	PointT 								mL;
+
+	TranslationMap2D(const PointT & p) : mL(p) {};
+
+	PointT inverse_map(const PointT & p) const{
+		return PointT(p.x[0] - mL.x[0], p.x[1] - mL.x[1]);
+	};
+
+	PointT forward_map(const PointT & p) const{
+		return PointT(p.x[0] + mL.x[0], p.x[1] + mL.x[1]);
+	};
+
+	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<TranslationMapping>" << mL << "</TranslationMapping>" << std::endl;
+	}
+};
 
 
 
@@ -150,5 +229,27 @@ LinearTransformation<Primitive3D, ShearMap3D> shear_transformation(const Derived
 
 
 
+
+
+template <typename DerivedType>
+LinearTransformation<Primitive2D, DilatationMap2D> dilatation_transformation(const DerivedType & c, const Point<2> & p){
+	return LinearTransformation<Primitive2D, DilatationMap2D>(c.copy(), DilatationMap2D(p));
+}
+
+
+
+
+
+template <typename DerivedType>
+LinearTransformation<Primitive2D, RotationMap2D> rotation_transformation(const DerivedType & c, double theta){
+	return LinearTransformation<Primitive2D, RotationMap2D>(c.copy(), RotationMap2D(theta));
+}
+
+
+
+template <typename DerivedType>
+LinearTransformation<Primitive2D, TranslationMap2D> translation_transformation(const DerivedType & c, const Point<2> & p){
+	return LinearTransformation<Primitive2D, TranslationMap2D>(c.copy(), TranslationMap2D(p));
+}
 }
 #endif
