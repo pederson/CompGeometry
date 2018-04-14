@@ -3,6 +3,7 @@
 
 #include "include/Point.hpp"
 #include "include/GeomUtils.hpp"
+#include "include/PrimitiveTypes.hpp"
 #include "include/Primitive2D.hpp"
 #include "include/Primitive3D.hpp"
 #include "include/CSGeometry2D.hpp"

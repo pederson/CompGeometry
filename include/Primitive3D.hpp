@@ -4,48 +4,9 @@
 #include "GeomUtils.hpp"
 #include "Primitive2D.hpp"
 #include "CSGeometry2D.hpp"
+#include "PrimitiveTypes.hpp"
 
 namespace csg{
-
-class Primitive3D
-{
-public:
-
-	virtual std::shared_ptr<Primitive3D> copy() const = 0;
-
-	virtual Box<3> get_bounding_box() const = 0;
-	virtual void translate(const Point<3> & pt) = 0;
-	// virtual void rotate(const Point<3> & axis, double degrees) = 0;
-	// virtual void rescale(const Point<2> & scalefactor) = 0;
-
-	virtual bool contains_point(const Point<3> & pt) const = 0;
-
-	bool contains_box(const Box<3> & bx) const{
-		return contains_point(Point<3>(bx.lo.x[0], bx.lo.x[1], bx.hi.x[2])) &&
-			   contains_point(Point<3>(bx.hi.x[0], bx.hi.x[1], bx.hi.x[2])) &&
-			   contains_point(Point<3>(bx.lo.x[0], bx.hi.x[1], bx.hi.x[2])) &&
-			   contains_point(Point<3>(bx.hi.x[0], bx.lo.x[1], bx.hi.x[2])) && 
-
-			   contains_point(Point<3>(bx.lo.x[0], bx.lo.x[1], bx.lo.x[2])) &&
-			   contains_point(Point<3>(bx.hi.x[0], bx.hi.x[1], bx.lo.x[2])) &&
-			   contains_point(Point<3>(bx.lo.x[0], bx.hi.x[1], bx.lo.x[2])) &&
-			   contains_point(Point<3>(bx.hi.x[0], bx.lo.x[1], bx.lo.x[2])) ;
-	}
-
-	bool collides_box(const Box<3> & bx) const{
-		return contains_point(Point<3>(bx.lo.x[0], bx.lo.x[1], bx.hi.x[2])) ||
-			   contains_point(Point<3>(bx.hi.x[0], bx.hi.x[1], bx.hi.x[2])) ||
-			   contains_point(Point<3>(bx.lo.x[0], bx.hi.x[1], bx.hi.x[2])) ||
-			   contains_point(Point<3>(bx.hi.x[0], bx.lo.x[1], bx.hi.x[2])) || 
-
-			   contains_point(Point<3>(bx.lo.x[0], bx.lo.x[1], bx.lo.x[2])) ||
-			   contains_point(Point<3>(bx.hi.x[0], bx.hi.x[1], bx.lo.x[2])) ||
-			   contains_point(Point<3>(bx.lo.x[0], bx.hi.x[1], bx.lo.x[2])) ||
-			   contains_point(Point<3>(bx.hi.x[0], bx.lo.x[1], bx.lo.x[2])) ;
-	}
-
-	virtual void print_summary(std::ostream & os, unsigned int ntabs=0) const = 0;
-};
 
 
 class Sphere : public Primitive3D

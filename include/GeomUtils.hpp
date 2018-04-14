@@ -81,6 +81,12 @@ std::ostream & operator<<(std::ostream & os, const Box<dim> & bx){
 	return os;
 }
 
+
+template <typename BoxType>
+BoxType bounding_box(const BoxType & bx1, const BoxType & bx2){
+	return BoxType::bounding_box(bx1, bx2);
+}
+
 /*
 namespace Box{
 

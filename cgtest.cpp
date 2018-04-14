@@ -277,8 +277,24 @@ int main(int argc, char * argv[])
 	ctreep3d.print_summary();
 
 
-	LinearTransformation<Primitive2D, Circle> ellip = shear_transformation(Circle({0,0},1),Point<2>(0.5,0));
+
+	// LinearTransformation<Primitive2D, ShearMap> ellip = shear_transformation(Circle({0,0},1),Point<2>(0.5,0));
+	// auto ellip = shear_transformation(Circle({0,0}, 1), Point<2>(0.5, 0));
+	// ellip.print_summary();
+	// Circle clt({0,0}, 1);
+	// LinearTransformation<Primitive2D, ShearMap> ellip(clt.copy(), ShearMap(Point<2>(0.5, 0)));
+	// ellip.print_summary();
+
+
+	// this is the ideal usage
+	auto ellip = shear_transformation(Circle({0,0}, 1), Point<2>(0.5, 0));
 	ellip.print_summary();
+
+	auto cgshear2 = shear_transformation(ctreep2d, Point<2>(0.5, 0));
+	cgshear2.print_summary();
+
+	auto cgshear3 = shear_transformation(ctreep3d, Point<3>(0.5, 0, 0));
+	cgshear3.print_summary();
 
 	return 0;
 }
