@@ -8,134 +8,26 @@ namespace csg{
 
 
 
-// // shear map implemented as M = I + S, where I is diagonal and S is off-diagonals
-// struct ShearMap2D{
-// public:
-// 	typedef Point<2> 					PointT;
-// 	typedef Box<2>						BoxT;
-// 	PointT 		mL;
 
-// 	ShearMap2D(const PointT & p) : mL(p) {};
-
-// 	PointT inverse_map(const PointT & p) const{
-// 		double det = (1-mL.x[0]*mL.x[1]);
-// 		return 1.0/det*PointT(p.x[0]-p.x[1]*mL.x[0], p.x[1]-p.x[0]*mL.x[1]);
-// 	};
-
-// 	PointT forward_map(const PointT & p) const{
-// 		return PointT(p.x[0]+mL.x[0]*p.x[1], p.x[1] + mL.x[1]*p.x[0]);
-// 	};
-
-// 	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
-// 		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
-// 		os << "<ShearMapping>" << mL << "</ShearMapping>" << std::endl;
-// 	}
-// };
-
-
-
-// struct ShearMap3D{
-// public:
-// 	typedef Point<3> 					PointT;
-// 	typedef Box<3>						BoxT;
-// 	PointT 		mL;
-
-// 	ShearMap3D(const PointT & p) : mL(p) {
-// 		std::cout << "3D Shear Map not working... fix me!" << std::endl;
-// 		throw -1;
-// 	};
-
-// 	PointT inverse_map(const PointT & p) const{
-// 		double det = (1-mL.x[0]*mL.x[1]*mL.x[2]);
-// 		return 1.0/det*PointT(p.x[0]-p.x[1]*mL.x[0], p.x[1]-p.x[0]*mL.x[1], 0);
-// 	};
-
-// 	PointT forward_map(const PointT & p) const{
-// 		return PointT(p.x[0]+mL.x[0]*p.x[1], p.x[1] + mL.x[1]*p.x[0], 0);
-// 	};
-
-// 	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
-// 		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
-// 		os << "<ShearMapping>" << mL << "</ShearMapping>" << std::endl;
-// 	}
-// };
-
-
-
-
-
-
-
-// // Dilatation map implemented as M = I + D, where I is identity and D is diagonal
-// struct DilatationMap2D{
-// public:
-// 	typedef Point<2> 					PointT;
-// 	typedef Box<2>						BoxT;
-// 	PointT 								mL;
-
-// 	DilatationMap2D(const PointT & p) : mL(p) {};
-
-// 	PointT inverse_map(const PointT & p) const{
-// 		double det = (1.0+mL.x[0])*(1.0+mL.x[1]);
-// 		return 1.0/det*PointT(p.x[0]*(1.0+mL.x[1]), p.x[1]*(1.0+mL.x[0]));
-// 	};
-
-// 	PointT forward_map(const PointT & p) const{
-// 		return PointT(p.x[0]*(1.0+mL.x[0]), p.x[1]*(1.0+mL.x[1]));
-// 	};
-
-// 	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
-// 		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
-// 		os << "<DilatationMapping>" << mL << "</DilatationMapping>" << std::endl;
-// 	}
-// };
-
-
-
-// // rotation map implemented as M = D+A, where A is antisymmetric and D is diagonal matrix
-// struct RotationMap2D{
-// public:
-// 	typedef Point<2> 					PointT;
-// 	typedef Box<2>						BoxT;
-// 	double 		mTheta;
-
-// 	RotationMap2D(double theta) : mTheta(theta) {};
-
-// 	PointT inverse_map(const PointT & p) const{
-// 		// double det = (1-mL.x[0]*mL.x[1]);
-// 		return PointT(cos(mTheta)*p.x[0]+sin(mTheta)*p.x[1], cos(mTheta)*p.x[1]-sin(mTheta)*p.x[0]);
-// 	};
-
-// 	PointT forward_map(const PointT & p) const{
-// 		return PointT(cos(mTheta)*p.x[0]-sin(mTheta)*p.x[1], cos(mTheta)*p.x[1]+sin(mTheta)*p.x[0]);
-// 	};
-
-// 	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
-// 		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
-// 		os << "<RoataionMapping>" << mTheta << "</RoataionMapping>" << std::endl;
-// 	}
-// };
-
-
-// Translation symmetry map implemented as M = I  and t = T, where I is identity and T is a vector
-struct TranslationSymmetryMap2D{
+// Discrete Translation symmetry map 
+struct DiscreteTranslationSymmetryMap2D{
 public:
 	typedef Point<2> 					PointT;
 	typedef Box<2>						BoxT;
 	PointT 								mCen, mSvec;
 
-	TranslationSymmetryMap2D(const PointT & t, const PointT & c) : mSvec(t), mCen(c) {};
+	DiscreteTranslationSymmetryMap2D(const PointT & t, const PointT & c) : mSvec(t), mCen(c) {};
 
 	PointT inverse_map(const PointT & p) const{
 		PointT v = p-mCen;
 		double amagn = mSvec.norm();
 		double proj = PointT::dot(v, mSvec);
-		double vmagn = v.norm();
+		// double vmagn = v.norm();
 		while (fabs(proj/(amagn*amagn)) > 0.5){
 			// if (fabs(proj/amagn) > 1.0) std::cout << "proj/a: " << proj/amagn << std::endl;
 			v = v - static_cast<double>(sgn(proj))*mSvec;
 			proj = PointT::dot(v, mSvec);
-			vmagn = v.norm();
+			// vmagn = v.norm();
 		}
 		// std::cout << "end" << std::endl;
 		return v;
@@ -147,9 +39,103 @@ public:
 
 	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
 		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
-		os << "<TranslationSymmetryMapping>" << mSvec << ", " << mCen << "</TranslationSymmetryMapping>" << std::endl;
+		os << "<DiscreteTranslationSymmetryMapping>" << mSvec << ", " << mCen << "</DiscreteTranslationSymmetryMapping>" << std::endl;
 	}
 };
+
+
+// Continuous Translation symmetry map 
+struct ContinuousTranslationSymmetryMap2D{
+public:
+	typedef Point<2> 					PointT;
+	typedef Box<2>						BoxT;
+	PointT 								mCen, mSvec;
+
+	ContinuousTranslationSymmetryMap2D(const PointT & t, const PointT & c) : mSvec(t), mCen(c) {};
+
+	PointT inverse_map(const PointT & p) const{
+		PointT v = p-mCen;
+		double amagn = mSvec.norm();
+		double proj = PointT::dot(v, mSvec);
+		v = v - mSvec/amagn*proj/amagn;
+		return v;
+	};
+
+	PointT forward_map(const PointT & p) const{
+		return p;
+	};
+
+	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<ContinuousTranslationSymmetryMapping>" << mSvec << ", " << mCen << "</ContinuousTranslationSymmetryMapping>" << std::endl;
+	}
+};
+
+
+
+// Discrete Rotation symmetry map 
+struct DiscreteRotationSymmetryMap2D{
+public:
+	typedef Point<2> 					PointT;
+	typedef Box<2>						BoxT;
+	PointT 								mCen, mRpt;
+	std::size_t 						mN; // number of copies per 360 degrees
+
+	DiscreteRotationSymmetryMap2D(const PointT & R, const PointT & c, std::size_t N) : mN(N), mCen(c), mRpt(R) {};
+
+	PointT inverse_map(const PointT & p) const{
+		double angle = 2.0*pi/static_cast<double>(mN);
+		PointT pp = p - mRpt;
+		PointT v = mCen - mRpt;
+		double proj = cross(pp, v);
+		while (PointT::dot(pp, v) < 0 || fabs(asin(proj/(v.norm()*pp.norm()))) > angle/2.0){
+			// rotate
+			pp = Point<2>(cos(angle)*pp.x[0] + sin(angle)*pp.x[1], -sin(angle)*pp.x[0] + cos(angle)*pp.x[1]);
+			proj = cross(pp, v);
+		}
+		return pp + mRpt;
+	};
+
+	PointT forward_map(const PointT & p) const{
+		return p;
+	};
+
+	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<DiscreteRotationSymmetryMapping>" << mN << ", " << mRpt << ", " << mCen << "</DiscreteRotationSymmetryMapping>" << std::endl;
+	}
+};
+
+
+// Discrete Translation symmetry map 
+struct ContinuousRotationSymmetryMap2D{
+public:
+	typedef Point<2> 					PointT;
+	typedef Box<2>						BoxT;
+	PointT 								mCen, mRpt;
+	// std::size_t 						mN; // number of copies per 360 degrees
+
+	ContinuousRotationSymmetryMap2D(const PointT & R, const PointT & c) : mCen(c), mRpt(R) {};
+
+	PointT inverse_map(const PointT & p) const{
+		PointT pp = p - mRpt;
+		PointT v = mCen - mRpt;
+		if (PointT::dot(pp, v) < 0) pp = Point<2>(cos(pi)*pp.x[0] + sin(pi)*pp.x[1], -sin(pi)*pp.x[0] + cos(pi)*pp.x[1]);
+		double proj = asin(cross(pp, v)/(v.norm()*pp.norm()));
+		pp = Point<2>(cos(proj)*pp.x[0] - sin(proj)*pp.x[1], sin(proj)*pp.x[0] + cos(proj)*pp.x[1]);
+		return pp + mRpt;
+	};
+
+	PointT forward_map(const PointT & p) const{
+		return p;
+	};
+
+	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<ContinuousRotationSymmetryMapping>" << mRpt << ", " << mCen << "</ContinuousRotationSymmetryMapping>" << std::endl;
+	}
+};
+
 
 
 
@@ -180,14 +166,14 @@ public:
 	}
 
 	BoxT get_bounding_box() const {
-		// BoxT bb = mPrim->get_bounding_box();
-		// return BoxT(mMap.forward_map(bb.lo), mMap.forward_map(bb.hi));
-		return BoxT(PointT(-std::numeric_limits<double>::infinity(),
-						   -std::numeric_limits<double>::infinity(), 
-						   -std::numeric_limits<double>::infinity()), 
-					PointT(std::numeric_limits<double>::infinity(), 
-						   std::numeric_limits<double>::infinity(), 
-						   std::numeric_limits<double>::infinity()));
+		return mPrim->get_bounding_box();
+
+		// return BoxT(PointT(-std::numeric_limits<double>::infinity(),
+		// 				   -std::numeric_limits<double>::infinity(), 
+		// 				   -std::numeric_limits<double>::infinity()), 
+		// 			PointT(std::numeric_limits<double>::infinity(), 
+		// 				   std::numeric_limits<double>::infinity(), 
+		// 				   std::numeric_limits<double>::infinity()));
 	}
 
 	// this is only for 2D
@@ -224,41 +210,38 @@ public:
 
 
 template <typename DerivedType>
-SymmetryTransformation<Primitive2D, TranslationSymmetryMap2D> translation_symmetry(const DerivedType & c, const Point<2> & svec){
+SymmetryTransformation<Primitive2D, DiscreteTranslationSymmetryMap2D> discrete_translation_symmetry(const DerivedType & c, const Point<2> & svec){
 	Box<2> bx = c.get_bounding_box();
 	Point<2> center = 0.5*(bx.hi+bx.lo);
-	return SymmetryTransformation<Primitive2D, TranslationSymmetryMap2D>(c.copy(), TranslationSymmetryMap2D(svec, center));
+	return SymmetryTransformation<Primitive2D, DiscreteTranslationSymmetryMap2D>(c.copy(), DiscreteTranslationSymmetryMap2D(svec, center));
 }
 
-// template <typename DerivedType>
-// SymmetryTransformation<Primitive3D, ShearMap3D> shear_transformation(const DerivedType & c, const Point<3> & p){
-// 	return SymmetryTransformation<Primitive3D, ShearMap3D>(c.copy(), ShearMap3D(p));
-// }
+template <typename DerivedType>
+SymmetryTransformation<Primitive2D, ContinuousTranslationSymmetryMap2D> continuous_translation_symmetry(const DerivedType & c, const Point<2> & svec){
+	Box<2> bx = c.get_bounding_box();
+	Point<2> center = 0.5*(bx.hi+bx.lo);
+	return SymmetryTransformation<Primitive2D, ContinuousTranslationSymmetryMap2D>(c.copy(), ContinuousTranslationSymmetryMap2D(svec, center));
+}
 
 
 
 
 
-// template <typename DerivedType>
-// SymmetryTransformation<Primitive2D, DilatationMap2D> dilatation_transformation(const DerivedType & c, const Point<2> & p){
-// 	return SymmetryTransformation<Primitive2D, DilatationMap2D>(c.copy(), DilatationMap2D(p));
-// }
+template <typename DerivedType>
+SymmetryTransformation<Primitive2D, DiscreteRotationSymmetryMap2D> discrete_rotation_symmetry(const DerivedType & c, const Point<2> & svec, std::size_t N){
+	Box<2> bx = c.get_bounding_box();
+	Point<2> center = 0.5*(bx.hi+bx.lo);
+	return SymmetryTransformation<Primitive2D, DiscreteRotationSymmetryMap2D>(c.copy(), DiscreteRotationSymmetryMap2D(svec, center, N));
+}
 
 
+template <typename DerivedType>
+SymmetryTransformation<Primitive2D, ContinuousRotationSymmetryMap2D> continuous_rotation_symmetry(const DerivedType & c, const Point<2> & svec){
+	Box<2> bx = c.get_bounding_box();
+	Point<2> center = 0.5*(bx.hi+bx.lo);
+	return SymmetryTransformation<Primitive2D, ContinuousRotationSymmetryMap2D>(c.copy(), ContinuousRotationSymmetryMap2D(svec, center));
+}
 
-
-
-// template <typename DerivedType>
-// SymmetryTransformation<Primitive2D, RotationMap2D> rotation_transformation(const DerivedType & c, double theta){
-// 	return SymmetryTransformation<Primitive2D, RotationMap2D>(c.copy(), RotationMap2D(theta));
-// }
-
-
-
-// template <typename DerivedType>
-// SymmetryTransformation<Primitive2D, TranslationMap2D> translation_transformation(const DerivedType & c, const Point<2> & p){
-// 	return SymmetryTransformation<Primitive2D, TranslationMap2D>(c.copy(), TranslationMap2D(p));
-// }
 
 } // end namespace csg
 #endif

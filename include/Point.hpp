@@ -195,6 +195,10 @@ inline Point3 cross(Point3 p1, Point3 p2){
 	return Point3(p1.x[1]*p2.x[2]-p1.x[2]*p2.x[1], p1.x[2]*p2.x[0]-p1.x[0]*p2.x[2], p1.x[0]*p2.x[1]-p1.x[1]*p2.x[0]);
 }
 
+inline double cross(Point2 p1, Point2 p2){
+	return p1.x[0]*p2.x[1]-p1.x[1]*p2.x[0];
+}
+
 
 }
 
