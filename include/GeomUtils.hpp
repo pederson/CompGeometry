@@ -24,6 +24,14 @@ enum Operation {UNION, INTERSECT, DIFFERENCE, XOR};
 
 
 
+template <typename T> int sgn(T val) {
+    return (static_cast<T>(0) < val) - (val < static_cast<T>(0));
+}
+
+
+
+
+
 template <std::size_t dim>
 struct Box{
 	// data

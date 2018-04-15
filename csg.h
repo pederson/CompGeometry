@@ -14,5 +14,6 @@
 #include "include/Octree.hpp"
 #include "include/CSGTree.hpp"
 #include "include/LinearTransformation.hpp"
+#include "include/SymmetryTransformation.hpp"
 
 #endif

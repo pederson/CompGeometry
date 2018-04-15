@@ -75,10 +75,14 @@ public:
 		return out;
 	}
 
-	GeneralPoint normalize() const{
+	double norm() const{
 		double magn = 0;
 		for (auto i=0; i<dim; i++) magn += x[i]*x[i];
-		magn = sqrt(magn);
+		return sqrt(magn);
+	}
+
+	GeneralPoint normalize() const{
+		double magn = norm();
 		return 1.0/magn*(*this);
 	}
 
