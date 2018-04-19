@@ -107,7 +107,7 @@ public:
 };
 
 
-// Discrete Translation symmetry map 
+// Continuous Rotation symmetry map 
 struct ContinuousRotationSymmetryMap2D{
 public:
 	typedef Point<2> 					PointT;
@@ -135,6 +135,39 @@ public:
 		os << "<ContinuousRotationSymmetryMapping>" << mRpt << ", " << mCen << "</ContinuousRotationSymmetryMapping>" << std::endl;
 	}
 };
+
+
+
+
+// // Helical symmetry map 
+// struct HelicalSymmetryMap2D{
+// public:
+// 	typedef Point<2> 					PointT;
+// 	typedef Box<2>						BoxT;
+// 	PointT 								mCen, mVec;
+// 	double 								mR;
+// 	// std::size_t 						mN; // number of copies per 360 degrees
+
+// 	HelicalSymmetryMap2D(const PointT & vec, const PointT & c, double r) : mCen(c), mVec(vec), mR(r) {};
+
+// 	PointT inverse_map(const PointT & p) const{
+// 		PointT pp = p - mRpt;
+// 		PointT v = mCen - mRpt;
+// 		if (PointT::dot(pp, v) < 0) pp = Point<2>(cos(pi)*pp.x[0] + sin(pi)*pp.x[1], -sin(pi)*pp.x[0] + cos(pi)*pp.x[1]);
+// 		double proj = asin(cross(pp, v)/(v.norm()*pp.norm()));
+// 		pp = Point<2>(cos(proj)*pp.x[0] - sin(proj)*pp.x[1], sin(proj)*pp.x[0] + cos(proj)*pp.x[1]);
+// 		return pp + mRpt;
+// 	};
+
+// 	PointT forward_map(const PointT & p) const{
+// 		return p;
+// 	};
+
+// 	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
+// 		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+// 		os << "<HelicalSymmetryMapping>" << mRpt << ", " << mCen << "</HelicalSymmetryMapping>" << std::endl;
+// 	}
+// };
 
 
 
