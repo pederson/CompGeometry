@@ -15,5 +15,7 @@
 #include "include/CSGTree.hpp"
 #include "include/LinearTransformation.hpp"
 #include "include/SymmetryTransformation.hpp"
+#include "include/Scene.hpp"
+#include "include/Frame.hpp"
 
 #endif

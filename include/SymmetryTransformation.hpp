@@ -18,6 +18,13 @@ public:
 
 	DiscreteTranslationSymmetryMap2D(const PointT & t, const PointT & c) : mSvec(t), mCen(c) {};
 
+	template <typename PrimitiveT>
+	BoxT get_bounding_box(const std::shared_ptr<PrimitiveT> prim) const {
+		return bounding_box(BoxT::translate(prim->get_bounding_box(), -1.0e+6*mSvec),
+							BoxT::translate(prim->get_bounding_box(), +1.0e+6*mSvec));
+		// return prim->get_bounding_box();
+	}
+
 	PointT inverse_map(const PointT & p) const{
 		PointT v = p-mCen;
 		double amagn = mSvec.norm();
@@ -53,6 +60,13 @@ public:
 
 	ContinuousTranslationSymmetryMap2D(const PointT & t, const PointT & c) : mSvec(t), mCen(c) {};
 
+	template <typename PrimitiveT>
+	BoxT get_bounding_box(const std::shared_ptr<PrimitiveT> prim) const {
+		return bounding_box(BoxT::translate(prim->get_bounding_box(), -1.0e+6*mSvec),
+							BoxT::translate(prim->get_bounding_box(), +1.0e+6*mSvec));
+		// return prim->get_bounding_box();
+	}
+
 	PointT inverse_map(const PointT & p) const{
 		PointT v = p-mCen;
 		double amagn = mSvec.norm();
@@ -82,6 +96,12 @@ public:
 	std::size_t 						mN; // number of copies per 360 degrees
 
 	DiscreteRotationSymmetryMap2D(const PointT & R, const PointT & c, std::size_t N) : mN(N), mCen(c), mRpt(R) {};
+
+	template <typename PrimitiveT>
+	BoxT get_bounding_box(const std::shared_ptr<PrimitiveT> prim) const {
+		double rmax = std::max(PointT::dist(mRpt, prim->get_bounding_box().lo), PointT::dist(mRpt, prim->get_bounding_box().hi));
+		return BoxT(mCen+PointT(rmax, rmax), mCen-PointT(rmax,rmax));
+	}
 
 	PointT inverse_map(const PointT & p) const{
 		double angle = 2.0*pi/static_cast<double>(mN);
@@ -116,6 +136,12 @@ public:
 	// std::size_t 						mN; // number of copies per 360 degrees
 
 	ContinuousRotationSymmetryMap2D(const PointT & R, const PointT & c) : mCen(c), mRpt(R) {};
+
+	template <typename PrimitiveT>
+	BoxT get_bounding_box(const std::shared_ptr<PrimitiveT> prim) const {
+		double rmax = std::max(PointT::dist(mRpt, prim->get_bounding_box().lo), PointT::dist(mRpt, prim->get_bounding_box().hi));
+		return BoxT(mCen+PointT(rmax, rmax), mCen-PointT(rmax,rmax));
+	}
 
 	PointT inverse_map(const PointT & p) const{
 		PointT pp = p - mRpt;
@@ -199,7 +225,8 @@ public:
 	}
 
 	BoxT get_bounding_box() const {
-		return mPrim->get_bounding_box();
+		return mMap.get_bounding_box(mPrim);
+		// return mPrim->get_bounding_box();
 
 		// return BoxT(PointT(-std::numeric_limits<double>::infinity(),
 		// 				   -std::numeric_limits<double>::infinity(), 

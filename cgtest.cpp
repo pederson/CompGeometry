@@ -265,6 +265,42 @@ int main(int argc, char * argv[])
 	cout << endl; 
 
 
+
+
+	// test build a scene (collection of geometries with some identifier)
+	Scene<std::string, Primitive2D> scene2("bg");
+	scene2.insert(make_pair("circle", std::make_shared<Circle>(Circle({0,0},0.5))));
+	scene2.insert("circle2", Circle({0.8,0}, 0.3));
+	cout << "center point identifier: " << scene2.query_point(Point<2>(0,0)) <<endl;
+	cout << "other point identifier: " << scene2.query_point(Point<2>(0.6,0.6)) <<endl;
+	cout << "another point identifier: " << scene2.query_point(Point<2>(0.8,0.0)) <<endl;
+
+	Scene<std::string, Primitive3D> scene3("bg");
+	scene3.insert("sphere", Sphere({0,0,0}, 0.5));
+	scene3.insert("sphere2", Sphere({0.8,0,0}, 0.3));
+	cout << "center point identifier: " << scene3.query_point(Point<3>(0,0,0)) <<endl;
+	cout << "other point identifier: " << scene3.query_point(Point<3>(0.6,0.6,0)) <<endl;
+	cout << "another point identifier: " << scene3.query_point(Point<3>(0.8,0.0,0.0)) <<endl;
+
+
+	// make a 1D frame out of these scenes
+	auto frame1 = make_frame_1d(scene2, Point<2>(-0.6, 0.0), Point<2>(1.5, 0.0));
+	cout << "frame1 length: " << frame1.length() <<endl;
+	// query the identifier at increments of 0.1
+	for (double x=0.0; x<=frame1.length(); x+=0.1){
+		cout << "x: " << x << " id: " << frame1.query_point(x) <<endl;
+	}
+
+
+	auto frame2 = make_frame_1d(scene3, Point<3>(-0.6, 0.0, 0.0), Point<3>(1.5, 0.0, 0.0));
+	cout << "frame2 length: " << frame2.length() <<endl;
+	// query the identifier at increments of 0.1
+	for (double x=0.0; x<=frame2.length(); x+=0.1){
+		cout << "x: " << x << " id: " << frame2.query_point(x) <<endl;
+	}
+
+
+	// test the linear transformations and symmetry transformations
 	CSGTree<Primitive2D> ctreep2d(Circle({0,0},0.5));
 	ctreep2d.push_back(Rectangle({0,0},{0.1, 0.5}), DIFFERENCE);
 	ctreep2d.push_back(Circle({0,0}, 0.05), DIFFERENCE);

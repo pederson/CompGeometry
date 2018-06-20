@@ -77,6 +77,10 @@ struct Box{
 		return Box(lo,hi);
 	}
 
+	static Box translate(const Box & bx1, const Point<dim> & pt){
+		return Box(bx1.lo+pt, bx1.hi+pt);
+	}
+
 	// print to std::out
 	template<std::size_t d>
 	friend std::ostream & operator<<(std::ostream & os, const Box<d> & bx);
