@@ -268,9 +268,9 @@ int main(int argc, char * argv[])
 
 
 	// test build a scene (collection of geometries with some identifier)
-	Scene<std::string, Primitive2D> scene2("bg");
-	scene2.insert(make_pair("circle", std::make_shared<Circle>(Circle({0,0},0.5))));
-	scene2.insert("circle2", Circle({0.8,0}, 0.3));
+	Scene<std::string, Primitive2D> scene2("b");
+	scene2.insert(make_pair("c", std::make_shared<Circle>(Circle({0,0},0.5))));
+	scene2.insert("e", Circle({0.8,0}, 0.3));
 	cout << "center point identifier: " << scene2.query_point(Point<2>(0,0)) <<endl;
 	cout << "other point identifier: " << scene2.query_point(Point<2>(0.6,0.6)) <<endl;
 	cout << "another point identifier: " << scene2.query_point(Point<2>(0.8,0.0)) <<endl;
@@ -297,6 +297,17 @@ int main(int argc, char * argv[])
 	// query the identifier at increments of 0.1
 	for (double x=0.0; x<=frame2.length(); x+=0.1){
 		cout << "x: " << x << " id: " << frame2.query_point(x) <<endl;
+	}
+
+
+	auto frame3 = make_frame_2d(scene2, Point<2>(-0.5, -0.5), Point<2>(1.5, 0.5), Point<2>(1,0));
+	cout << "frame3 dims: " << frame3.lengthx() << " x " << frame3.lengthy() << endl;
+	// query the identifier at increments of 0.1
+	for (double y=0.0; y<=frame3.lengthy(); y+=0.03){
+		for (double x=0.0; x<=frame3.lengthx(); x+=0.03){
+			cout << frame3.query_point(Point<2>(x, y)) ;
+		}
+		cout << endl;
 	}
 
 

@@ -35,5 +35,48 @@ Frame1<SceneType, dim> make_frame_1d(const SceneType & s, Point<dim> start, Poin
 	return Frame1<SceneType, dim>(s, start, end);
 }
 
+
+
+
+
+
+
+
+template <typename SceneType, std::size_t scene_dim>
+class Frame2
+{
+private:
+	std::shared_ptr<SceneType> 	mScene;
+	Point<scene_dim> 			mStart;
+	Point<scene_dim>			mEnd;
+	Point<scene_dim>			mVecX;
+
+	double length_diag() const {return (mEnd-mStart).norm();};
+	Point<scene_dim> vecy() const {return ((mEnd-mStart) - lengthx()*mVecX).normalize();};
+public:
+	Frame2(const SceneType & s, Point<scene_dim> start, Point<scene_dim> end, Point<scene_dim> xvec)
+	: mScene(std::make_shared<SceneType>(s)) 
+	, mStart(start)
+	, mEnd(end)
+	, mVecX(xvec.normalize())
+	{};
+
+	decltype(auto) query_point(Point<2> p) const {
+		// std::cout << " xvec: " << mVecX << " yvec: " << vecy() << " ";
+		return mScene->query_point(mStart + p.x[0]*mVecX + p.x[1]*vecy());
+	}
+
+	double lengthx() const {return Point<scene_dim>::dot((mEnd-mStart), mVecX);};
+	double lengthy() const {return sqrt(length_diag()*length_diag() - lengthx()*lengthx());};
+};
+
+
+
+template <std::size_t dim, typename SceneType>
+Frame2<SceneType, dim> make_frame_2d(const SceneType & s, Point<dim> start, Point<dim> end, Point<dim> xvec){
+	return Frame2<SceneType, dim>(s, start, end, xvec);
+}
+
+
 } // end namespace csg
 #endif
