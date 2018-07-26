@@ -166,6 +166,26 @@ struct DefaultNode{
 
 
 
+template <typename ValueT> 
+struct DefaultNodeExtension{
+private:
+	const ValueT & derived() const {return *static_cast<const ValueT *>(this);};
+	ValueT & derived() {return *static_cast<ValueT *>(this);};
+
+	bool mIsLeaf;
+public:
+	bool & isLeaf() {return mIsLeaf;};
+	const bool & isLeaf() const {return mIsLeaf;};
+};
+
+
+template <class NodeType>
+struct DefaultNodeWrapper : public NodeType, public DefaultNodeExtension<NodeType>
+{
+	using NodeType::NodeType; // use constructors for NodeType
+};
+
+
 
 //##############################################################
 //##############################################################
@@ -348,6 +368,21 @@ public:
 		if (lvl==0) return 0;
 
 		return pow(sSize,lvl-1)+getLevelStartingIndex(lvl-1);
+	}
+
+
+	constexpr Box<dim> getOffset(KeyT key){
+		Box<dim> bx;
+		IntPoint<dim> off = getOffsetWithinLevel(key);
+
+		double dx = pow(1.0/static_cast<double>(rfactor), getLevel(key));
+
+		for (auto d=0; d<dim; d++){
+			bx.lo.x[d] = off.x[d]*dx;
+			bx.hi.x[d] = off.x[d]*dx + dx;
+		}
+
+		return bx;
 	}
 };
 
@@ -708,23 +743,19 @@ public:
 	// //********** random access
 
 
-	// // split parent key, and endow all children
-	// // with a copy of the parent value
-	// void refineCell(KeyT key) {
-	// 	std::size_t lvl = LevelDecoder::decodeLevel(key);
-	// 	std::size_t subd = SubdomainDecoder::decodeSubdomain(key);
-	// 	if (!mKeyMaps[lvl][subd][key].mIsLeaf){
-	// 		std::cerr << "Orthtree: Cell is already refined!" << std::endl;
-	// 		throw -1;
-	// 	}
-	// 	Node n = mKeyMaps[lvl][subd].at(key);
-	// 	for (auto so=0; so<sSize; so++){
-	// 		KeyT kc = ChildDecoder::getChildKey(key, so);
-	// 		std::size_t sd = SubdomainDecoder::decodeSubdomain(kc);
-	// 		mKeyMaps[lvl+1][sd][kc] = n;
-	// 	}
-	// 	mKeyMaps[lvl][subd][key].mIsLeaf = false;
-	// }
+	// split parent key, and endow all children
+	// with a copy of the parent value
+	void refineCell(KeyT key) {
+		std::size_t lvl = KeyDecoder::getLevel(key);
+		if (!(*this)[key].isLeaf()) return;
+		NodeType n = (*this)[key];
+		for (auto so=0; so<sSize; so++){
+			KeyT kc = KeyDecoder::getChildKey(key, so);
+			(*this)[kc] = n;
+			(*this)[kc].isLeaf() = true;
+		}
+		(*this)[key].isLeaf() = false;
+	}
 
 
 	// // delete all child cells of a given parent key

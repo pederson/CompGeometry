@@ -37,7 +37,7 @@ public:
 			// vmagn = v.norm();
 		}
 		// std::cout << "end" << std::endl;
-		return v;
+		return v+mCen;
 	};
 
 	PointT forward_map(const PointT & p) const{
@@ -72,7 +72,7 @@ public:
 		double amagn = mSvec.norm();
 		double proj = PointT::dot(v, mSvec);
 		v = v - mSvec/amagn*proj/amagn;
-		return v;
+		return v+mCen;
 	};
 
 	PointT forward_map(const PointT & p) const{

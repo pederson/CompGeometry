@@ -17,6 +17,12 @@ public:
 	GeneralPoint(){};
 
 	// constructor
+	GeneralPoint(T x0){
+		x[0] = x0;
+		if (dim > 1) throw("ERROR: That GeneralPoint constructor not implemented for dim > 3");
+	}
+
+	// constructor
 	GeneralPoint(T x0, T x1){
 		x[0] = x0;
 		if (dim > 1) x[1] = x1;
@@ -142,6 +148,10 @@ template<> GeneralPoint<2,double>::GeneralPoint(double x0, double x1){
 
 template<> GeneralPoint<3,double>::GeneralPoint(double x0, double x1, double x2){
 	x[0] = x0; x[1] = x1; x[2] = x2;
+}
+
+template<> GeneralPoint<1,int>::GeneralPoint(int x0){
+	x[0] = x0;
 }
 
 template<> GeneralPoint<2,int>::GeneralPoint(int x0, int x1){
