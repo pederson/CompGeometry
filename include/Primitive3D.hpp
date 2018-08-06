@@ -149,6 +149,104 @@ private:
 
 
 
+
+
+
+
+
+class RectangularPrism : public Primitive3D
+{
+public:
+
+	RectangularPrism(){};
+
+	RectangularPrism(const Point<3> & center, const Point<3> & normal, const Point<3> & px, const Point<2> & rdims, double height)
+	: m_plane(Plane(center, normal, px))
+	, m_rect(Rectangle(Point<2>(0,0), rdims))
+	, m_height(height) {};
+
+	std::shared_ptr<Primitive3D> copy() const {return std::make_shared<RectangularPrism>(*this);};
+
+	Box<3> get_bounding_box() const {
+		Point<3> yhat = (cross(m_plane.normal, m_plane.posx)).normalize();
+		Point<3> xhat = (m_plane.posx).normalize();
+		Point<3> nhat = (m_plane.normal).normalize();
+
+		Box<2> basebox = m_rect.get_bounding_box();
+
+		// get the 8 box points in 3D space
+		std::vector<Point<3>> bpts(8);
+		bpts[0] = xhat*basebox.lo.x[0] + yhat*basebox.lo.x[1] + m_plane.origin;
+		bpts[1] = xhat*basebox.hi.x[0] + yhat*basebox.lo.x[1] + m_plane.origin;
+		bpts[2] = xhat*basebox.hi.x[0] + yhat*basebox.hi.x[1] + m_plane.origin;
+		bpts[3] = xhat*basebox.lo.x[0] + yhat*basebox.hi.x[1] + m_plane.origin;
+
+		bpts[4] = xhat*basebox.lo.x[0] + yhat*basebox.lo.x[1] + m_plane.origin + m_height*nhat;
+		bpts[5] = xhat*basebox.hi.x[0] + yhat*basebox.lo.x[1] + m_plane.origin + m_height*nhat;
+		bpts[6] = xhat*basebox.hi.x[0] + yhat*basebox.hi.x[1] + m_plane.origin + m_height*nhat;
+		bpts[7] = xhat*basebox.lo.x[0] + yhat*basebox.hi.x[1] + m_plane.origin + m_height*nhat;
+
+		Point<3> lo = bpts[0];
+		Point<3> hi = bpts[0];
+		for (auto i=0; i<8; i++){
+			lo.x[0] = std::min(lo.x[0], bpts[i].x[0]);
+			lo.x[1] = std::min(lo.x[1], bpts[i].x[1]);
+			lo.x[2] = std::min(lo.x[2], bpts[i].x[2]);
+			hi.x[0] = std::max(hi.x[0], bpts[i].x[0]);
+			hi.x[1] = std::max(hi.x[1], bpts[i].x[1]);
+			hi.x[2] = std::max(hi.x[2], bpts[i].x[2]);
+		}
+		return Box<3>(lo,hi);
+	}
+
+	void translate(const Point<3> & pt) {
+		m_plane.origin = m_plane.origin + pt;
+	}
+
+	// void rotate(const Point<3> & axis, double degrees) {
+	// }
+
+	bool contains_point(const Point<3> & pt) const{
+		// check projection of point onto normal
+		Point<3> ptvec(pt.x[0]-m_plane.origin.x[0], pt.x[1]-m_plane.origin.x[1], pt.x[2]-m_plane.origin.x[2]);
+		double proj = Point<3>::dot(ptvec, m_plane.normal);
+		if (proj > m_height || proj < 0) return false;
+
+		// now project the point onto the plane
+		Point<2> pp = m_plane.project(pt);
+		return m_rect.contains_point(pp);
+	}
+
+	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "<RectangularPrism>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Center>" << m_plane.origin << "</Center>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Normal>" << m_plane.normal << "</Normal>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<XDir>" << m_plane.posx << "</XDir>" << std::endl;
+
+		m_rect.print_summary(os, ntabs+1);
+
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "</RectangularPrism>" << std::endl;
+	}
+private:
+
+	double 			m_height;
+	Plane 			m_plane;
+	Rectangle 		m_rect;
+};
+
+
+
+
+
+
+
+
+
 class Pyramid : public Primitive3D
 {
 public:
