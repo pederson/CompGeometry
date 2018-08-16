@@ -65,6 +65,12 @@ public:
 	}
 
 
+	template <typename CastableType>
+	std::pair<iterator, bool> insert(const Identifier & id, std::shared_ptr<CastableType> & castable_shared){
+		return insert(make_pair(id, castable_shared));
+	}
+
+
 protected:
 	Identifier 			mBackground;
 };
