@@ -45,8 +45,25 @@ public:
 	};
 
 	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
-		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
 		os << "<DiscreteTranslationSymmetryMapping>" << mSvec << ", " << mCen << "</DiscreteTranslationSymmetryMapping>" << std::endl;
+	}
+
+
+	template <typename PrimitiveT>
+	std::vector<Hull<2>> get_outline(unsigned int npts, const std::shared_ptr<PrimitiveT> prim) const {
+		std::vector<Hull<2>> o = prim->get_outline(npts);
+		std::vector<Hull<2>> out;
+		for (auto it=o.begin(); it!=o.end(); it++){
+			for (int i=-10; i<=10; i++){
+				out.push_back(*it);
+				auto mit = --out.end();
+				for (auto p=mit->points.begin(); p!=mit->points.end(); p++){
+					*p = *p + static_cast<double>(i)*mSvec;
+				}
+			}
+		}
+		return out;
 	}
 };
 
@@ -80,8 +97,20 @@ public:
 	};
 
 	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
-		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
 		os << "<ContinuousTranslationSymmetryMapping>" << mSvec << ", " << mCen << "</ContinuousTranslationSymmetryMapping>" << std::endl;
+	}
+
+	// this is only for 2D
+	template <typename PrimitiveT>
+	std::vector<Hull<2>> get_outline(unsigned int npts, const std::shared_ptr<PrimitiveT> prim) const {
+		std::vector<Hull<2>> o = prim->get_outline(npts);
+		for (auto it=o.begin(); it!=o.end(); it++){
+			for (auto p=it->points.begin(); p!=it->points.end(); p++){
+				*p = forward_map(*p);
+			}
+		}
+		return o;
 	}
 };
 
@@ -121,8 +150,39 @@ public:
 	};
 
 	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "<DiscreteRotationSymmetryMapping>" << std::endl;
 		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
-		os << "<DiscreteRotationSymmetryMapping>" << mN << ", " << mRpt << ", " << mCen << "</DiscreteRotationSymmetryMapping>" << std::endl;
+		os << "<N>" << mN << "</N>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Center>" << mRpt << "</Center>" << std::endl;
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "</DiscreteRotationSymmetryMapping>" << std::endl;
+	}
+
+	// this is only for 2D
+	template <typename PrimitiveT>
+	std::vector<Hull<2>> get_outline(unsigned int npts, const std::shared_ptr<PrimitiveT> prim) const {
+		std::vector<Hull<2>> o = prim->get_outline(npts);
+		std::vector<Hull<2>> out;
+		double angle = 2.0*pi/static_cast<double>(mN);
+		for (auto it=o.begin(); it!=o.end(); it++){
+			for (std::size_t i=0; i<mN; i++){
+				double theta = static_cast<double>(i)*angle;
+				out.push_back(*it);
+				auto mit = --out.end();
+				for (auto p=mit->points.begin(); p!=mit->points.end(); p++){
+					// (*p) = inverse_map(*p);
+					PointT pp = *p - mRpt;
+					pp = Point<2>(cos(theta)*pp.x[0] + sin(theta)*pp.x[1], -sin(theta)*pp.x[0] + cos(theta)*pp.x[1]);
+					*p = pp + mRpt;
+				}
+			}
+		}
+
+		std::cout << "size of in: " << o.size() << std::endl;
+		std::cout << "size of out: " << out.size() << std::endl;
+		return out;
 	}
 };
 
@@ -159,6 +219,18 @@ public:
 	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
 		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
 		os << "<ContinuousRotationSymmetryMapping>" << mRpt << ", " << mCen << "</ContinuousRotationSymmetryMapping>" << std::endl;
+	}
+
+	// this is only for 2D
+	template <typename PrimitiveT>
+	std::vector<Hull<2>> get_outline(unsigned int npts, const std::shared_ptr<PrimitiveT> prim) const {
+		std::vector<Hull<2>> o = prim->get_outline(npts);
+		for (auto it=o.begin(); it!=o.end(); it++){
+			for (auto p=it->points.begin(); p!=it->points.end(); p++){
+				*p = forward_map(*p);
+			}
+		}
+		return o;
 	}
 };
 
@@ -238,13 +310,14 @@ public:
 
 	// this is only for 2D
 	std::vector<Hull<2>> get_outline(unsigned int npts) const {
-		std::vector<Hull<2>> o = mPrim->get_outline(npts);
-		for (auto it=o.begin(); it!=o.end(); it++){
-			for (auto p=it->points.begin(); p!=it->points.end(); p++){
-				*p = mMap.forward_map(*p);
-			}
-		}
-		return o;
+		// std::vector<Hull<2>> o = mPrim->get_outline(npts);
+		// for (auto it=o.begin(); it!=o.end(); it++){
+		// 	for (auto p=it->points.begin(); p!=it->points.end(); p++){
+		// 		*p = mMap.forward_map(*p);
+		// 	}
+		// }
+		// return o;
+		return mMap.get_outline(npts, mPrim);
 	}
 
 	bool contains_point(const PointT & pt) const {
@@ -257,10 +330,16 @@ public:
 		os << "<SymmetryTransformation>" << std::endl;
 		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
 		os << "<Mapping>" << std::endl;
-		mMap.print_summary(os, ntabs+1);
+		mMap.print_summary(os, ntabs+2);
 		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
 		os << "</Mapping>" << std::endl;
-		mPrim->print_summary(os, ntabs+1);
+
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Primitive>" << std::endl;
+		mPrim->print_summary(os, ntabs+2);
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "</Primitive>" << std::endl;
+
 		for (auto i=0; i<ntabs; i++) os << "\t" ;
 		os << "</SymmetryTransformation>" << std::endl;
 	}

@@ -2,8 +2,10 @@
 #define _POINT_H
 
 #include <iostream>
+#include <sstream>
 #include <math.h>
 #include <vector>
+#include <array>
 
 namespace csg{
 
@@ -116,9 +118,14 @@ public:
 		return dt;
 	}
 
-	// print to std::out
+	// print to an ostream
 	template<std::size_t d, class t>
 	friend std::ostream & operator<<(std::ostream & os, const GeneralPoint<d, t> & p);
+
+
+	// read from an istream
+	template<std::size_t d, class t>
+	friend std::istream & operator>>(std::istream & os, GeneralPoint<d, t> & p);
 
 };
 
@@ -130,6 +137,27 @@ std::ostream & operator<<(std::ostream & os, const GeneralPoint<dim, T> & p){
 	
 	return os;
 }
+
+
+template<std::size_t dim, class T>
+std::istream & operator>>(std::istream & is, GeneralPoint<dim, T> & p){
+	is.get(); // reads the opening parenthesis
+	std::stringstream strbuff;
+	char lin[200];
+	is.get(lin, 200, ')');
+	strbuff << lin ;
+
+   	std::array<char, 30> a;
+   	int i=0;
+    while(strbuff.getline(&a[0], 30, ',')){
+    	std::stringstream item;
+    	item << &a[0];
+    	item >> p.x[i];
+    	i++;
+    }
+	return is;
+}
+
 
 template<std::size_t dim, class T>
 GeneralPoint<dim, T> operator*(T val, const GeneralPoint<dim, T> & p){

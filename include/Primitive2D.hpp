@@ -8,7 +8,6 @@
 namespace csg{
 
 
-
 class Circle : public Primitive2D
 {
 public:
@@ -158,9 +157,7 @@ public:
 		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
 		os << "<Center>" << m_center << "</Center>" << std::endl;
 		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
-		os << "<Sides>(" << m_lx << ", " << m_ly << ")</Sides>" << std::endl ;
-		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
-		os << "<Rotation>" << m_rotation << "</Rotation>" << std::endl;
+		os << "<Dims>(" << m_lx << ", " << m_ly << ")</Dims>" << std::endl ;
 		for (auto i=0; i<ntabs; i++) os << "\t" ;
 		os << "</Rectangle>" << std::endl;
 	}
@@ -240,8 +237,6 @@ public:
 		os << "<Center>" << 0.5*(m_axis1.begin+m_axis1.end) << "</Center>" << std::endl;
 		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
 		os << "<Axes>(" << 0.5*Point<2>::dist(m_axis1.end,m_axis1.begin) << ", " << 0.5*Point<2>::dist(m_axis2.end,m_axis2.begin) << ")</Axes>" << std::endl ;
-		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
-		os << "<Rotation>" << m_rotation << "</Rotation>" << std::endl;
 		for (auto i=0; i<ntabs; i++) os << "\t" ;
 		os << "</Ellipse>" << std::endl;
 	}
@@ -413,9 +408,18 @@ public:
 
 	std::vector<Hull<2>> get_outline(unsigned int npts) const {
 		Hull<2> h1;
-		h1.points.resize(npts);
+		// h1.points.resize(npts);
 		// should divide up each segment to its respective size
 		std::cout << "Polycurve: get_outline not working! FIX ME" << std::endl;
+		// h1.resize(m_segments.size())
+		// h1.push_back(m_segments[0]->begin);
+		h1.points.push_back(m_segments[0]->begin);
+		for (auto i=0; i<m_segments.size(); i++){
+			h1.points.push_back(0.25*m_segments[i]->end + 0.75*m_segments[i]->begin);
+			h1.points.push_back(0.5*(m_segments[i]->end + m_segments[i]->begin));
+			h1.points.push_back(0.75*m_segments[i]->end + 0.25*m_segments[i]->begin);
+			h1.points.push_back(m_segments[i]->end);
+		}
 		return {h1};
 	}
 
@@ -521,6 +525,9 @@ public:
 	RegularPolygon(){};
 
 	RegularPolygon(unsigned int nsides, const Point<2> & center, double tovertex)
+	: mCenter(center)
+	, mN(nsides)
+	, mVertexLength(tovertex)
 	{
 		// angle between consecutive segments
 		double pi = 3.14159265358979323846;
@@ -550,16 +557,23 @@ public:
 	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
 		for (auto i=0; i<ntabs; i++) os << "\t" ;
 		os << "<RegularPolygon>" << std::endl;
-		for (auto n=0; n<m_segments.size(); n++){
-			for (auto i=0; i<ntabs+1; i++) os << "\t" ;
-			m_segments[n]->print_summary(os);
-			os << std::endl;
-		}
+
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Center>" << mCenter << "</Center>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<N>" << mN << "</N>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<VertexLength>" << mVertexLength << "</VertexLength>" << std::endl;
+	
 		for (auto i=0; i<ntabs; i++) os << "\t" ;
 		os << "</RegularPolygon>" << std::endl;
 
 	}
 
+private:
+	Point<2> mCenter;
+	unsigned int mN;
+	double mVertexLength;
 };
 
 }

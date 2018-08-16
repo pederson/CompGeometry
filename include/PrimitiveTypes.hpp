@@ -2,6 +2,7 @@
 #define _PRIMITIVETYPES_H
 
 #include "GeomUtils.hpp"
+#include "Delaunay.hpp"
 #include <memory>
 
 namespace csg{
@@ -58,8 +59,56 @@ public:
 	// get bounding box
 	virtual BoxT get_bounding_box() const = 0;
 
-	// // get outline
+	// get outline
 	virtual std::vector<Hull<2>> get_outline(unsigned int npts) const = 0;
+
+	// get outline points
+	std::vector<Point<2>> get_outline_points(unsigned int npts) const {
+		std::vector<Hull<2>> hv = get_outline(npts);
+		std::vector<csg::Point<2>> pts;
+		for (auto i=0; i<hv.size(); i++) pts.insert(pts.end(), hv[i].points.begin(), hv[i].points.end());
+		return pts;
+	}
+
+	// get a triangulation of the object
+	Triangulation<2> get_triangulation(unsigned int npts) const {
+		// first get set of points that define the outline
+		Triangulation<2> tout;
+		tout.points = get_outline_points(npts);
+
+		// do a Delaunay triangulation of these points
+		Delaunay del(tout.points, 1);
+
+		// go through the triangulation and remove triangles with
+		// 2 or more edges whose centerpoint is not contained 
+		// within the geometry
+		unsigned int ct;
+		for (auto it=del.triangles.begin(); it != del.triangles.end(); it++){
+			if (it->state <= 0) continue;
+
+			ct=0;
+			if (!contains_point(0.5*(del.points[it->vertices[0]]+del.points[it->vertices[1]]))) ct++;
+			if (!contains_point(0.5*(del.points[it->vertices[1]]+del.points[it->vertices[2]]))) ct++;
+			if (!contains_point(0.5*(del.points[it->vertices[2]]+del.points[it->vertices[0]]))) ct++;
+			if (!contains_point(1.0/3.0*(del.points[it->vertices[0]]+del.points[it->vertices[1]]+del.points[it->vertices[2]]))) ct++;
+
+			if (ct > 1){
+				del.erase_triangle(it->vertices[0], it->vertices[1], it->vertices[2],
+								   -1, -1, -1);
+			}
+		}
+
+		unsigned int pos = 0;
+		tout.triangles.resize(del.ntri);
+		for (auto it=del.triangles.begin(); it != del.triangles.end(); it++){
+			if (it->state <= 0) continue;
+
+			tout.triangles[pos] = {static_cast<int>(it->vertices[0]), static_cast<int>(it->vertices[1]), static_cast<int>(it->vertices[2])};
+			pos++;
+		}
+
+		return tout;
+	}
 
 	// contains point
 	virtual bool contains_point(const PointT & pt) const = 0;

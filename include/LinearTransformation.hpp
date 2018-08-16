@@ -112,7 +112,7 @@ public:
 
 	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
 		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
-		os << "<RoataionMapping>" << mTheta << "</RoataionMapping>" << std::endl;
+		os << "<RotationMapping>" << mTheta << "</RotationMapping>" << std::endl;
 	}
 };
 
@@ -208,7 +208,11 @@ public:
 		mMap.print_summary(os, ntabs+1);
 		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
 		os << "</Mapping>" << std::endl;
-		mPrim->print_summary(os, ntabs+1);
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Primitive>" << std::endl;
+		mPrim->print_summary(os, ntabs+2);
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "</Primitive>" << std::endl;
 		for (auto i=0; i<ntabs; i++) os << "\t" ;
 		os << "</LinearTransformation>" << std::endl;
 	}

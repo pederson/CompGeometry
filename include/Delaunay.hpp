@@ -2,7 +2,7 @@
 #define _DELAUNAY_H
 
 #include "GeomUtils.hpp"
-#include "Primitive2D.hpp"
+// #include "Primitive2D.hpp"
 
 #include <unordered_map>
 #include <stack>
@@ -42,9 +42,11 @@ struct RandomHash{
 // on, or outside the circle through points a, b, and c.
 inline double in_circle(const Point<2> & d, const Point<2> & a, const Point<2> & b, const Point<2> & c) {
 	
-	Circle cc = Circle::circumcircle(a,b,c);
-	Point<2> ccen = cc.center();
-	double crad = cc.radius();
+	// Circle cc = Circle::circumcircle(a,b,c);
+	// Point<2> ccen = cc.center();
+	Point<2> ccen = circumcenter(a,b,c);
+	// double crad = cc.radius();
+	double crad = circumradius(a,b,c);
 	double radd = (d.x[0]-ccen.x[0])*(d.x[0]-ccen.x[0]) + (d.x[1]-ccen.x[1])*(d.x[1]-ccen.x[1]);
 	return ((crad)*(crad) - radd);
 }
