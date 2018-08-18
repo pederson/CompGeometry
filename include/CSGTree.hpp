@@ -258,8 +258,8 @@ public:
 
 		for (auto i=0; i<level; i++) os << "\t" ;
 		os << "<CSGTree> " << std::endl;
-		for (auto i=0; i<level; i++) os << "\t" ;
 
+		for (auto i=0; i<level+1; i++) os << "\t" ;
 		os << "<Operation>" ;
 		switch (m_op){
 			case UNION:
@@ -277,13 +277,13 @@ public:
 		}
 		os << "</Operation>" ;
 		os << std::endl;
-		for (auto i=0; i<level; i++) os << "\t" ;
-		os << "<Left> " << std::endl ; m_ldaughter->print_summary(os, level+1); 
-		for (auto i=0; i<level; i++) os << "\t" ;
+		for (auto i=0; i<level+1; i++) os << "\t" ;
+		os << "<Left> " << std::endl ; m_ldaughter->print_summary(os, level+1+1); 
+		for (auto i=0; i<level+1; i++) os << "\t" ;
 		os << "</Left>" << std::endl;
-		for (auto i=0; i<level; i++) os << "\t" ;
-		os << "<Right> " << std::endl ; m_rdaughter->print_summary(os, level+1); 
-		for (auto i=0; i<level; i++) os << "\t" ;
+		for (auto i=0; i<level+1; i++) os << "\t" ;
+		os << "<Right> " << std::endl ; m_rdaughter->print_summary(os, level+1+1); 
+		for (auto i=0; i<level+1; i++) os << "\t" ;
 		os <<"</Right>" << std::endl;
 		for (auto i=0; i<level; i++) os << "\t" ;
 		os << "</CSGTree> " << std::endl;

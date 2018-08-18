@@ -134,6 +134,8 @@ public:
 		os << "<XDir>" << m_plane.posx << "</XDir>" << std::endl;
 		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
 		os << "<Radius>" << m_circle.radius() << "</Radius>" << std::endl ;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Height>" << m_height << "</Height>" << std::endl ;
 		for (auto i=0; i<ntabs; i++) os << "\t" ;
 		os << "</Cylinder>" << std::endl;
 	}
@@ -226,8 +228,12 @@ public:
 		os << "<Normal>" << m_plane.normal << "</Normal>" << std::endl;
 		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
 		os << "<XDir>" << m_plane.posx << "</XDir>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Dims>" << m_rect.dims() << "</Dims>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Height>" << m_height << "</Height>" << std::endl;
 
-		m_rect.print_summary(os, ntabs+1);
+		// m_rect.print_summary(os, ntabs+1);
 
 		for (auto i=0; i<ntabs; i++) os << "\t" ;
 		os << "</RectangularPrism>" << std::endl;
@@ -253,7 +259,7 @@ public:
 
 	Pyramid(){};
 
-	Pyramid(const CSGeometry2D & base, const Point<3> & center, const Point<3> & normal, const Point<3> & px, double height)
+	Pyramid(const Primitive2D & base, const Point<3> & center, const Point<3> & normal, const Point<3> & px, double height)
 	: m_plane(Plane(center, normal, px))
 	, m_base(base.copy())
 	, m_height(height) {};
@@ -326,12 +332,14 @@ public:
 		m_base->print_summary(os, ntabs+2);
 		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
 		os << "</Base>" << std::endl ;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Height>" << m_height << "</Height>" << std::endl;
 		for (auto i=0; i<ntabs; i++) os << "\t" ;
 		os << "</Pyramid>" << std::endl;
 	}
 private:
 
-	std::shared_ptr<CSGeometry2D> 	m_base;
+	std::shared_ptr<Primitive2D> 	m_base;
 	double 							m_height;
 	Plane 							m_plane;
 
@@ -349,7 +357,7 @@ public:
 
 	Extrusion(){};
 
-	Extrusion(const CSGeometry2D & base, const Point<3> & center, const Point<3> & normal, const Point<3> & px, double height)
+	Extrusion(const Primitive2D & base, const Point<3> & center, const Point<3> & normal, const Point<3> & px, double height)
 	: m_plane(Plane(center, normal, px))
 	, m_base(base.copy())
 	, m_height(height) {};
@@ -409,22 +417,24 @@ public:
 		for (auto i=0; i<ntabs; i++) os << "\t" ;
 		os << "<Extrusion>" << std::endl;
 		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Base>" << std::endl;
+		m_base->print_summary(os, ntabs+2);
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "</Base>" << std::endl ;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
 		os << "<Center>" << m_plane.origin << "</Center>" << std::endl;
 		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
 		os << "<Normal>" << m_plane.normal << "</Normal>" << std::endl;
 		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
 		os << "<XDir>" << m_plane.posx << "</XDir>" << std::endl;
 		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
-		os << "<Base>" << std::endl;
-		m_base->print_summary(os, ntabs+2);
-		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
-		os << "</Base>" << std::endl ;
+		os << "<Height>" << m_height << "</Height>" << std::endl;
 		for (auto i=0; i<ntabs; i++) os << "\t" ;
 		os << "</Extrusion>" << std::endl;
 	}
 private:
 
-	std::shared_ptr<CSGeometry2D> 	m_base;
+	std::shared_ptr<Primitive2D> 	m_base;
 	double 							m_height;
 	Plane 							m_plane;
 
@@ -442,7 +452,7 @@ public:
 
 	Sweep(){};
 
-	Sweep(const CSGeometry2D & base, const Point<3> & center, const Point<3> & normal, const Point<3> & px, Line<3> ln, double angle)
+	Sweep(const Primitive2D & base, const Point<3> & center, const Point<3> & normal, const Point<3> & px, Line<3> ln, double angle)
 	: m_plane(Plane(center, normal, px))
 	, m_base(base.copy())
 	, m_line(ln)
@@ -451,8 +461,12 @@ public:
 	std::shared_ptr<Primitive3D> copy() const {return std::make_shared<Sweep>(*this);};
 
 	Box<3> get_bounding_box() const {
-		return Box<3>({0,0,0},
-					  {0,0,0});
+		Point<3> o = m_plane.origin - m_line.pt;
+		double distsq = Point<3>::dot(o,o);
+		Point<2> dims = m_base->get_bounding_box().hi - m_base->get_bounding_box().lo;
+		double maxdim = std::max(dims.x[0], dims.x[1]);
+		return Box<3>(m_line.pt+(2*sqrt(distsq)+maxdim/4)*Point<3>(1,1,1),
+					  m_line.pt-(2*sqrt(distsq)+maxdim/4)*Point<3>(1,1,1));
 	}
 
 	void translate(const Point<3> & pt) {
@@ -465,42 +479,58 @@ public:
 	// }
 
 	bool contains_point(const Point<3> & pt) const{
+		// center everything around the line point
 		Point<3> rho = pt - m_line.pt;
 		Point<3> o = m_plane.origin - m_line.pt;
+		Point<3> odir;
+
+		Point<3> yhat;
+		if (o.norm() < 1e-16){
+			yhat = m_plane.normal;
+			odir = cross(yhat, m_line.dir).normalize();
+		}
+		else {
+			yhat = (cross(m_line.dir, o)).normalize();
+			odir = o.normalize();
+		}
 
 		// project onto line
 		Box<2> bb = m_base->get_bounding_box();
 		double pproj_l = Point<3>::dot(rho, m_line.dir);
-		Point<3> p_x = rho - pproj_l*m_line.dir;
-		double pproj_x = Point<3>::dist(p_x, {0,0,0});
+		// subtract out the l component of rho
+		Point<3> p_yo = rho - pproj_l*m_line.dir;
 
-		double oproj_l = Point<3>::dot(o, m_line.dir);
-		Point<3> o_x = o - oproj_l*m_line.dir;
-		double oproj_x = Point<3>::dist(o_x, {0,0,0});
+		// project rho onto the y-o plane
+		double theta = atan2(Point<3>::dot(p_yo, yhat), Point<3>::dot(p_yo, odir));
+		double ang = theta*180.0/3.14159265;
+		if (ang < 0) ang += 360.0;
+		if (ang > m_angle) return false;
 
-		
-
-		if (pproj_l > bb.hi.x[1] + oproj_l || pproj_l < bb.lo.x[1] + oproj_l 
-			|| pproj_x > bb.hi.x[0] + oproj_x || pproj_x < bb.lo.x[0] + oproj_x) return false;
-		
-
-		Point<3> yhat = (cross(m_line.dir, o_x)).normalize();
-		double theta = atan2(Point<3>::dot(p_x.normalize(), yhat), Point<3>::dot(p_x.normalize(), o_x.normalize()))*180.0/3.14159265;
-		if (theta < 0) theta += 360.0;
-		if (theta > m_angle) return false;
-
-		Point<2> dprime(pproj_x-oproj_x, pproj_l-oproj_l);
+		// rotate rho to the l-o plane
+		theta = -theta;
+		Point<3> u = m_line.dir;
+		Point<3> p_lo(rho.x[0]*(cos(theta) + u.x[0]*u.x[0]*(1.0-cos(theta))) 		+ rho.x[1]*(u.x[0]*u.x[1]*(1-cos(theta)) - u.x[2]*sin(theta)) 	+ rho.x[2]*(u.x[0]*u.x[2]*(1-cos(theta))+u.x[1]*sin(theta)),
+					   rho.x[0]*(u.x[1]*u.x[0]*(1-cos(theta))+u.x[2]*sin(theta)) 	+ rho.x[1]*(cos(theta) + u.x[1]*u.x[1]*(1.0-cos(theta))) 		+ rho.x[2]*(u.x[1]*u.x[2]*(1-cos(theta))+u.x[0]*sin(theta)),
+					   rho.x[0]*(u.x[2]*u.x[0]*(1-cos(theta))+u.x[1]*sin(theta)) 	+ rho.x[1]*(u.x[2]*u.x[1]*(1-cos(theta))+u.x[0]*sin(theta)) 	+ rho.x[2]*(cos(theta) + u.x[2]*u.x[2]*(1.0-cos(theta)))
+					   );
+		Point<3> p_lo_mo = p_lo - o;
+		Point<2> dprime(Point<3>::dot(p_lo_mo, odir), Point<3>::dot(p_lo_mo, u));
 		return m_base->contains_point(dprime);
 	}
 
 	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
-		os << "Sweep: center = " ;
-		os << m_plane.origin ;
-		os << " base = " << std::endl;
-		m_base->print_summary(os,ntabs+1);
+		// os << "Sweep: center = " ;
+		// os << m_plane.origin ;
+		// os << " base = " << std::endl;
+		// m_base->print_summary(os,ntabs+1);
 
 		for (auto i=0; i<ntabs; i++) os << "\t" ;
 		os << "<Sweep>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Base>" << std::endl;
+		m_base->print_summary(os, ntabs+2);
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "</Base>" << std::endl ;
 		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
 		os << "<Center>" << m_plane.origin << "</Center>" << std::endl;
 		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
@@ -512,16 +542,13 @@ public:
 		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
 		os << "<LineDir>" << m_line.dir << "</LineDir>" << std::endl;
 		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
-		os << "<Base>" << std::endl;
-		m_base->print_summary(os, ntabs+2);
-		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
-		os << "</Base>" << std::endl ;
+		os << "<Angle>" << m_angle << "</Angle>" << std::endl;
 		for (auto i=0; i<ntabs; i++) os << "\t" ;
 		os << "</Sweep>" << std::endl;
 	}
 private:
 
-	std::shared_ptr<CSGeometry2D> 		m_base;
+	std::shared_ptr<Primitive2D> 		m_base;
 	double 								m_angle;	// sweep angle in degrees
 	Plane 								m_plane;
 	Line<3> 							m_line;

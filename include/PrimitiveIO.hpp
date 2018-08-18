@@ -52,6 +52,9 @@ void write(std::string filename, const PrimitiveT & obj){
 		return;
 	}
 
+
+
+//////////////////////// 2D GEOMETRY READ /////////////////////////////
 	// forward declare this
 	std::shared_ptr<Primitive2D> buildGeometryFromXML2D(const XMLNode * n);
 
@@ -511,6 +514,641 @@ void write(std::string filename, const PrimitiveT & obj){
 		XMLDocument doc;
 		doc.LoadFile(filename.c_str());
 		return buildGeometryFromXML2D(doc.FirstChild());
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//////////////////////// 3D GEOMETRY READ /////////////////////////////
+	// forward declare this
+	std::shared_ptr<Primitive3D> buildGeometryFromXML3D(const XMLNode * n);
+
+	// declare the templatized version
+	template <typename T>
+	std::shared_ptr<Primitive3D> buildGeometryFromXML3D(const XMLNode * n){
+	}
+
+	template <>
+	std::shared_ptr<Primitive3D> buildGeometryFromXML3D<Sphere>(const XMLNode * n){
+		std::cout << "\t output is a Sphere" << std::endl;
+		auto c = n->FirstChild();
+
+		bool hasCenter = false, hasRadius = false;
+		double rad;
+		Point<3> cen;
+
+		while (c != nullptr){
+			std::stringstream ss;
+
+			if (!strcmp(c->Value(), "Center")){
+				hasCenter = true;
+				ss << c->FirstChild()->Value();
+				ss >> cen;
+			}
+			else if(!strcmp(c->Value(), "Radius")){
+				hasRadius = true;
+				ss << c->FirstChild()->Value();
+				ss >> rad;
+			}
+
+			c = c->NextSibling();
+		}
+
+		if (!hasCenter || !hasRadius){
+			std::cerr << "must have both <Radius> and <Center> properties" << std::endl;
+			throw -1;
+		}
+
+		return std::make_shared<Sphere>(Sphere(cen, rad));
+	}
+
+
+
+
+
+	template <>
+	std::shared_ptr<Primitive3D> buildGeometryFromXML3D<Cylinder>(const XMLNode * n){
+		std::cout << "\t output is a Cylinder" << std::endl;
+		auto c = n->FirstChild();
+
+		bool hasCenter = false, hasNormal = false, hasXDir = false, hasRadius = false, hasHeight = false;
+		Point<3> cen, normal, xdir;
+		double radius, height;
+
+		while (c != nullptr){
+			std::stringstream ss;
+
+			if (!strcmp(c->Value(), "Center")){
+				hasCenter = true;
+				ss << c->FirstChild()->Value();
+				ss >> cen;
+			}
+			else if(!strcmp(c->Value(), "Normal")){
+				hasNormal = true;
+				ss << c->FirstChild()->Value();
+				ss >> normal;
+			}
+			else if(!strcmp(c->Value(), "XDir")){
+				hasXDir = true;
+				ss << c->FirstChild()->Value();
+				ss >> xdir;
+			}
+			else if(!strcmp(c->Value(), "Radius")){
+				hasRadius = true;
+				ss << c->FirstChild()->Value();
+				ss >> radius;
+			}
+			else if(!strcmp(c->Value(), "Height")){
+				hasHeight = true;
+				ss << c->FirstChild()->Value();
+				ss >> height;
+			}
+
+			c = c->NextSibling();
+		}
+
+		if (!hasCenter || !hasNormal || !hasXDir || !hasRadius || !hasHeight){
+			std::cerr << "Cylinder format prototype is: " << std::endl;
+			std::cerr << "\t<Cylinder>" << std::endl;
+			std::cerr << "\t\t<Center>(c0,c1,c2)</Center>" << std::endl;
+			std::cerr << "\t\t<Normal>(n0,n1,n2)</Normal>" << std::endl;
+			std::cerr << "\t\t<XDir>(x0,x1,x2)</XDir>" << std::endl;
+			std::cerr << "\t\t<Radius>rad</Radius>" << std::endl;
+			std::cerr << "\t\t<Height>h</Height>" << std::endl;
+			std::cerr << "\t</Cylinder>" << std::endl;
+
+			throw -1;
+		}
+
+		return std::make_shared<Cylinder>(Cylinder(cen, normal, xdir, radius, height));
+	}
+
+
+
+
+
+	template <>
+	std::shared_ptr<Primitive3D> buildGeometryFromXML3D<RectangularPrism>(const XMLNode * n){
+		std::cout << "\t output is a RectangularPrism" << std::endl;
+		auto c = n->FirstChild();
+
+		bool hasCenter = false, hasNormal = false, hasXDir = false, hasDims = false, hasHeight = false;
+		Point<3> cen, normal, xdir;
+		Point<2> dims;
+		double  height;
+
+		while (c != nullptr){
+			std::stringstream ss;
+
+			if (!strcmp(c->Value(), "Center")){
+				hasCenter = true;
+				ss << c->FirstChild()->Value();
+				ss >> cen;
+			}
+			else if(!strcmp(c->Value(), "Normal")){
+				hasNormal = true;
+				ss << c->FirstChild()->Value();
+				ss >> normal;
+			}
+			else if(!strcmp(c->Value(), "XDir")){
+				hasXDir = true;
+				ss << c->FirstChild()->Value();
+				ss >> xdir;
+			}
+			else if(!strcmp(c->Value(), "Dims")){
+				hasDims = true;
+				ss << c->FirstChild()->Value();
+				ss >> dims;
+			}
+			else if(!strcmp(c->Value(), "Height")){
+				hasHeight = true;
+				ss << c->FirstChild()->Value();
+				ss >> height;
+			}
+
+			c = c->NextSibling();
+		}
+
+		if (!hasCenter || !hasNormal || !hasXDir || !hasDims || !hasHeight){
+			std::cerr << "RectangularPrism format prototype is: " << std::endl;
+			std::cerr << "\t<RectangularPrism>" << std::endl;
+			std::cerr << "\t\t<Center>(c0,c1,c2)</Center>" << std::endl;
+			std::cerr << "\t\t<Normal>(n0,n1,n2)</Normal>" << std::endl;
+			std::cerr << "\t\t<XDir>(x0,x1,x2)</XDir>" << std::endl;
+			std::cerr << "\t\t<Dims>(length, width)</Dims>" << std::endl;
+			std::cerr << "\t\t<Height>h</Height>" << std::endl;
+			std::cerr << "\t</RectangularPrism>" << std::endl;
+
+			throw -1;
+		}
+
+		return std::make_shared<RectangularPrism>(RectangularPrism(cen, normal, xdir, dims, height));
+	}
+
+
+
+
+
+	template <>
+	std::shared_ptr<Primitive3D> buildGeometryFromXML3D<Pyramid>(const XMLNode * n){
+		std::cout << "\t output is a Pyramid" << std::endl;
+		auto c = n->FirstChild();
+
+		bool hasCenter = false, hasNormal = false, hasXDir = false, hasBase = false, hasHeight = false;
+		Point<3> cen, normal, xdir;
+		double height;
+		std::shared_ptr<Primitive2D> prim2;
+
+		while (c != nullptr){
+			std::stringstream ss;
+
+			if (!strcmp(c->Value(), "Center")){
+				hasCenter = true;
+				ss << c->FirstChild()->Value();
+				ss >> cen;
+			}
+			else if(!strcmp(c->Value(), "Normal")){
+				hasNormal = true;
+				ss << c->FirstChild()->Value();
+				ss >> normal;
+			}
+			else if(!strcmp(c->Value(), "XDir")){
+				hasXDir = true;
+				ss << c->FirstChild()->Value();
+				ss >> xdir;
+			}
+			else if(!strcmp(c->Value(), "Base")){
+				hasBase = true;
+				prim2 = buildGeometryFromXML2D(c->FirstChild());
+			}
+			else if(!strcmp(c->Value(), "Height")){
+				hasHeight = true;
+				ss << c->FirstChild()->Value();
+				ss >> height;
+			}
+
+			c = c->NextSibling();
+		}
+
+		if (!hasCenter || !hasNormal || !hasXDir || !hasBase || !hasHeight){
+			std::cerr << "Pyramid format prototype is: " << std::endl;
+			std::cerr << "\t<Pyramid>" << std::endl;
+			std::cerr << "\t\t<Base>[primitive 2d type here]</Base>" << std::endl;
+			std::cerr << "\t\t<Center>(c0,c1,c2)</Center>" << std::endl;
+			std::cerr << "\t\t<Normal>(n0,n1,n2)</Normal>" << std::endl;
+			std::cerr << "\t\t<XDir>(x0,x1,x2)</XDir>" << std::endl;
+			std::cerr << "\t\t<Height>h</Height>" << std::endl;
+			std::cerr << "\t</Pyramid>" << std::endl;
+
+			throw -1;
+		}
+
+		return std::make_shared<Pyramid>(Pyramid(*prim2, cen, normal, xdir, height));
+	}
+
+
+
+	template <>
+	std::shared_ptr<Primitive3D> buildGeometryFromXML3D<Extrusion>(const XMLNode * n){
+		std::cout << "\t output is a Extrusion" << std::endl;
+		auto c = n->FirstChild();
+
+		bool hasCenter = false, hasNormal = false, hasXDir = false, hasBase = false, hasHeight = false;
+		Point<3> cen, normal, xdir;
+		double height;
+		std::shared_ptr<Primitive2D> prim2;
+
+		while (c != nullptr){
+			std::stringstream ss;
+
+			if (!strcmp(c->Value(), "Center")){
+				hasCenter = true;
+				ss << c->FirstChild()->Value();
+				ss >> cen;
+			}
+			else if(!strcmp(c->Value(), "Normal")){
+				hasNormal = true;
+				ss << c->FirstChild()->Value();
+				ss >> normal;
+			}
+			else if(!strcmp(c->Value(), "XDir")){
+				hasXDir = true;
+				ss << c->FirstChild()->Value();
+				ss >> xdir;
+			}
+			else if(!strcmp(c->Value(), "Base")){
+				hasBase = true;
+				prim2 = buildGeometryFromXML2D(c->FirstChild());
+			}
+			else if(!strcmp(c->Value(), "Height")){
+				hasHeight = true;
+				ss << c->FirstChild()->Value();
+				ss >> height;
+			}
+
+			c = c->NextSibling();
+		}
+
+		if (!hasCenter || !hasNormal || !hasXDir || !hasBase || !hasHeight){
+			std::cerr << "Extrusion format prototype is: " << std::endl;
+			std::cerr << "\t<Extrusion>" << std::endl;
+			std::cerr << "\t\t<Base>[primitive 2d type here]</Base>" << std::endl;
+			std::cerr << "\t\t<Center>(c0,c1,c2)</Center>" << std::endl;
+			std::cerr << "\t\t<Normal>(n0,n1,n2)</Normal>" << std::endl;
+			std::cerr << "\t\t<XDir>(x0,x1,x2)</XDir>" << std::endl;
+			std::cerr << "\t\t<Height>h</Height>" << std::endl;
+			std::cerr << "\t</Extrusion>" << std::endl;
+
+			throw -1;
+		}
+
+		return std::make_shared<Extrusion>(Extrusion(*prim2, cen, normal, xdir, height));
+	}
+
+
+
+
+	template <>
+	std::shared_ptr<Primitive3D> buildGeometryFromXML3D<Sweep>(const XMLNode * n){
+		std::cout << "\t output is a Sweep" << std::endl;
+		auto c = n->FirstChild();
+
+		bool hasCenter = false, hasNormal = false, hasXDir = false, hasBase = false, hasAngle = false, hasLinePoint = false, hasLineDir = false;
+		Point<3> cen, normal, xdir, lpt, ldir;
+		double angle;
+		std::shared_ptr<Primitive2D> prim2;
+
+		while (c != nullptr){
+			std::stringstream ss;
+
+			if (!strcmp(c->Value(), "Center")){
+				hasCenter = true;
+				ss << c->FirstChild()->Value();
+				ss >> cen;
+			}
+			else if(!strcmp(c->Value(), "Normal")){
+				hasNormal = true;
+				ss << c->FirstChild()->Value();
+				ss >> normal;
+			}
+			else if(!strcmp(c->Value(), "XDir")){
+				hasXDir = true;
+				ss << c->FirstChild()->Value();
+				ss >> xdir;
+			}
+			else if(!strcmp(c->Value(), "LinePoint")){
+				hasLinePoint = true;
+				ss << c->FirstChild()->Value();
+				ss >> lpt;
+			}
+			else if(!strcmp(c->Value(), "LineDir")){
+				hasLineDir = true;
+				ss << c->FirstChild()->Value();
+				ss >> ldir;
+			}
+			else if(!strcmp(c->Value(), "Base")){
+				hasBase = true;
+				prim2 = buildGeometryFromXML2D(c->FirstChild());
+			}
+			else if(!strcmp(c->Value(), "Angle")){
+				hasAngle = true;
+				ss << c->FirstChild()->Value();
+				ss >> angle;
+			}
+
+			c = c->NextSibling();
+		}
+
+		if (!hasCenter || !hasNormal || !hasXDir || 
+			!hasBase || !hasAngle || !hasLinePoint || !hasLineDir){
+			std::cerr << "Sweep format prototype is: " << std::endl;
+			std::cerr << "\t<Sweep>" << std::endl;
+			std::cerr << "\t\t<Base>[primitive 2d type here]</Base>" << std::endl;
+			std::cerr << "\t\t<Center>(c0,c1,c2)</Center>" << std::endl;
+			std::cerr << "\t\t<Normal>(n0,n1,n2)</Normal>" << std::endl;
+			std::cerr << "\t\t<XDir>(x0,x1,x2)</XDir>" << std::endl;
+			std::cerr << "\t\t<LinePoint>(p0,p1,p2)</LinePoint>" << std::endl;
+			std::cerr << "\t\t<LineDir>(l0,l1,l2)</LineDir>" << std::endl;
+			std::cerr << "\t\t<Angle>alpha_degrees</Angle>" << std::endl;
+			std::cerr << "\t</Sweep>" << std::endl;
+
+			throw -1;
+		}
+
+		return std::make_shared<Sweep>(Sweep(*prim2, cen, normal, xdir, Line<3>(lpt, ldir), angle));
+	}
+
+
+
+
+	template <>
+	std::shared_ptr<Primitive3D> buildGeometryFromXML3D<CSGTree<Primitive3D>>(const XMLNode * n){
+		std::cout << "\t output is a CSGTree" << std::endl;
+		auto c = n->FirstChild();
+
+		bool hasLeft = false, hasRight = false, hasOperation = false;
+		std::shared_ptr<Primitive3D> left, right;
+		Operation op = DIFFERENCE;
+
+		while (c != nullptr){
+			std::stringstream ss;
+
+			if (!strcmp(c->Value(), "Left")){
+				hasLeft = true;
+				left = buildGeometryFromXML3D(c->FirstChild());
+			}
+			else if(!strcmp(c->Value(), "Right")){
+				hasRight = true;
+				right = buildGeometryFromXML3D(c->FirstChild());
+			}
+			else if(!strcmp(c->Value(), "Operation")){
+				hasOperation = true;
+				if(!strcmp(c->FirstChild()->Value(), "DIFFERENCE")) op = DIFFERENCE;
+				else if(!strcmp(c->FirstChild()->Value(), "INTERSECT")) op = INTERSECT;
+				else if(!strcmp(c->FirstChild()->Value(), "UNION"))	op = UNION;
+				else if(!strcmp(c->FirstChild()->Value(), "XOR"))	op = XOR;
+				else{
+					std::cerr << "Operation value must be one of [DIFFERENCE, INTERSECT, UNION, XOR]" << std::endl;
+					throw -1;
+				}
+			}
+
+			c = c->NextSibling();
+		}
+
+		if (!hasLeft || !hasRight || !hasOperation){
+			std::cerr << "CSGTree format prototype is: " << std::endl;
+			std::cerr << "\t<CSGTree>" << std::endl;
+			std::cerr << "\t\t<Right>[a primitive type here]</Right>" << std::endl;
+			std::cerr << "\t\t<Left>[a primitive type here]</Left>" << std::endl;
+			std::cerr << "\t\t<Operation>[a binary operation here]</Operation>" << std::endl;
+			std::cerr << "\t</CSGTree>" << std::endl;
+
+			std::cerr << "The resulting tree is interpreted as (Left **Op** Right)" << std::endl;
+
+			throw -1;
+		}
+
+		return std::make_shared<CSGTree<Primitive3D>>(CSGTree<Primitive3D>(left, right, op));
+	}
+
+
+
+
+	std::shared_ptr<Primitive3D> buildGeometryFromXML3D_LinearTransformation(const XMLNode * n){
+		std::cout << "\t output is a LinearTransformation" << std::endl;
+		auto c = n->FirstChild();
+
+		bool hasMapping = false, hasPrimitive = false;
+		std::shared_ptr<Primitive3D> prim;
+		std::string mapstring;
+		const XMLNode * mapnode;
+
+		while (c != nullptr){
+
+			if (!strcmp(c->Value(), "Primitive")){
+				hasPrimitive = true;
+				prim = buildGeometryFromXML3D(c->FirstChild());
+			}
+			else if(!strcmp(c->Value(), "Mapping")){
+				hasMapping = true;
+				mapnode = c->FirstChild();
+				if(!strcmp(c->FirstChild()->Value(), "ShearMapping")) mapstring = "ShearMapping";
+				else if(!strcmp(c->FirstChild()->Value(), "DilatationMapping")) mapstring = "DilatationMapping";
+				else if(!strcmp(c->FirstChild()->Value(), "RotationMapping"))	mapstring = "RotationMapping";
+				else if(!strcmp(c->FirstChild()->Value(), "TranslationMapping"))	mapstring = "TranslationMapping";
+				else{
+					std::cerr << "Operation value must be one of [ShearMapping, DilatationMapping, RotationMapping, TranslationMapping]" << std::endl;
+					throw -1;
+				}
+			}
+
+			c = c->NextSibling();
+		}
+
+		if (!hasMapping || !hasPrimitive){
+			std::cerr << "LinearTransformation format prototype is: " << std::endl;
+			std::cerr << "\t<LinearTransformation>" << std::endl;
+			std::cerr << "\t\t<Mapping>[a mapping type here]</Mapping>" << std::endl;
+			std::cerr << "\t\t<Primitive>[a primitive type here]</Primitive>" << std::endl;
+			std::cerr << "\t</LinearTransformation>" << std::endl;
+			throw -1;
+		}
+
+
+		std::stringstream ss;
+		if(!strcmp(mapstring.c_str(), "ShearMapping")){
+			Point<3> up, lo;
+			ss << mapnode->FirstChild()->FirstChild()->Value();
+			ss >> up;
+			ss.clear();
+			ss << mapnode->FirstChild()->NextSibling()->FirstChild()->Value();
+			ss >> lo;
+			return std::make_shared<LinearTransformation<Primitive3D, ShearMap3D>>(shear_transformation(*prim, up, lo));
+		}
+		// else if(!strcmp(mapstring.c_str(), "DilatationMapping")){
+		// 	Point<2> p;
+		// 	ss << mapnode->FirstChild()->Value();
+		// 	ss >> p;
+		// 	return std::make_shared<LinearTransformation<Primitive3D, DilatationMap2D>>(dilatation_transformation(*prim, p));
+		// }
+		// else if(!strcmp(mapstring.c_str(), "RotationMapping")){
+		// 	double p;
+		// 	ss << mapnode->FirstChild()->Value();
+		// 	ss >> p;
+		// 	return std::make_shared<LinearTransformation<Primitive3D, RotationMap2D>>(rotation_transformation(*prim, p));
+		// }
+		// else if(!strcmp(mapstring.c_str(), "TranslationMapping")){
+		// 	Point<2> p;
+		// 	ss << mapnode->FirstChild()->Value();
+		// 	ss >> p;
+		// 	return std::make_shared<LinearTransformation<Primitive3D, TranslationMap2D>>(translation_transformation(*prim, p));
+		// }
+		else{
+			std::cerr << "Operation value must be one of [ShearMapping, DilatationMapping, RotationMapping, TranslationMapping]" << std::endl;
+			throw -1;
+		}
+
+		// return std::make_shared<LinearTransformation<Primitive3D>>(LinearTransformation<Primitive3D>(left, right, op));
+	}
+
+
+
+
+
+	// std::shared_ptr<Primitive3D> buildGeometryFromXML3D_SymmetryTransformation(const XMLNode * n){
+	// 	std::cout << "\t output is a SymmetryTransformation" << std::endl;
+	// 	auto c = n->FirstChild();
+
+	// 	bool hasMapping = false, hasPrimitive = false;
+	// 	std::shared_ptr<Primitive3D> prim;
+	// 	std::string mapstring;
+	// 	const XMLNode * mapnode;
+
+	// 	while (c != nullptr){
+
+	// 		if (!strcmp(c->Value(), "Primitive")){
+	// 			hasPrimitive = true;
+	// 			prim = buildGeometryFromXML3D(c->FirstChild());
+	// 		}
+	// 		else if(!strcmp(c->Value(), "Mapping")){
+	// 			hasMapping = true;
+	// 			mapnode = c->FirstChild();
+	// 			if(!strcmp(c->FirstChild()->Value(), "DiscreteRotationMapping")) mapstring = "DiscreteRotationMapping";
+	// 			else if(!strcmp(c->FirstChild()->Value(), "ContinuousRotationMapping")) mapstring = "ContinuousRotationMapping";
+	// 			else if(!strcmp(c->FirstChild()->Value(), "ContinuousTranslationMapping"))	mapstring = "ContinuousTranslationMapping";
+	// 			else if(!strcmp(c->FirstChild()->Value(), "DiscreteTranslationMapping"))	mapstring = "DiscreteTranslationMapping";
+	// 			else{
+	// 				std::cerr << "Operation value must be one of [DiscreteRotationMapping, ContinuousRotationMapping, DiscreteTranslationMapping, ContinuousTranslationMapping]" << std::endl;
+	// 				throw -1;
+	// 			}
+	// 		}
+
+	// 		c = c->NextSibling();
+	// 	}
+
+	// 	if (!hasMapping || !hasPrimitive){
+	// 		std::cerr << "SymmetryTransformation format prototype is: " << std::endl;
+	// 		std::cerr << "\t<SymmetryTransformation>" << std::endl;
+	// 		std::cerr << "\t\t<Mapping>[a mapping type here]</Mapping>" << std::endl;
+	// 		std::cerr << "\t\t<Primitive>[a primitive type here]</Primitive>" << std::endl;
+	// 		std::cerr << "\t</SymmetryTransformation>" << std::endl;
+	// 		throw -1;
+	// 	}
+
+
+	// 	std::stringstream ss;
+	// 	if(!strcmp(mapstring.c_str(), "DiscreteRotationMapping")){
+	// 		Point<2> p;
+	// 		std::size_t N;
+	// 		const XMLNode * mn = mapnode->FirstChild();
+	// 		ss << mn->FirstChild()->Value();
+	// 		ss >> N;
+
+	// 		std::cout << "N: " << mn->FirstChild()->Value() << std::endl;
+
+	// 		ss.clear();
+	// 		mn = mn->NextSibling();
+	// 		ss << mn->FirstChild()->Value();
+	// 		ss >> p;
+	// 		return std::make_shared<SymmetryTransformation<Primitive3D, DiscreteRotationSymmetryMap2D>>(discrete_rotation_symmetry(*prim, p, N));
+	// 	}
+	// 	else if(!strcmp(mapstring.c_str(), "ContinuousRotationMapping")){
+	// 		Point<2> p;
+	// 		ss << mapnode->FirstChild()->Value();
+	// 		ss >> p;
+	// 		return std::make_shared<SymmetryTransformation<Primitive3D, ContinuousRotationSymmetryMap2D>>(continuous_rotation_symmetry(*prim, p));
+	// 	}
+	// 	else if(!strcmp(mapstring.c_str(), "ContinuousTranslationMapping")){
+	// 		double p;
+	// 		ss << mapnode->FirstChild()->Value();
+	// 		ss >> p;
+	// 		return std::make_shared<SymmetryTransformation<Primitive3D, ContinuousTranslationSymmetryMap2D>>(continuous_translation_symmetry(*prim, p));
+	// 	}
+	// 	else if(!strcmp(mapstring.c_str(), "DiscreteTranslationMapping")){
+	// 		Point<2> p;
+	// 		ss << mapnode->FirstChild()->Value();
+	// 		ss >> p;
+	// 		return std::make_shared<SymmetryTransformation<Primitive3D, DiscreteTranslationSymmetryMap2D>>(discrete_translation_symmetry(*prim, p));
+	// 	}
+	// 	else{
+	// 		std::cerr << "Operation value must be one of [DiscreteRotationMapping, ContinuousRotationMapping, DiscreteTranslationMapping, ContinuousTranslationMapping]" << std::endl;
+	// 		throw -1;
+	// 	}
+
+	// 	// return std::make_shared<LinearTransformation<Primitive3D>>(LinearTransformation<Primitive3D>(left, right, op));
+	// }
+
+
+
+
+	std::shared_ptr<Primitive3D> buildGeometryFromXML3D(const XMLNode * n){
+		if (n == nullptr){
+			std::cerr << "Failed to complete an XML tag... make sure it is closed" << std::endl;
+			throw -1;
+			return std::make_shared<Sphere>(Sphere({0,0,0}, 0));
+		}
+
+		// for (unsigned int i=0; i<ntab; i++) std::cout << "\t" ;
+		std::cout << n->Value() << ":   " << std::endl ;
+
+		if (!strcmp(n->Value(),"CSGTree")) return buildGeometryFromXML3D<CSGTree<Primitive3D>>(n);
+		else if (!strcmp(n->Value(),"LinearTransformation")) return buildGeometryFromXML3D_LinearTransformation(n);
+		// else if (!strcmp(n->Value(),"SymmetryTransformation")) return buildGeometryFromXML3D_SymmetryTransformation(n);
+		else if (!strcmp(n->Value(),"Sphere")) return buildGeometryFromXML3D<Sphere>(n);
+		else if (!strcmp(n->Value(),"Cylinder")) return buildGeometryFromXML3D<Cylinder>(n);
+		else if (!strcmp(n->Value(),"RectangularPrism")) return buildGeometryFromXML3D<RectangularPrism>(n);
+		else if (!strcmp(n->Value(),"Pyramid")) return buildGeometryFromXML3D<Pyramid>(n);
+		else if (!strcmp(n->Value(),"Extrusion")) return buildGeometryFromXML3D<Extrusion>(n);
+		else if (!strcmp(n->Value(),"Sweep")) return buildGeometryFromXML3D<Sweep>(n);
+		
+
+		std::cerr << "Unrecognized geometry option: " << n->Value() << std::endl;
+		throw -1;
+		return std::make_shared<Sphere>(Sphere({0,0,0}, 0));
+	}
+
+
+
+
+	std::shared_ptr<Primitive3D> read3D(std::string filename){
+		XMLDocument doc;
+		doc.LoadFile(filename.c_str());
+		return buildGeometryFromXML3D(doc.FirstChild());
 	}
 
 	

@@ -704,7 +704,7 @@ public:
 	template <class PrototypeMap, 
 			  class RefineOracle,
 			  class ContainerInserter>
-	void buildTree(std::size_t lvlstop, 
+	void buildTree(std::size_t lvlmin, std::size_t lvlstop, 
 				  const PrototypeMap & pm, 
 				  const RefineOracle & ro,
 				  const ContainerInserter & ci,
@@ -724,7 +724,7 @@ public:
 		// decide if refinement is necessary
 		// std::cout << "before isUniform ------" ;
 		if (lvl == lvlstop) return;
-		if (ro.isUniform(key)) return;
+		if (ro.isUniform(key) && lvl >= lvlmin) return;
 		// std::cout << "after isUniform" << std::endl;
 
 		// mKeyMaps[lvl][subd][key].mIsLeaf = false;
@@ -736,7 +736,7 @@ public:
 		// if refining, 
 		for (auto so=0; so<sSize; so++){
 			KeyT kc = KeyDecoder::getChildKey(key, so);
-			buildTree(lvlstop, pm, ro, ci, kc, lvl+1);
+			buildTree(lvlmin, lvlstop, pm, ro, ci, kc, lvl+1);
 		}
 	}
 

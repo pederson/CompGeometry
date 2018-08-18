@@ -38,25 +38,37 @@ struct ShearMap3D{
 public:
 	typedef Point<3> 					PointT;
 	typedef Box<3>						BoxT;
-	PointT 		mL;
+	PointT 		mL, mU;
 
-	ShearMap3D(const PointT & p) : mL(p) {
-		std::cout << "3D Shear Map not working... fix me!" << std::endl;
-		throw -1;
+	ShearMap3D(const PointT & U, const PointT & L) : mU(U), mL(L) {
+		// std::cout << "3D Shear Map not working... fix me!" << std::endl;
+		// throw -1;
 	};
 
 	PointT inverse_map(const PointT & p) const{
-		double det = (1-mL.x[0]*mL.x[1]*mL.x[2]);
-		return 1.0/det*PointT(p.x[0]-p.x[1]*mL.x[0], p.x[1]-p.x[0]*mL.x[1], 0);
+		double a=mU.x[0], b=mU.x[1], c=mU.x[2];
+		double d=mL.x[0], e=mL.x[1], f=mL.x[2];
+		double det = (1-c*f)-a*(d-e*c)+b*(d*f-e);//(1-mL.x[0]*mL.x[1]*mL.x[2]);
+		return 1.0/det*PointT(p.x[0]*(1*1-f*c)-p.x[1]*(1*a-f*b)+p.x[2]*(c*a-1*b),
+							 -p.x[0]*(1*d-e*c)+p.x[1]*(1*1-e*b)-p.x[2]*(c*1-d*b),
+							  p.x[0]*(f*d-e*1)-p.x[1]*(f*1-e*a)+p.x[2]*(1*1-d*a));
 	};
 
 	PointT forward_map(const PointT & p) const{
-		return PointT(p.x[0]+mL.x[0]*p.x[1], p.x[1] + mL.x[1]*p.x[0], 0);
+		double a=mU.x[0], b=mU.x[1], c=mU.x[2];
+		double d=mL.x[0], e=mL.x[1], f=mL.x[2];
+		return PointT(p.x[0]+a*p.x[1]+b*p.x[2], d*p.x[0]+p.x[1]+c*p.x[2], e*p.x[0]+f*p.x[1]+p.x[2]);
 	};
 
 	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "<ShearMapping>" << std::endl;
 		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
-		os << "<ShearMapping>" << mL << "</ShearMapping>" << std::endl;
+		os << "<Upper>" << mU << "</Upper>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Lower>" << mL << "</Lower>" << std::endl;
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "</ShearMapping>" << std::endl;
 	}
 };
 
@@ -227,8 +239,8 @@ LinearTransformation<Primitive2D, ShearMap2D> shear_transformation(const Derived
 }
 
 template <typename DerivedType>
-LinearTransformation<Primitive3D, ShearMap3D> shear_transformation(const DerivedType & c, const Point<3> & p){
-	return LinearTransformation<Primitive3D, ShearMap3D>(c.copy(), ShearMap3D(p));
+LinearTransformation<Primitive3D, ShearMap3D> shear_transformation(const DerivedType & c, const Point<3> & upper, const Point<3> & lower){
+	return LinearTransformation<Primitive3D, ShearMap3D>(c.copy(), ShearMap3D(upper, lower));
 }
 
 

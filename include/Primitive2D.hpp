@@ -114,6 +114,8 @@ public:
 					  		   std::max(std::max(p1.x[1],p2.x[1]),std::max(p3.x[1], p4.x[1]))));
 	}
 
+	Point<2> dims() const {return Point<2>(m_lx, m_ly);};
+
 	std::vector<Hull<2>> get_outline(unsigned int npts) const {
 		Hull<2> h1;
 		// h1.points.resize(npts);
