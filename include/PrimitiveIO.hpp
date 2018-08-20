@@ -1151,6 +1151,29 @@ void write(std::string filename, const PrimitiveT & obj){
 		return buildGeometryFromXML3D(doc.FirstChild());
 	}
 
+
+
+
+
+
+
+	//////////////////////// READ OF OTHER PRIMITIVES /////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	
 #endif
 
