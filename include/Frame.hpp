@@ -27,6 +27,7 @@ public:
 	}
 
 	double length() const {return (mEnd-mStart).norm();};
+	Box<1> get_bounding_box() const {return Box<1>({0}, {length()});};
 };
 
 

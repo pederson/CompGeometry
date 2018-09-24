@@ -327,6 +327,10 @@ public:
 		return off;
 	}
 
+	constexpr std::size_t levelSize(std::size_t lvl) const {
+		return pow(rfactor, lvl);
+	}
+
 
 	// get a key from a offset on a given level
 	constexpr KeyT getKeyFromLevelOffset(std::size_t lvl, IntPoint<dim> off) const{
@@ -384,6 +388,17 @@ public:
 
 		return bx;
 	}
+
+	// this is the box corresponding to key, normalized from 0 to 1 in each dimension
+	constexpr Box<dim> getBox(std::size_t key) const{
+			auto lvl = getLevel(key);
+			double rf = pow(rfactor,lvl);
+			Point<dim> boxsize = 1.0/static_cast<double>(rf);
+			IntPoint<dim> off = getOffsetWithinLevel(key);
+			Point<dim> newlo = boxsize*off;
+			Box<dim> rbox(newlo, newlo+boxsize);
+			return rbox;
+		}
 };
 
 
@@ -713,7 +728,7 @@ public:
 		// std:: cout << "build_key: " << key << std::endl;
 		// create node for key
 		NodeT n; n.isLeaf() = true; 
-		n.getValue() = pm.getValue(key);
+		n = pm.getValue(key);
 		// std::cout << "before insert ------" ;
 		auto pr = std::pair<const KeyT, NodeT>(key,n);
 		auto suc = ci.insert(*this,pr);
