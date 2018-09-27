@@ -398,7 +398,19 @@ public:
 			Point<dim> newlo = boxsize*off;
 			Box<dim> rbox(newlo, newlo+boxsize);
 			return rbox;
-		}
+	}
+
+
+	// these are the keys of neighbors of equal depth
+	constexpr std::vector<std::size_t> getEqualSizedNeighborKeys(std::size_t key) const{
+			std::vector<std::size_t> keylist;
+			keylist.push_back(key);
+			for (std::size_t d=0; d<dim; d++){
+				keylist.push_back(getNeighborKeyMin(key, d));
+				keylist.push_back(getNeighborKeyMax(key, d));	
+			}
+			return keylist;
+	}
 };
 
 
@@ -1222,15 +1234,90 @@ public:
 
 
 	// define some utility functions (can be specialized)
+	//
+	// takes a point in [0,1]^dim and returns the list
+	// of neighbor keys and distances to the neighbors
+	//
+	// this function accepts an argument that is the offset 
+	// to the point within the cell that we want to interpolate
+	// from (in the range [-1/2, 1/2]^dim)
+	std::vector<std::pair<KeyT, double>> interpolateTo(const Point<dim> & p, const Point<dim> & offset = Point<dim>(0)){
+		// get the key of the leaf node in which this point resides
+		auto it = Container::find(0);
+		std::size_t lvl = 1;
+		KeyT k;
+		// depth-first seach for leaf
+		while (!it->second.isLeaf()){
+			Point<dim> off_d = p*KeyDecoder::levelSize(lvl);
+			IntPoint<dim> off;
+			for (auto i=0; i<dim; i++) off.x[i] = floor(off_d.x[i]);
+			// std::cout << "level: " << lvl << " off_d: " << off_d << " offset: " << off <<std::endl;
+			k = KeyDecoder::getKeyFromLevelOffset(lvl, off);
+			it = Container::find(k);
+			lvl++;
+		}
+		// std::cout << "finished while loop " << it->first << std::endl;
+		k = it->first;
 
+		// get the equal-size neighbors of this key
+		std::vector<KeyT> v = KeyDecoder::getEqualSizedNeighborKeys(k);
+		// for (auto it=v.begin(); it!=v.end(); it++) std::cout << "equal size neighbor: " << *it << std::endl;
+		
+		// std::cout << "replacing non-existent keys" << std::endl;
+		v.reserve(1000);
+		// remove any non-existent keys and add the parent key
+		for (auto it=v.begin(); it!=v.end();){
+			if (Container::find(*it) == Container::end()){
+				// std::cout << "key : " << *it << " does not exist.. erasing" << std::endl;
+				k = *it;
+				while (Container::find(k) == Container::end()){
+					k = KeyDecoder::getParentKey(k);
+				}
+				v.emplace(it+1, k);
+				it = v.erase(it);
+			}
+			else {
+				it++;
+			}
+		}
 
-	// // set an existing key in the level map as a boundary.
-	// // this will add the key to the boundary key map
-	// void changeKeySubdomain(KeyT key, std::size_t lvl, std::size_t subd) {
-	// 	std::size_t old_subd = SubdomainDecoder::decodeSubdomain(key);
-	// 	mKeyMaps[lvl][subd][key] = &mKeyMaps[lvl][old_subd][key];
-	// 	mKeyMaps[lvl][old_subd].remove(key);
-	// }	
+		// std::cout << "replacing non-leaves" << std::endl;
+		v.reserve(1000);
+		// replace non-leaf keys with their children
+		for (auto it=v.begin(); it!=v.end();){
+			if (!(*this)[*it].isLeaf()){
+				// std::cout << "key: " << *it << " is not a leaf... replacing it" << std::endl;
+				KeyT skey = KeyDecoder::getChildKey(*it, 0);
+				// std::cout << "first child key is: " << skey << std::endl;
+				for (int n=0; n<sSize; n++){
+					v.emplace(it+1, skey+n);
+				}
+				it = v.erase(it);
+			}
+			else {
+				it++;
+			}
+		}
+
+		// std::cout << "finding distances" << std::endl;
+		// get the distances corresponding to all keys
+		std::vector<std::pair<KeyT, double>> out(v.size());
+		for (auto it=v.begin(); it!=v.end(); it++){
+			Box<dim> keybox = KeyDecoder::getBox(*it);
+			Point<dim> ctr = 0.5*(keybox.hi+keybox.lo);
+			Point<dim> pt = ctr + offset/static_cast<double>(KeyDecoder::levelSize(KeyDecoder::getLevel(*it)));
+			out[it-v.begin()] = (std::make_pair(*it, Point<dim>::dist(pt, p)));
+		}
+		
+		// std::cout << "sorting on distances" << std::endl;
+		// sort from shortest to largest distance
+		std::sort(out.begin(), out.end(), [](const std::pair<KeyT, double> & a, 
+											 const std::pair<KeyT, double> & b){
+												return a.second < b.second;});
+
+		return out;
+	}
+
 };
 
 
