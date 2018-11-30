@@ -20,8 +20,8 @@ public:
 
 	// constructor
 	GeneralPoint(T x0){
+		static_assert(dim == 1, "ERROR: That GeneralPoint constructor not implemented for dim > 1");
 		x[0] = x0;
-		if (dim > 1) throw("ERROR: That GeneralPoint constructor not implemented for dim > 3");
 	}
 
 	// constructor
@@ -80,6 +80,20 @@ public:
 	GeneralPoint operator/ (T val) const{
 		GeneralPoint out(*this);
 		for (auto i=0; i<dim; i++) out.x[i] = x[i]/val;
+		return out;
+	}
+
+	// scalar addition 
+	GeneralPoint operator+ (T val) const{
+		GeneralPoint out(*this);
+		for (auto i=0; i<dim; i++) out.x[i] + val;
+		return out;
+	}
+
+	// scalar subtraction 
+	GeneralPoint operator- (T val) const{
+		GeneralPoint out(*this);
+		for (auto i=0; i<dim; i++) out.x[i] -= val;
 		return out;
 	}
 

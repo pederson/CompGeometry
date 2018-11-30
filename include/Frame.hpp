@@ -69,6 +69,7 @@ public:
 
 	double lengthx() const {return Point<scene_dim>::dot((mEnd-mStart), mVecX);};
 	double lengthy() const {return sqrt(length_diag()*length_diag() - lengthx()*lengthx());};
+	Box<2> get_bounding_box() const {return Box<2>({0,0}, {lengthx(), lengthy()});};
 };
 
 
@@ -112,7 +113,8 @@ public:
 	double lengthx() const {return Point<scene_dim>::dot((mEnd-mStart), mVecX);};
 	double lengthy() const {return Point<scene_dim>::dot((mEnd-mStart), mVecY);};
 	double lengthz() const {return sqrt(length_diag()*length_diag() - lengthx()*lengthx() - lengthy()*lengthy());};
-	
+	Box<3> get_bounding_box() const {return Box<3>({0,0,0}, {lengthx(), lengthy(), lengthz()});};
+
 };
 
 
