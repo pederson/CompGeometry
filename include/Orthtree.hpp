@@ -392,14 +392,14 @@ public:
 	// this is the box corresponding to key, normalized from 0 to 1 in each dimension
 	constexpr Box<dim> getBox(std::size_t key) const{
 			auto lvl = getLevel(key);
-			std::cout << "got level " << lvl << " for key " << key << std::endl;
+			// std::cout << "got level " << lvl << " for key " << key << std::endl;
 			double rf = pow(rfactor,lvl);
-			std::cout << "computed rfactor: " << rf << std::endl;
+			// std::cout << "computed rfactor: " << rf << std::endl;
 			// Point<dim> boxsize = 1.0/rf;
 			Point<dim> boxsize;
 			for (int i=0; i<dim; i++) boxsize.x[i] = 1.0/rf;
 			IntPoint<dim> off = getOffsetWithinLevel(key);
-			std::cout << " got offset " << off << " for key " << key << std::endl;
+			// std::cout << " got offset " << off << " for key " << key << std::endl;
 			Point<dim> newlo = boxsize*off;
 			Box<dim> rbox(newlo, newlo+boxsize);
 			return rbox;
@@ -748,7 +748,8 @@ public:
 		std::cout << " bkey2" << std::endl;
 		n = pm.getValue(key);
 		std::cout << "before insert ------" ;
-		auto pr = std::pair<const KeyT, NodeT>(key,n);
+		// typedef std::pair<const KeyType, NodeType> pair_type;
+		auto pr = std::pair<const KeyType, NodeType>(key,n);
 		auto suc = ci.insert(*this,pr);
 		// Container::insert(key, lvl, n);
 		std::cout << "after insert " << std::endl;

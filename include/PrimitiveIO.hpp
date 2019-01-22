@@ -464,7 +464,7 @@ void write(std::string filename, const PrimitiveT & obj){
 			return std::make_shared<SymmetryTransformation<Primitive2D, ContinuousRotationSymmetryMap2D>>(continuous_rotation_symmetry(*prim, p));
 		}
 		else if(!strcmp(mapstring.c_str(), "ContinuousTranslationMapping")){
-			double p;
+			Point<2> p;
 			ss << mapnode->FirstChild()->Value();
 			ss >> p;
 			return std::make_shared<SymmetryTransformation<Primitive2D, ContinuousTranslationSymmetryMap2D>>(continuous_translation_symmetry(*prim, p));

@@ -24,18 +24,6 @@ public:
 	Scene(Identifier bg) : mBackground(bg) {};
 
 
-	// template <unsigned int ndim>
-	// Identifier query_point(const Point<ndim> & pt) const {
-	// 	Identifier id = mBackground;
-	// 	for (auto it=begin(); it!=end(); it++){
-	// 		if (it->second->contains_point(pt)){
-	// 			id = it->first;
-	// 			break;
-	// 		}
-	// 	}
-	// 	return id;
-	// }
-
 	Identifier query_point(const Point<2> & pt) const {
 		Identifier id = mBackground;
 		for (auto it=begin(); it!=end(); it++){
