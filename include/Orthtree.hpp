@@ -389,6 +389,10 @@ public:
 		return bx;
 	}
 
+	constexpr double getSize(KeyT key){
+		return 1.0/static_cast<double>(pow(rfactor, getLevel(key)));
+	}
+
 	// this is the box corresponding to key, normalized from 0 to 1 in each dimension
 	constexpr Box<dim> getBox(std::size_t key) const{
 			auto lvl = getLevel(key);
@@ -409,12 +413,26 @@ public:
 	// these are the keys of neighbors of equal depth
 	constexpr std::vector<std::size_t> getEqualSizedNeighborKeys(std::size_t key) const{
 			std::vector<std::size_t> keylist;
-			keylist.push_back(key);
-			for (std::size_t d=0; d<dim; d++){
-				keylist.push_back(getNeighborKeyMin(key, d));
-				keylist.push_back(getNeighborKeyMax(key, d));	
-			}
+			// keylist.push_back(key);
+			// for (std::size_t d=0; d<dim; d++){
+			// 	keylist.push_back(getNeighborKeyMin(key, d));
+			// 	keylist.push_back(getNeighborKeyMax(key, d));	
+			// }
+			spawnNeighbors(keylist, key, dim-1);
 			return keylist;
+	}
+
+
+	void spawnNeighbors(std::vector<std::size_t> & v, std::size_t k, std::size_t d) const {
+		if (d == 0){
+			v.push_back(getNeighborKeyMin(k, d));
+			v.push_back(getNeighborKeyMax(k, d));
+			v.push_back(k);
+			return;
+		}
+		spawnNeighbors(v, getNeighborKeyMin(k, d), d-1);
+		spawnNeighbors(v, getNeighborKeyMax(k, d), d-1);
+		spawnNeighbors(v, k, d-1);
 	}
 };
 
@@ -1243,12 +1261,12 @@ public:
 	// define some utility functions (can be specialized)
 	//
 	// takes a point in [0,1]^dim and returns the list
-	// of neighbor keys and distances to the neighbors
+	// of neighbor keys and distances to the neighbors (in normalized units)
 	//
 	// this function accepts an argument that is the offset 
 	// to the point within the cell that we want to interpolate
 	// from (in the range [-1/2, 1/2]^dim)
-	std::vector<std::pair<KeyT, double>> interpolateTo(const Point<dim> & p, const Point<dim> & offset = Point<dim>(0)){
+	std::vector<std::pair<KeyT, Point<dim>>> interpolateTo(const Point<dim> & p, const Point<dim> & offset = Point<dim>(0)){
 		// get the key of the leaf node in which this point resides
 		auto it = Container::find(0);
 		std::size_t lvl = 1;
@@ -1266,10 +1284,15 @@ public:
 		// std::cout << "finished while loop " << it->first << std::endl;
 		k = it->first;
 
+		// std::cout << "attempting to interpolate to: " << k << std::endl;
+
 		// get the equal-size neighbors of this key
 		std::vector<KeyT> v = KeyDecoder::getEqualSizedNeighborKeys(k);
-		// for (auto it=v.begin(); it!=v.end(); it++) std::cout << "equal size neighbor: " << *it << std::endl;
-		
+		// for (auto it=v.begin(); it!=v.end(); it++) std::cout << "eq-neighb: " << *it << std::endl;
+
+		// int brr;
+		// std::cin >> brr ;
+
 		// std::cout << "replacing non-existent keys" << std::endl;
 		v.reserve(1000);
 		// remove any non-existent keys and add the parent key
@@ -1280,13 +1303,27 @@ public:
 				while (Container::find(k) == Container::end()){
 					k = KeyDecoder::getParentKey(k);
 				}
-				v.emplace(it+1, k);
-				it = v.erase(it);
+				// std::cout << "new key is : " << k << std::endl;
+				// v.emplace(it+1, k);
+				// it = v.erase(it);
+				*it = k;
+				it++;
+
+				// std::cout << "replaced by : " << *(it-1) << std::endl;
+
+				// if (Container::find(*(it-1)) == Container::end()){
+				// 	std::cout << "replacement key does not exist" << std::endl;
+				// 	int brrr;
+				// 	std::cin >> brrr;
+				// }
+				
 			}
 			else {
 				it++;
 			}
 		}
+
+
 
 		// std::cout << "replacing non-leaves" << std::endl;
 		v.reserve(1000);
@@ -1306,22 +1343,41 @@ public:
 			}
 		}
 
+
+
 		// std::cout << "finding distances" << std::endl;
 		// get the distances corresponding to all keys
-		std::vector<std::pair<KeyT, double>> out(v.size());
+		std::vector<std::pair<KeyT, Point<dim>>> out(v.size());
 		for (auto it=v.begin(); it!=v.end(); it++){
 			Box<dim> keybox = KeyDecoder::getBox(*it);
 			Point<dim> ctr = 0.5*(keybox.hi+keybox.lo);
 			Point<dim> pt = ctr + offset/static_cast<double>(KeyDecoder::levelSize(KeyDecoder::getLevel(*it)));
-			out[it-v.begin()] = (std::make_pair(*it, Point<dim>::dist(pt, p)));
+			out[it-v.begin()] = (std::make_pair(*it, pt-p));
 		}
-		
-		// std::cout << "sorting on distances" << std::endl;
-		// sort from shortest to largest distance
-		std::sort(out.begin(), out.end(), [](const std::pair<KeyT, double> & a, 
-											 const std::pair<KeyT, double> & b){
-												return a.second < b.second;});
 
+		// // std::cout << "sorting on distances" << std::endl;
+		// // sort by key
+		std::sort(out.begin(), out.end(), [](const std::pair<KeyT, Point<dim>> & a, 
+											 const std::pair<KeyT, Point<dim>> & b){
+												return a.first < b.first;});
+		
+		// return only unique keys
+		auto last = std::unique(out.begin(), out.end(), [](const std::pair<KeyT, Point<dim>> & a, 
+											 const std::pair<KeyT, Point<dim>> & b){
+												return a.first == b.first;});
+		out.erase(last, out.end());
+		
+		// // std::cout << "sorting on distances" << std::endl;
+		// // sort from shortest to largest distance
+		std::sort(out.begin(), out.end(), [](const std::pair<KeyT, Point<dim>> & a, 
+											 const std::pair<KeyT, Point<dim>> & b){
+												return a.second.norm() < b.second.norm();});
+		
+		// // return only unique keys
+		// auto last = std::unique(out.begin(), out.end(), [](const std::pair<KeyT, Point<dim>> & a, 
+		// 									 const std::pair<KeyT, Point<dim>> & b){
+		// 										return a.first == b.first;});
+		// out.erase()
 		return out;
 	}
 
