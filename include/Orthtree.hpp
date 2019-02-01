@@ -760,30 +760,30 @@ public:
 				  const ContainerInserter & ci,
 				  KeyT key, std::size_t lvl){
 
-		std:: cout << "build_key: " << key << std::endl;
+		// std:: cout << "build_key: " << key << std::endl;
 		// create node for key
 		NodeT n; n.isLeaf() = true; 
-		std::cout << " bkey2" << std::endl;
+		// std::cout << " bkey2" << std::endl;
 		n = pm.getValue(key);
-		std::cout << "before insert ------" ;
+		// std::cout << "before insert ------" ;
 		// typedef std::pair<const KeyType, NodeType> pair_type;
 		auto pr = std::pair<const KeyType, NodeType>(key,n);
 		auto suc = ci.insert(*this,pr);
 		// Container::insert(key, lvl, n);
-		std::cout << "after insert " << std::endl;
+		// std::cout << "after insert " << std::endl;
 
 		// std::cout << "insertion was " << (suc.second ? "success" : "failure") << std::endl;
 		// decide if refinement is necessary
-		std::cout << "before isUniform ------" ;
+		// std::cout << "before isUniform ------" ;
 		if (lvl == lvlstop) return;
 		if (ro.isUniform(key) && lvl >= lvlmin) return;
-		std::cout << "after isUniform" << std::endl;
+		// std::cout << "after isUniform" << std::endl;
 
 		// mKeyMaps[lvl][subd][key].mIsLeaf = false;
-		std::cout << "before find ------" ;
+		// std::cout << "before find ------" ;
 		suc.first->second.isLeaf() = false;
 		// Container::find(key,lvl)->second.isLeaf() = false;
-		std::cout << "after find" << std::endl;
+		// std::cout << "after find" << std::endl;
 
 		// if refining, 
 		for (auto so=0; so<sSize; so++){
