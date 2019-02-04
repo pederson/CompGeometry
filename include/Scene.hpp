@@ -59,6 +59,10 @@ public:
 	}
 
 
+	Identifier & background() {return mBackground;};
+	const Identifier & background() const {return mBackground;};
+
+
 protected:
 	Identifier 			mBackground;
 };

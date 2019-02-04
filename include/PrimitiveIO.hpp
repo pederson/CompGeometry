@@ -8,6 +8,8 @@
 #include "LinearTransformation.hpp"
 #include "SymmetryTransformation.hpp"
 
+#include "Scene.hpp"
+
 #include <fstream>
 #include <memory>
 
@@ -53,6 +55,26 @@ void write(std::string filename, const PrimitiveT & obj){
 	}
 
 
+	// this function is purely for the purpose of skipping over comments
+	const XMLNode * retrieveNode(const XMLNode * n){
+		if (n==nullptr) return n;
+		if(n->ToComment() != nullptr) return retrieveNode(n->NextSibling());
+		return n;
+	}
+
+
+	const char * retrieveXMLString(const XMLNode * n){
+		if (n->ToComment() != nullptr) return retrieveXMLString(n->NextSibling());
+		return n->Value();
+	}
+
+
+
+	// const char * retrieveXMLString(const XMLComment * n){
+	// 	return retrieveXMLString(n->NextSibling()); // skip line for comments
+	// }
+
+
 
 //////////////////////// 2D GEOMETRY READ /////////////////////////////
 	// forward declare this
@@ -66,7 +88,7 @@ void write(std::string filename, const PrimitiveT & obj){
 	template <>
 	std::shared_ptr<Primitive2D> buildGeometryFromXML2D<Circle>(const XMLNode * n){
 		std::cout << "\t output is a Circle" << std::endl;
-		auto c = n->FirstChild();
+		auto c = retrieveNode(n->FirstChild());
 
 		bool hasCenter = false, hasRadius = false;
 		double rad;
@@ -75,18 +97,18 @@ void write(std::string filename, const PrimitiveT & obj){
 		while (c != nullptr){
 			std::stringstream ss;
 
-			if (!strcmp(c->Value(), "Center")){
+			if (!strcmp(retrieveXMLString(c), "Center")){
 				hasCenter = true;
-				ss << c->FirstChild()->Value();
+				ss << retrieveNode(c->FirstChild())->Value();
 				ss >> cen;
 			}
-			else if(!strcmp(c->Value(), "Radius")){
+			else if(!strcmp(retrieveXMLString(c), "Radius")){
 				hasRadius = true;
-				ss << c->FirstChild()->Value();
+				ss << retrieveNode(c->FirstChild())->Value();
 				ss >> rad;
 			}
 
-			c = c->NextSibling();
+			c = retrieveNode(c->NextSibling());
 		}
 
 		if (!hasCenter || !hasRadius){
@@ -104,7 +126,7 @@ void write(std::string filename, const PrimitiveT & obj){
 	template <>
 	std::shared_ptr<Primitive2D> buildGeometryFromXML2D<Rectangle>(const XMLNode * n){
 		std::cout << "\t output is a Rectangle" << std::endl;
-		auto c = n->FirstChild();
+		auto c = retrieveNode(n->FirstChild());
 
 		bool hasCenter = false, hasDims = false;
 		Point<2> cen, dims;
@@ -112,18 +134,18 @@ void write(std::string filename, const PrimitiveT & obj){
 		while (c != nullptr){
 			std::stringstream ss;
 
-			if (!strcmp(c->Value(), "Center")){
+			if (!strcmp(retrieveXMLString(c), "Center")){
 				hasCenter = true;
-				ss << c->FirstChild()->Value();
+				ss << retrieveNode(c->FirstChild())->Value();
 				ss >> cen;
 			}
-			else if(!strcmp(c->Value(), "Dims")){
+			else if(!strcmp(retrieveXMLString(c), "Dims")){
 				hasDims = true;
-				ss << c->FirstChild()->Value();
+				ss << retrieveNode(c->FirstChild())->Value();
 				ss >> dims;
 			}
 
-			c = c->NextSibling();
+			c = retrieveNode(c->NextSibling());
 		}
 
 		if (!hasCenter || !hasDims){
@@ -144,7 +166,7 @@ void write(std::string filename, const PrimitiveT & obj){
 	template <>
 	std::shared_ptr<Primitive2D> buildGeometryFromXML2D<Ellipse>(const XMLNode * n){
 		std::cout << "\t output is a Ellipse" << std::endl;
-		auto c = n->FirstChild();
+		auto c = retrieveNode(n->FirstChild());
 
 		bool hasCenter = false, hasDims = false;
 		Point<2> cen, dims;
@@ -152,18 +174,18 @@ void write(std::string filename, const PrimitiveT & obj){
 		while (c != nullptr){
 			std::stringstream ss;
 
-			if (!strcmp(c->Value(), "Center")){
+			if (!strcmp(retrieveXMLString(c), "Center")){
 				hasCenter = true;
-				ss << c->FirstChild()->Value();
+				ss << retrieveNode(c->FirstChild())->Value();
 				ss >> cen;
 			}
-			else if(!strcmp(c->Value(), "Axes")){
+			else if(!strcmp(retrieveXMLString(c), "Axes")){
 				hasDims = true;
-				ss << c->FirstChild()->Value();
+				ss << retrieveNode(c->FirstChild())->Value();
 				ss >> dims;
 			}
 
-			c = c->NextSibling();
+			c = retrieveNode(c->NextSibling());
 		}
 
 		if (!hasCenter || !hasDims){
@@ -185,7 +207,7 @@ void write(std::string filename, const PrimitiveT & obj){
 	template <>
 	std::shared_ptr<Primitive2D> buildGeometryFromXML2D<Triangle>(const XMLNode * n){
 		std::cout << "\t output is a Triangle" << std::endl;
-		auto c = n->FirstChild();
+		auto c = retrieveNode(n->FirstChild());
 
 		std::vector<Point<2>> pts;
 		Point<2> p;
@@ -193,13 +215,13 @@ void write(std::string filename, const PrimitiveT & obj){
 		while (c != nullptr){
 			std::stringstream ss;
 
-			if (!strcmp(c->Value(), "Point")){
-				ss << c->FirstChild()->Value();
+			if (!strcmp(retrieveXMLString(c), "Point")){
+				ss << retrieveNode(c->FirstChild())->Value();
 				ss >> p;
 				pts.push_back(p);
 			}
 
-			c = c->NextSibling();
+			c = retrieveNode(c->NextSibling());
 		}
 
 		if (pts.size() != 3){
@@ -222,7 +244,7 @@ void write(std::string filename, const PrimitiveT & obj){
 	template <>
 	std::shared_ptr<Primitive2D> buildGeometryFromXML2D<RegularPolygon>(const XMLNode * n){
 		std::cout << "\t output is a RegularPolygon" << std::endl;
-		auto c = n->FirstChild();
+		auto c = retrieveNode(n->FirstChild());
 
 		bool hasCenter = false, hasN = false, hasVertexLength = false;
 		Point<2> cen;
@@ -232,23 +254,23 @@ void write(std::string filename, const PrimitiveT & obj){
 		while (c != nullptr){
 			std::stringstream ss;
 
-			if (!strcmp(c->Value(), "Center")){
+			if (!strcmp(retrieveXMLString(c), "Center")){
 				hasCenter = true;
-				ss << c->FirstChild()->Value();
+				ss << retrieveNode(c->FirstChild())->Value();
 				ss >> cen;
 			}
-			if (!strcmp(c->Value(), "N")){
+			if (!strcmp(retrieveXMLString(c), "N")){
 				hasN = true;
-				ss << c->FirstChild()->Value();
+				ss << retrieveNode(c->FirstChild())->Value();
 				ss >> N;
 			}
-			if (!strcmp(c->Value(), "VertexLength")){
+			if (!strcmp(retrieveXMLString(c), "VertexLength")){
 				hasVertexLength = true;
-				ss << c->FirstChild()->Value();
+				ss << retrieveNode(c->FirstChild())->Value();
 				ss >> vlen;
 			}
 
-			c = c->NextSibling();
+			c = retrieveNode(c->NextSibling());
 		}
 
 		if (!hasCenter || !hasN || !hasVertexLength){
@@ -271,7 +293,7 @@ void write(std::string filename, const PrimitiveT & obj){
 	template <>
 	std::shared_ptr<Primitive2D> buildGeometryFromXML2D<CSGTree<Primitive2D>>(const XMLNode * n){
 		std::cout << "\t output is a CSGTree" << std::endl;
-		auto c = n->FirstChild();
+		auto c = retrieveNode(n->FirstChild());
 
 		bool hasLeft = false, hasRight = false, hasOperation = false;
 		std::shared_ptr<Primitive2D> left, right;
@@ -280,27 +302,27 @@ void write(std::string filename, const PrimitiveT & obj){
 		while (c != nullptr){
 			std::stringstream ss;
 
-			if (!strcmp(c->Value(), "Left")){
+			if (!strcmp(retrieveXMLString(c), "Left")){
 				hasLeft = true;
-				left = buildGeometryFromXML2D(c->FirstChild());
+				left = buildGeometryFromXML2D(retrieveNode(c->FirstChild()));
 			}
-			else if(!strcmp(c->Value(), "Right")){
+			else if(!strcmp(retrieveXMLString(c), "Right")){
 				hasRight = true;
-				right = buildGeometryFromXML2D(c->FirstChild());
+				right = buildGeometryFromXML2D(retrieveNode(c->FirstChild()));
 			}
-			else if(!strcmp(c->Value(), "Operation")){
+			else if(!strcmp(retrieveXMLString(c), "Operation")){
 				hasOperation = true;
-				if(!strcmp(c->FirstChild()->Value(), "DIFFERENCE")) op = DIFFERENCE;
-				else if(!strcmp(c->FirstChild()->Value(), "INTERSECT")) op = INTERSECT;
-				else if(!strcmp(c->FirstChild()->Value(), "UNION"))	op = UNION;
-				else if(!strcmp(c->FirstChild()->Value(), "XOR"))	op = XOR;
+				if(!strcmp(retrieveXMLString(c->FirstChild()), "DIFFERENCE")) op = DIFFERENCE;
+				else if(!strcmp(retrieveXMLString(c->FirstChild()), "INTERSECT")) op = INTERSECT;
+				else if(!strcmp(retrieveXMLString(c->FirstChild()), "UNION"))	op = UNION;
+				else if(!strcmp(retrieveXMLString(c->FirstChild()), "XOR"))	op = XOR;
 				else{
 					std::cerr << "Operation value must be one of [DIFFERENCE, INTERSECT, UNION, XOR]" << std::endl;
 					throw -1;
 				}
 			}
 
-			c = c->NextSibling();
+			c = retrieveNode(c->NextSibling());
 		}
 
 		if (!hasLeft || !hasRight || !hasOperation){
@@ -324,7 +346,7 @@ void write(std::string filename, const PrimitiveT & obj){
 
 	std::shared_ptr<Primitive2D> buildGeometryFromXML2D_LinearTransformation(const XMLNode * n){
 		std::cout << "\t output is a LinearTransformation" << std::endl;
-		auto c = n->FirstChild();
+		auto c = retrieveNode(n->FirstChild());
 
 		bool hasMapping = false, hasPrimitive = false;
 		std::shared_ptr<Primitive2D> prim;
@@ -333,24 +355,24 @@ void write(std::string filename, const PrimitiveT & obj){
 
 		while (c != nullptr){
 
-			if (!strcmp(c->Value(), "Primitive")){
+			if (!strcmp(retrieveXMLString(c), "Primitive")){
 				hasPrimitive = true;
-				prim = buildGeometryFromXML2D(c->FirstChild());
+				prim = buildGeometryFromXML2D(retrieveNode(c->FirstChild()));
 			}
-			else if(!strcmp(c->Value(), "Mapping")){
+			else if(!strcmp(retrieveXMLString(c), "Mapping")){
 				hasMapping = true;
-				mapnode = c->FirstChild();
-				if(!strcmp(c->FirstChild()->Value(), "ShearMapping")) mapstring = "ShearMapping";
-				else if(!strcmp(c->FirstChild()->Value(), "DilatationMapping")) mapstring = "DilatationMapping";
-				else if(!strcmp(c->FirstChild()->Value(), "RotationMapping"))	mapstring = "RotationMapping";
-				else if(!strcmp(c->FirstChild()->Value(), "TranslationMapping"))	mapstring = "TranslationMapping";
+				mapnode = retrieveNode(c->FirstChild());
+				if(!strcmp(retrieveXMLString(c->FirstChild()), "ShearMapping")) mapstring = "ShearMapping";
+				else if(!strcmp(retrieveXMLString(c->FirstChild()), "DilatationMapping")) mapstring = "DilatationMapping";
+				else if(!strcmp(retrieveXMLString(c->FirstChild()), "RotationMapping"))	mapstring = "RotationMapping";
+				else if(!strcmp(retrieveXMLString(c->FirstChild()), "TranslationMapping"))	mapstring = "TranslationMapping";
 				else{
 					std::cerr << "Operation value must be one of [ShearMapping, DilatationMapping, RotationMapping, TranslationMapping]" << std::endl;
 					throw -1;
 				}
 			}
 
-			c = c->NextSibling();
+			c = retrieveNode(c->NextSibling());
 		}
 
 		if (!hasMapping || !hasPrimitive){
@@ -366,25 +388,25 @@ void write(std::string filename, const PrimitiveT & obj){
 		std::stringstream ss;
 		if(!strcmp(mapstring.c_str(), "ShearMapping")){
 			Point<2> p;
-			ss << mapnode->FirstChild()->Value();
+			ss << retrieveNode(mapnode->FirstChild())->Value();
 			ss >> p;
 			return std::make_shared<LinearTransformation<Primitive2D, ShearMap2D>>(shear_transformation(*prim, p));
 		}
 		else if(!strcmp(mapstring.c_str(), "DilatationMapping")){
 			Point<2> p;
-			ss << mapnode->FirstChild()->Value();
+			ss << retrieveNode(mapnode->FirstChild())->Value();
 			ss >> p;
 			return std::make_shared<LinearTransformation<Primitive2D, DilatationMap2D>>(dilatation_transformation(*prim, p));
 		}
 		else if(!strcmp(mapstring.c_str(), "RotationMapping")){
 			double p;
-			ss << mapnode->FirstChild()->Value();
+			ss << retrieveNode(mapnode->FirstChild())->Value();
 			ss >> p;
 			return std::make_shared<LinearTransformation<Primitive2D, RotationMap2D>>(rotation_transformation(*prim, p));
 		}
 		else if(!strcmp(mapstring.c_str(), "TranslationMapping")){
 			Point<2> p;
-			ss << mapnode->FirstChild()->Value();
+			ss << retrieveNode(mapnode->FirstChild())->Value();
 			ss >> p;
 			return std::make_shared<LinearTransformation<Primitive2D, TranslationMap2D>>(translation_transformation(*prim, p));
 		}
@@ -402,7 +424,7 @@ void write(std::string filename, const PrimitiveT & obj){
 
 	std::shared_ptr<Primitive2D> buildGeometryFromXML2D_SymmetryTransformation(const XMLNode * n){
 		std::cout << "\t output is a SymmetryTransformation" << std::endl;
-		auto c = n->FirstChild();
+		auto c = retrieveNode(n->FirstChild());
 
 		bool hasMapping = false, hasPrimitive = false;
 		std::shared_ptr<Primitive2D> prim;
@@ -411,24 +433,24 @@ void write(std::string filename, const PrimitiveT & obj){
 
 		while (c != nullptr){
 
-			if (!strcmp(c->Value(), "Primitive")){
+			if (!strcmp(retrieveXMLString(c), "Primitive")){
 				hasPrimitive = true;
-				prim = buildGeometryFromXML2D(c->FirstChild());
+				prim = buildGeometryFromXML2D(retrieveNode(c->FirstChild()));
 			}
-			else if(!strcmp(c->Value(), "Mapping")){
+			else if(!strcmp(retrieveXMLString(c), "Mapping")){
 				hasMapping = true;
-				mapnode = c->FirstChild();
-				if(!strcmp(c->FirstChild()->Value(), "DiscreteRotationMapping")) mapstring = "DiscreteRotationMapping";
-				else if(!strcmp(c->FirstChild()->Value(), "ContinuousRotationMapping")) mapstring = "ContinuousRotationMapping";
-				else if(!strcmp(c->FirstChild()->Value(), "ContinuousTranslationMapping"))	mapstring = "ContinuousTranslationMapping";
-				else if(!strcmp(c->FirstChild()->Value(), "DiscreteTranslationMapping"))	mapstring = "DiscreteTranslationMapping";
+				mapnode = retrieveNode(c->FirstChild());
+				if(!strcmp(retrieveXMLString(c->FirstChild()), "DiscreteRotationMapping")) mapstring = "DiscreteRotationMapping";
+				else if(!strcmp(retrieveXMLString(c->FirstChild()), "ContinuousRotationMapping")) mapstring = "ContinuousRotationMapping";
+				else if(!strcmp(retrieveXMLString(c->FirstChild()), "ContinuousTranslationMapping"))	mapstring = "ContinuousTranslationMapping";
+				else if(!strcmp(retrieveXMLString(c->FirstChild()), "DiscreteTranslationMapping"))	mapstring = "DiscreteTranslationMapping";
 				else{
 					std::cerr << "Operation value must be one of [DiscreteRotationMapping, ContinuousRotationMapping, DiscreteTranslationMapping, ContinuousTranslationMapping]" << std::endl;
 					throw -1;
 				}
 			}
 
-			c = c->NextSibling();
+			c = retrieveNode(c->NextSibling());
 		}
 
 		if (!hasMapping || !hasPrimitive){
@@ -446,32 +468,32 @@ void write(std::string filename, const PrimitiveT & obj){
 			Point<2> p;
 			std::size_t N;
 			const XMLNode * mn = mapnode->FirstChild();
-			ss << mn->FirstChild()->Value();
+			ss << retrieveNode(mn->FirstChild())->Value();
 			ss >> N;
 
-			std::cout << "N: " << mn->FirstChild()->Value() << std::endl;
+			std::cout << "N: " << retrieveNode(mn->FirstChild())->Value() << std::endl;
 
 			ss.clear();
-			mn = mn->NextSibling();
-			ss << mn->FirstChild()->Value();
+			mn = retrieveNode(mn->NextSibling());
+			ss << retrieveNode(mn->FirstChild())->Value();
 			ss >> p;
 			return std::make_shared<SymmetryTransformation<Primitive2D, DiscreteRotationSymmetryMap2D>>(discrete_rotation_symmetry(*prim, p, N));
 		}
 		else if(!strcmp(mapstring.c_str(), "ContinuousRotationMapping")){
 			Point<2> p;
-			ss << mapnode->FirstChild()->Value();
+			ss << retrieveNode(mapnode->FirstChild())->Value();
 			ss >> p;
 			return std::make_shared<SymmetryTransformation<Primitive2D, ContinuousRotationSymmetryMap2D>>(continuous_rotation_symmetry(*prim, p));
 		}
 		else if(!strcmp(mapstring.c_str(), "ContinuousTranslationMapping")){
 			Point<2> p;
-			ss << mapnode->FirstChild()->Value();
+			ss << retrieveNode(mapnode->FirstChild())->Value();
 			ss >> p;
 			return std::make_shared<SymmetryTransformation<Primitive2D, ContinuousTranslationSymmetryMap2D>>(continuous_translation_symmetry(*prim, p));
 		}
 		else if(!strcmp(mapstring.c_str(), "DiscreteTranslationMapping")){
 			Point<2> p;
-			ss << mapnode->FirstChild()->Value();
+			ss << retrieveNode(mapnode->FirstChild())->Value();
 			ss >> p;
 			return std::make_shared<SymmetryTransformation<Primitive2D, DiscreteTranslationSymmetryMap2D>>(discrete_translation_symmetry(*prim, p));
 		}
@@ -492,15 +514,21 @@ void write(std::string filename, const PrimitiveT & obj){
 		// for (unsigned int i=0; i<ntab; i++) std::cout << "\t" ;
 		std::cout << n->Value() << ":   " << std::endl ;
 
-		if (!strcmp(n->Value(),"CSGTree")) return buildGeometryFromXML2D<CSGTree<Primitive2D>>(n);
-		else if (!strcmp(n->Value(),"LinearTransformation")) return buildGeometryFromXML2D_LinearTransformation(n);
-		else if (!strcmp(n->Value(),"SymmetryTransformation")) return buildGeometryFromXML2D_SymmetryTransformation(n);
-		else if (!strcmp(n->Value(),"Circle")) return buildGeometryFromXML2D<Circle>(n);
-		else if (!strcmp(n->Value(),"Rectangle")) return buildGeometryFromXML2D<Rectangle>(n);
-		else if (!strcmp(n->Value(),"Ellipse")) return buildGeometryFromXML2D<Ellipse>(n);
-		else if (!strcmp(n->Value(),"Triangle")) return buildGeometryFromXML2D<Triangle>(n);
-		else if (!strcmp(n->Value(),"RegularPolygon")) return buildGeometryFromXML2D<RegularPolygon>(n);
-		
+		if (!strcmp(retrieveXMLString(n),"CSGTree")) return buildGeometryFromXML2D<CSGTree<Primitive2D>>(n);
+		else if (!strcmp(retrieveXMLString(n),"LinearTransformation")) return buildGeometryFromXML2D_LinearTransformation(n);
+		else if (!strcmp(retrieveXMLString(n),"SymmetryTransformation")) return buildGeometryFromXML2D_SymmetryTransformation(n);
+		else if (!strcmp(retrieveXMLString(n),"Circle")) return buildGeometryFromXML2D<Circle>(n);
+		else if (!strcmp(retrieveXMLString(n),"Rectangle")) return buildGeometryFromXML2D<Rectangle>(n);
+		else if (!strcmp(retrieveXMLString(n),"Ellipse")) return buildGeometryFromXML2D<Ellipse>(n);
+		else if (!strcmp(retrieveXMLString(n),"Triangle")) return buildGeometryFromXML2D<Triangle>(n);
+		else if (!strcmp(retrieveXMLString(n),"RegularPolygon")) return buildGeometryFromXML2D<RegularPolygon>(n);
+		else if (!strcmp(retrieveXMLString(n),"XMLFile")){
+			std::cout << "I am an XML file" << std::endl;
+			std::cout << "name: " << retrieveXMLString(retrieveNode(n->FirstChild())) << std::endl;
+			XMLDocument doc;
+			doc.LoadFile(retrieveXMLString(retrieveNode(n->FirstChild())));
+			return buildGeometryFromXML2D(retrieveNode(doc.FirstChild()));
+		} 
 
 		std::cerr << "Unrecognized geometry option: " << n->Value() << std::endl;
 		throw -1;
@@ -508,22 +536,98 @@ void write(std::string filename, const PrimitiveT & obj){
 	}
 
 
+	
+
+
 
 
 	std::shared_ptr<Primitive2D> read2D(std::string filename){
 		XMLDocument doc;
 		doc.LoadFile(filename.c_str());
-		return buildGeometryFromXML2D(doc.FirstChild());
+		return buildGeometryFromXML2D(retrieveNode(doc.FirstChild()));
 	}
 
 
 
 
+////////////////////////// 2D SCENE ///////////////////////////
+void buildSceneFromXML2D_Background(const XMLNode * n, std::shared_ptr<Scene<std::string, Primitive2D>> s){
+	s->background() = n->Value();
+	std::cout << n->Value() << std::endl;
+	return;
+}
+
+void buildSceneFromXML2D_Object(const XMLNode * n, std::shared_ptr<Scene<std::string, Primitive2D>> s){
+	typedef Scene<std::string, Primitive2D> SceneType;
+	std::string id;
+	std::shared_ptr<Primitive2D> prim;
+
+	while (n != nullptr){
+		// for (unsigned int i=0; i<ntab; i++) std::cout << "\t" ;
+		std::cout << n->Value() << ":   " << std::endl ;
+
+		if (!strcmp(retrieveXMLString(n),"Identifier")){
+			id = retrieveNode(n->FirstChild())->Value();
+			std::cout << id << std::endl;
+		} 
+		else if (!strcmp(retrieveXMLString(n),"Primitive")){
+			prim = buildGeometryFromXML2D(retrieveNode(n->FirstChild()));
+			prim->print_summary();
+		}
+		else{
+			std::cerr << "Unrecognized scene option: " << n->Value() << std::endl;
+			throw -1;
+		}
+
+		
+		n = retrieveNode(n->NextSibling());
+	}
+	
+	s->insert(id, prim);
+	return;
+}
 
 
 
+void buildSceneFromXML2D(const XMLNode * n, std::shared_ptr<Scene<std::string, Primitive2D>> s){
+	typedef Scene<std::string, Primitive2D> SceneType;
+
+	while (n != nullptr){
+		// for (unsigned int i=0; i<ntab; i++) std::cout << "\t" ;
+		std::cout << n->Value() << ":   " << std::endl ;
+
+		if (!strcmp(retrieveXMLString(n),"Object")) buildSceneFromXML2D_Object(retrieveNode(n->FirstChild()), s);
+		else if (!strcmp(retrieveXMLString(n),"Background")) buildSceneFromXML2D_Background(retrieveNode(n->FirstChild()), s);
+		else{
+			std::cerr << "Unrecognized scene option: " << n->Value() << std::endl;
+			throw -1;
+		}
+
+		
+		n = retrieveNode(n->NextSibling());
+	}
+	return;
+}
 
 
+
+std::shared_ptr<Scene<std::string, Primitive2D>> read2DScene(std::string filename){
+	typedef Scene<std::string, Primitive2D> SceneType;
+	XMLDocument doc;
+	doc.LoadFile(filename.c_str());
+	std::shared_ptr<SceneType> s = std::make_shared<SceneType>(SceneType("background"));
+	buildSceneFromXML2D(retrieveNode(doc.FirstChild()), s);
+	return s;
+}
+
+///////////////////////// END 2D SCENE ///////////////////////
+
+
+
+////////////////////////// 2D FRAME ///////////////////////////
+
+
+///////////////////////// END 2D FRAME ///////////////////////
 
 
 

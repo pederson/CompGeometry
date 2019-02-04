@@ -15,6 +15,8 @@ public:
 	// data
 	T x[dim];
 
+	constexpr std::size_t size() const {return dim;}; 
+
 	// default constructor
 	GeneralPoint(){};
 

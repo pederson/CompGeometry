@@ -79,6 +79,11 @@ Frame2<SceneType, dim> make_frame_2d(const SceneType & s, Point<dim> start, Poin
 	return Frame2<SceneType, dim>(s, start, end, xvec);
 }
 
+// template <std::size_t dim, typename SceneType>
+// Frame2<SceneType, dim> make_frame_2d(std::shared_ptr<SceneType> s, Point<dim> start, Point<dim> end, Point<dim> xvec){
+// 	return Frame2<SceneType, dim>(s, start, end, xvec);
+// }
+
 
 
 

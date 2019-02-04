@@ -71,7 +71,31 @@ public:
 	// - only compiles if the LeafT has a function "get_bounding_box()"
 	typename BoxTypedef<PrimitiveType>::type get_bounding_box() const{
 		if (m_isleaf) return m_leaf->get_bounding_box();
-		return bounding_box(m_ldaughter->get_bounding_box(), m_rdaughter->get_bounding_box());
+
+		typedef typename BoxTypedef<PrimitiveType>::type BoxT;
+		BoxT bxl = m_ldaughter->get_bounding_box();
+		BoxT bxr = m_rdaughter->get_bounding_box();
+
+		BoxT bx = bxl;
+			
+		switch (m_op){
+			case UNION:
+				bx = bounding_box(m_ldaughter->get_bounding_box(), m_rdaughter->get_bounding_box());
+				break;
+			case INTERSECT:
+				for (auto i=0; i<bx.lo.size(); i++){
+					bx.lo.x[i] = std::max(bxl.lo.x[i], bxr.lo.x[i]);
+					bx.hi.x[i] = std::min(bxl.hi.x[i], bxr.hi.x[i]);
+				}
+				break;
+			case DIFFERENCE:
+				bx = m_ldaughter->get_bounding_box();
+				break;
+			case XOR:
+				bx = bounding_box(m_ldaughter->get_bounding_box(), m_rdaughter->get_bounding_box());
+				break;
+		}
+		return bx;
 	}
 
 
