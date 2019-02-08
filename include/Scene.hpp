@@ -62,6 +62,36 @@ public:
 	Identifier & background() {return mBackground;};
 	const Identifier & background() const {return mBackground;};
 
+	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "<Scene>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Background>" << mBackground << "</Background>" << std::endl;
+		
+		for (auto it=begin(); it!=end(); it++){
+			for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+			os << "<Object>" << std::endl;
+
+			for (auto i=0; i<ntabs+2; i++) os << "\t" ;
+			os << "<Identifier>" << it->first << "</Identifier>" << std::endl;
+
+			for (auto i=0; i<ntabs+2; i++) os << "\t" ;
+			os << "<Primitive>" << std::endl;
+
+			it->second->print_summary(os, ntabs+3);
+
+			for (auto i=0; i<ntabs+2; i++) os << "\t" ;
+			os << "</Primitive>" << std::endl;
+
+
+			for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+			os << "</Object>" << std::endl;
+		}
+
+
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "</Scene>" << std::endl;
+	}
 
 protected:
 	Identifier 			mBackground;

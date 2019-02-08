@@ -1,5 +1,5 @@
-#ifndef _PRIMITIVEIO_H
-#define _PRIMITIVEIO_H
+#ifndef _XMLIO_H
+#define _XMLIO_H
 
 #include "PrimitiveTypes.hpp"
 #include "Primitive2D.hpp"
@@ -9,6 +9,7 @@
 #include "SymmetryTransformation.hpp"
 
 #include "Scene.hpp"
+#include "Frame.hpp"
 
 #include <fstream>
 #include <memory>
@@ -598,6 +599,12 @@ void buildSceneFromXML2D(const XMLNode * n, std::shared_ptr<Scene<std::string, P
 
 		if (!strcmp(retrieveXMLString(n),"Object")) buildSceneFromXML2D_Object(retrieveNode(n->FirstChild()), s);
 		else if (!strcmp(retrieveXMLString(n),"Background")) buildSceneFromXML2D_Background(retrieveNode(n->FirstChild()), s);
+		else if (!strcmp(retrieveXMLString(n),"XMLFile")){
+			XMLDocument doc;
+			doc.LoadFile(retrieveXMLString(retrieveNode(n->FirstChild())));
+			buildSceneFromXML2D(retrieveNode(doc.FirstChild()), s);
+			return;
+		} 
 		else{
 			std::cerr << "Unrecognized scene option: " << n->Value() << std::endl;
 			throw -1;
@@ -625,7 +632,66 @@ std::shared_ptr<Scene<std::string, Primitive2D>> read2DScene(std::string filenam
 
 
 ////////////////////////// 2D FRAME ///////////////////////////
+std::shared_ptr<Frame2<Scene<std::string, Primitive2D>, 2>> buildFrameFromXML2D(const XMLNode * n){
+	typedef Scene<std::string, Primitive2D> SceneType;
+	typedef Frame2<SceneType, 2> FrameType;
 
+	Point<2> Start, End, XVec;
+	std::shared_ptr<SceneType> sc = std::make_shared<SceneType>(SceneType("background"));
+	
+
+	while (n != nullptr){
+		// for (unsigned int i=0; i<ntab; i++) std::cout << "\t" ;
+		std::cout << n->Value() << ":   " << std::endl ;
+
+		std::stringstream ss;
+		if (!strcmp(retrieveXMLString(n),"Min")){
+			ss << retrieveXMLString(n->FirstChild());
+			ss >> Start;
+			std::cout << "Min: " << Start << std::endl;
+		}
+		else if (!strcmp(retrieveXMLString(n),"Max")){
+			ss << retrieveXMLString(n->FirstChild());
+			ss >> End;
+			std::cout << "Max: " << End << std::endl;
+		}
+		else if (!strcmp(retrieveXMLString(n),"XVec")){
+			ss << retrieveXMLString(n->FirstChild());
+			ss >> XVec;
+			std::cout << "XVec: " << XVec << std::endl;
+		}
+		else if (!strcmp(retrieveXMLString(n),"Scene")){
+			buildSceneFromXML2D(retrieveNode(n->FirstChild()), sc);
+		}
+		else if (!strcmp(retrieveXMLString(n),"XMLFile")){
+			XMLDocument doc;
+			doc.LoadFile(retrieveXMLString(retrieveNode(n->FirstChild())));
+			return buildFrameFromXML2D(retrieveNode(doc.FirstChild()));
+		} 
+		else{
+			std::cerr << "Unrecognized frame option: " << n->Value() << std::endl;
+			throw -1;
+		}
+
+		
+		n = retrieveNode(n->NextSibling());
+	}
+
+	FrameType f = make_frame_2d(*sc, Start, End, XVec);
+	return std::make_shared<FrameType>(f);
+}
+
+
+
+std::shared_ptr<Frame2<Scene<std::string, Primitive2D>, 2>> read2DFrame(std::string filename){
+	typedef Scene<std::string, Primitive2D> SceneType;
+	typedef Frame2<SceneType, 2> 			FrameType;
+	XMLDocument doc;
+	doc.LoadFile(filename.c_str());
+	// std::shared_ptr<FrameType> f = std::make_shared<FrameType>(FrameType("background"));
+	std::shared_ptr<FrameType> f = buildFrameFromXML2D(retrieveNode(doc.FirstChild()));
+	return f;
+}
 
 ///////////////////////// END 2D FRAME ///////////////////////
 

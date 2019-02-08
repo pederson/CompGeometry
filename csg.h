@@ -6,7 +6,6 @@
 #include "include/PrimitiveTypes.hpp"
 #include "include/Primitive2D.hpp"
 #include "include/Primitive3D.hpp"
-#include "include/PrimitiveIO.hpp"
 #include "include/CSGeometry2D.hpp"
 #include "include/CSGeometry3D.hpp"
 #include "include/Delaunay.hpp"
@@ -18,5 +17,7 @@
 #include "include/SymmetryTransformation.hpp"
 #include "include/Scene.hpp"
 #include "include/Frame.hpp"
+
+#include "include/XMLIO.hpp"
 
 #endif

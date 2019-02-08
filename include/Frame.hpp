@@ -28,6 +28,24 @@ public:
 
 	double length() const {return (mEnd-mStart).norm();};
 	Box<1> get_bounding_box() const {return Box<1>({0}, {length()});};
+
+
+	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "<Frame>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Start>" << mStart << "</Start>" << std::endl;
+		
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<End>" << mEnd << "</End>" << std::endl ;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<XVec>" << mVec << "</XVec>" << std::endl;
+		
+		mScene->print_summary(os, ntabs+1);
+
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "</Frame>" << std::endl;
+	}
 };
 
 
@@ -70,6 +88,23 @@ public:
 	double lengthx() const {return Point<scene_dim>::dot((mEnd-mStart), mVecX);};
 	double lengthy() const {return sqrt(length_diag()*length_diag() - lengthx()*lengthx());};
 	Box<2> get_bounding_box() const {return Box<2>({0,0}, {lengthx(), lengthy()});};
+
+	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "<Frame>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Start>" << mStart << "</Start>" << std::endl;
+		
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<End>" << mEnd << "</End>" << std::endl ;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<XVec>" << mVecX << "</XVec>" << std::endl;
+		
+		mScene->print_summary(os, ntabs+1);
+
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "</Frame>" << std::endl;
+	}
 };
 
 
@@ -120,6 +155,24 @@ public:
 	double lengthz() const {return sqrt(length_diag()*length_diag() - lengthx()*lengthx() - lengthy()*lengthy());};
 	Box<3> get_bounding_box() const {return Box<3>({0,0,0}, {lengthx(), lengthy(), lengthz()});};
 
+	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "<Frame>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<Start>" << mStart << "</Start>" << std::endl;
+		
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<End>" << mEnd << "</End>" << std::endl ;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<XVec>" << mVecX << "</XVec>" << std::endl;
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<YVec>" << mVecY << "</YVec>" << std::endl;
+		
+		mScene->print_summary(os, ntabs+1);
+
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "</Frame>" << std::endl;
+	}
 };
 
 
