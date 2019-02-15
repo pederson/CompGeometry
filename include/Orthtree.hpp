@@ -183,6 +183,8 @@ template <class NodeType>
 struct DefaultNodeWrapper : public NodeType, public DefaultNodeExtension<NodeType>
 {
 	using NodeType::NodeType; // use constructors for NodeType
+
+	using NodeType::operator=;
 };
 
 
@@ -720,7 +722,7 @@ template <	std::size_t dim,
 			class ValueT,
 			class KeyT = std::size_t,
 			template <std::size_t,std::size_t,typename> class KeyDecoderRing = IntegralKeyDecoder,
-			class NodeT = DefaultNode<ValueT>,
+			class NodeT = DefaultNodeWrapper<ValueT>,
 			template <typename,typename> class ContainerT = LevelContainer,
 			std::size_t lvlmax = 16>
 class Orthtree : public KeyDecoderRing<dim,rfactor,KeyT>, public ContainerT<KeyT, NodeT>{

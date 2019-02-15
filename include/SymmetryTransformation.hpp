@@ -8,7 +8,7 @@ namespace csg{
 
 
 
-
+////////////////////////////////////////////// 2D Maps ////////////////
 // Discrete Translation symmetry map 
 struct DiscreteTranslationSymmetryMap2D{
 public:
@@ -237,6 +237,67 @@ public:
 
 
 
+
+////////////////////////////////////////////// 3D Maps ////////////////
+// Discrete Translation symmetry map 
+struct DiscreteTranslationSymmetryMap3D{
+public:
+	typedef Point<3> 					PointT;
+	typedef Box<3>						BoxT;
+	PointT 								mCen, mSvec;
+
+	DiscreteTranslationSymmetryMap3D(const PointT & t, const PointT & c) : mSvec(t), mCen(c) {};
+
+	template <typename PrimitiveT>
+	BoxT get_bounding_box(const std::shared_ptr<PrimitiveT> prim) const {
+		return bounding_box(BoxT::translate(prim->get_bounding_box(), -1.0e+6*mSvec),
+							BoxT::translate(prim->get_bounding_box(), +1.0e+6*mSvec));
+		// return prim->get_bounding_box();
+	}
+
+	PointT inverse_map(const PointT & p) const{
+		PointT v = p-mCen;
+		double amagn = mSvec.norm();
+		double proj = PointT::dot(v, mSvec);
+		// double vmagn = v.norm();
+		while (fabs(proj/(amagn*amagn)) > 0.5){
+			// if (fabs(proj/amagn) > 1.0) std::cout << "proj/a: " << proj/amagn << std::endl;
+			v = v - static_cast<double>(sgn(proj))*mSvec;
+			proj = PointT::dot(v, mSvec);
+			// vmagn = v.norm();
+		}
+		// std::cout << "end" << std::endl;
+		return v+mCen;
+	};
+
+	PointT forward_map(const PointT & p) const{
+		return p;
+	};
+
+	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+		os << "<DiscreteTranslationSymmetryMapping>" << mSvec << ", " << mCen << "</DiscreteTranslationSymmetryMapping>" << std::endl;
+	}
+
+
+	// template <typename PrimitiveT>
+	// std::vector<Hull<2>> get_outline(unsigned int npts, const std::shared_ptr<PrimitiveT> prim) const {
+	// 	std::vector<Hull<2>> o = prim->get_outline(npts);
+	// 	std::vector<Hull<2>> out;
+	// 	for (auto it=o.begin(); it!=o.end(); it++){
+	// 		for (int i=-10; i<=10; i++){
+	// 			out.push_back(*it);
+	// 			auto mit = --out.end();
+	// 			for (auto p=mit->points.begin(); p!=mit->points.end(); p++){
+	// 				*p = *p + static_cast<double>(i)*mSvec;
+	// 			}
+	// 		}
+	// 	}
+	// 	return out;
+	// }
+};
+
+
 // // Helical symmetry map 
 // struct HelicalSymmetryMap2D{
 // public:
@@ -379,6 +440,18 @@ SymmetryTransformation<Primitive2D, ContinuousRotationSymmetryMap2D> continuous_
 	Box<2> bx = c.get_bounding_box();
 	Point<2> center = 0.5*(bx.hi+bx.lo);
 	return SymmetryTransformation<Primitive2D, ContinuousRotationSymmetryMap2D>(c.copy(), ContinuousRotationSymmetryMap2D(svec, center));
+}
+
+
+
+
+
+
+template <typename DerivedType>
+SymmetryTransformation<Primitive3D, DiscreteTranslationSymmetryMap3D> discrete_translation_symmetry(const DerivedType & c, const Point<3> & svec){
+	Box<3> bx = c.get_bounding_box();
+	Point<3> center = 0.5*(bx.hi+bx.lo);
+	return SymmetryTransformation<Primitive3D, DiscreteTranslationSymmetryMap3D>(c.copy(), DiscreteTranslationSymmetryMap3D(svec, center));
 }
 
 
