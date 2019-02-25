@@ -1242,12 +1242,12 @@ std::shared_ptr<Frame2<Scene<std::string, Primitive2D>, 2>> read2DFrame(std::str
 		// 	ss >> p;
 		// 	return std::make_shared<LinearTransformation<Primitive3D, RotationMap2D>>(rotation_transformation(*prim, p));
 		// }
-		// else if(!strcmp(mapstring.c_str(), "TranslationMapping")){
-		// 	Point<2> p;
-		// 	ss << mapnode->FirstChild()->Value();
-		// 	ss >> p;
-		// 	return std::make_shared<LinearTransformation<Primitive3D, TranslationMap2D>>(translation_transformation(*prim, p));
-		// }
+		else if(!strcmp(mapstring.c_str(), "TranslationMapping")){
+			Point<3> p;
+			ss << mapnode->FirstChild()->Value();
+			ss >> p;
+			return std::make_shared<LinearTransformation<Primitive3D, TranslationMap3D>>(translation_transformation(*prim, p));
+		}
 		else{
 			std::cerr << "Operation value must be one of [ShearMapping, DilatationMapping, RotationMapping, TranslationMapping]" << std::endl;
 			throw -1;

@@ -152,6 +152,29 @@ public:
 	}
 };
 
+// Translation map implemented as M = I  and t = T, where I is identity and T is a vector
+struct TranslationMap3D{
+public:
+	typedef Point<3> 					PointT;
+	typedef Box<3>						BoxT;
+	PointT 								mL;
+
+	TranslationMap3D(const PointT & p) : mL(p) {};
+
+	PointT inverse_map(const PointT & p) const{
+		return PointT(p.x[0] - mL.x[0], p.x[1] - mL.x[1], p.x[2] - mL.x[2]);
+	};
+
+	PointT forward_map(const PointT & p) const{
+		return PointT(p.x[0] + mL.x[0], p.x[1] + mL.x[1], p.x[2] + mL.x[2]);
+	};
+
+	void print_summary(std::ostream & os = std::cout, unsigned int ntabs=0) const{
+		for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+		os << "<TranslationMapping>" << mL << "</TranslationMapping>" << std::endl;
+	}
+};
+
 
 
 template <class PrimitiveType, class MapPolicy>
@@ -266,6 +289,11 @@ LinearTransformation<Primitive2D, RotationMap2D> rotation_transformation(const D
 template <typename DerivedType>
 LinearTransformation<Primitive2D, TranslationMap2D> translation_transformation(const DerivedType & c, const Point<2> & p){
 	return LinearTransformation<Primitive2D, TranslationMap2D>(c.copy(), TranslationMap2D(p));
+}
+
+template <typename DerivedType>
+LinearTransformation<Primitive3D, TranslationMap3D> translation_transformation(const DerivedType & c, const Point<3> & p){
+	return LinearTransformation<Primitive3D, TranslationMap3D>(c.copy(), TranslationMap3D(p));
 }
 }
 #endif
