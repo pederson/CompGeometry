@@ -17,6 +17,27 @@
 namespace csg{
 
 
+
+
+
+struct FilePath{
+private:
+	std::string mPath;
+	std::size_t mPathEnd;
+	std::size_t mExtBegin;
+public:
+	FilePath(std::string st) : mPath(st) {mPathEnd = mPath.find_last_of("/"); mExtBegin = mPath.find_last_of(".");}
+
+	std::string fullname() const {return mPath;};
+	std::string filename() const {return mPath.substr(mPathEnd+1);};
+
+	std::string path() const {return mPath.substr(0,mPathEnd+1);};
+	std::string prefix() const {return mPath.substr(mPathEnd+1, mExtBegin-mPathEnd-1);};
+	std::string ext() const {return mPath.substr(mExtBegin+1);};
+};
+
+
+
 template <typename PrimitiveT>
 void write(std::string filename, const PrimitiveT & obj){
 	std::fstream fobj(filename, std::fstream::out);
@@ -35,8 +56,6 @@ void write(std::string filename, const PrimitiveT & obj){
 
 #ifdef TINYXML2_INCLUDED
 	using namespace tinyxml2;
-
-	
 
 	void printXML(const XMLNode * n, unsigned int ntab = 0){
 		if (n == nullptr) return;
@@ -79,16 +98,16 @@ void write(std::string filename, const PrimitiveT & obj){
 
 //////////////////////// 2D GEOMETRY READ /////////////////////////////
 	// forward declare this
-	std::shared_ptr<Primitive2D> buildGeometryFromXML2D(const XMLNode * n);
+	std::shared_ptr<Primitive2D> buildGeometryFromXML2D(FilePath fp, const XMLNode * n);
 
 	// declare the templatized version
 	template <typename T>
-	std::shared_ptr<Primitive2D> buildGeometryFromXML2D(const XMLNode * n){
+	std::shared_ptr<Primitive2D> buildGeometryFromXML2D(FilePath fp, const XMLNode * n){
 	}
 
 	template <>
-	std::shared_ptr<Primitive2D> buildGeometryFromXML2D<Circle>(const XMLNode * n){
-		std::cout << "\t output is a Circle" << std::endl;
+	std::shared_ptr<Primitive2D> buildGeometryFromXML2D<Circle>(FilePath fp, const XMLNode * n){
+		// std::cout << "\t output is a Circle" << std::endl;
 		auto c = retrieveNode(n->FirstChild());
 
 		bool hasCenter = false, hasRadius = false;
@@ -125,8 +144,8 @@ void write(std::string filename, const PrimitiveT & obj){
 
 
 	template <>
-	std::shared_ptr<Primitive2D> buildGeometryFromXML2D<Rectangle>(const XMLNode * n){
-		std::cout << "\t output is a Rectangle" << std::endl;
+	std::shared_ptr<Primitive2D> buildGeometryFromXML2D<Rectangle>(FilePath fp, const XMLNode * n){
+		// std::cout << "\t output is a Rectangle" << std::endl;
 		auto c = retrieveNode(n->FirstChild());
 
 		bool hasCenter = false, hasDims = false;
@@ -165,8 +184,8 @@ void write(std::string filename, const PrimitiveT & obj){
 
 
 	template <>
-	std::shared_ptr<Primitive2D> buildGeometryFromXML2D<Ellipse>(const XMLNode * n){
-		std::cout << "\t output is a Ellipse" << std::endl;
+	std::shared_ptr<Primitive2D> buildGeometryFromXML2D<Ellipse>(FilePath fp, const XMLNode * n){
+		// std::cout << "\t output is a Ellipse" << std::endl;
 		auto c = retrieveNode(n->FirstChild());
 
 		bool hasCenter = false, hasDims = false;
@@ -206,8 +225,8 @@ void write(std::string filename, const PrimitiveT & obj){
 
 
 	template <>
-	std::shared_ptr<Primitive2D> buildGeometryFromXML2D<Triangle>(const XMLNode * n){
-		std::cout << "\t output is a Triangle" << std::endl;
+	std::shared_ptr<Primitive2D> buildGeometryFromXML2D<Triangle>(FilePath fp, const XMLNode * n){
+		// std::cout << "\t output is a Triangle" << std::endl;
 		auto c = retrieveNode(n->FirstChild());
 
 		std::vector<Point<2>> pts;
@@ -243,8 +262,8 @@ void write(std::string filename, const PrimitiveT & obj){
 
 
 	template <>
-	std::shared_ptr<Primitive2D> buildGeometryFromXML2D<RegularPolygon>(const XMLNode * n){
-		std::cout << "\t output is a RegularPolygon" << std::endl;
+	std::shared_ptr<Primitive2D> buildGeometryFromXML2D<RegularPolygon>(FilePath fp, const XMLNode * n){
+		// std::cout << "\t output is a RegularPolygon" << std::endl;
 		auto c = retrieveNode(n->FirstChild());
 
 		bool hasCenter = false, hasN = false, hasVertexLength = false;
@@ -292,8 +311,8 @@ void write(std::string filename, const PrimitiveT & obj){
 
 
 	template <>
-	std::shared_ptr<Primitive2D> buildGeometryFromXML2D<CSGTree<Primitive2D>>(const XMLNode * n){
-		std::cout << "\t output is a CSGTree" << std::endl;
+	std::shared_ptr<Primitive2D> buildGeometryFromXML2D<CSGTree<Primitive2D>>(FilePath fp, const XMLNode * n){
+		// std::cout << "\t output is a CSGTree" << std::endl;
 		auto c = retrieveNode(n->FirstChild());
 
 		bool hasLeft = false, hasRight = false, hasOperation = false;
@@ -305,11 +324,11 @@ void write(std::string filename, const PrimitiveT & obj){
 
 			if (!strcmp(retrieveXMLString(c), "Left")){
 				hasLeft = true;
-				left = buildGeometryFromXML2D(retrieveNode(c->FirstChild()));
+				left = buildGeometryFromXML2D(fp, retrieveNode(c->FirstChild()));
 			}
 			else if(!strcmp(retrieveXMLString(c), "Right")){
 				hasRight = true;
-				right = buildGeometryFromXML2D(retrieveNode(c->FirstChild()));
+				right = buildGeometryFromXML2D(fp, retrieveNode(c->FirstChild()));
 			}
 			else if(!strcmp(retrieveXMLString(c), "Operation")){
 				hasOperation = true;
@@ -345,8 +364,8 @@ void write(std::string filename, const PrimitiveT & obj){
 
 
 
-	std::shared_ptr<Primitive2D> buildGeometryFromXML2D_LinearTransformation(const XMLNode * n){
-		std::cout << "\t output is a LinearTransformation" << std::endl;
+	std::shared_ptr<Primitive2D> buildGeometryFromXML2D_LinearTransformation(FilePath fp, const XMLNode * n){
+		// std::cout << "\t output is a LinearTransformation" << std::endl;
 		auto c = retrieveNode(n->FirstChild());
 
 		bool hasMapping = false, hasPrimitive = false;
@@ -358,7 +377,7 @@ void write(std::string filename, const PrimitiveT & obj){
 
 			if (!strcmp(retrieveXMLString(c), "Primitive")){
 				hasPrimitive = true;
-				prim = buildGeometryFromXML2D(retrieveNode(c->FirstChild()));
+				prim = buildGeometryFromXML2D(fp, retrieveNode(c->FirstChild()));
 			}
 			else if(!strcmp(retrieveXMLString(c), "Mapping")){
 				hasMapping = true;
@@ -423,8 +442,8 @@ void write(std::string filename, const PrimitiveT & obj){
 
 
 
-	std::shared_ptr<Primitive2D> buildGeometryFromXML2D_SymmetryTransformation(const XMLNode * n){
-		std::cout << "\t output is a SymmetryTransformation" << std::endl;
+	std::shared_ptr<Primitive2D> buildGeometryFromXML2D_SymmetryTransformation(FilePath fp, const XMLNode * n){
+		// std::cout << "\t output is a SymmetryTransformation" << std::endl;
 		auto c = retrieveNode(n->FirstChild());
 
 		bool hasMapping = false, hasPrimitive = false;
@@ -436,7 +455,7 @@ void write(std::string filename, const PrimitiveT & obj){
 
 			if (!strcmp(retrieveXMLString(c), "Primitive")){
 				hasPrimitive = true;
-				prim = buildGeometryFromXML2D(retrieveNode(c->FirstChild()));
+				prim = buildGeometryFromXML2D(fp, retrieveNode(c->FirstChild()));
 			}
 			else if(!strcmp(retrieveXMLString(c), "Mapping")){
 				hasMapping = true;
@@ -472,7 +491,7 @@ void write(std::string filename, const PrimitiveT & obj){
 			ss << retrieveNode(mn->FirstChild())->Value();
 			ss >> N;
 
-			std::cout << "N: " << retrieveNode(mn->FirstChild())->Value() << std::endl;
+			// std::cout << "N: " << retrieveNode(mn->FirstChild())->Value() << std::endl;
 
 			ss.clear();
 			mn = retrieveNode(mn->NextSibling());
@@ -509,26 +528,28 @@ void write(std::string filename, const PrimitiveT & obj){
 
 
 
-	std::shared_ptr<Primitive2D> buildGeometryFromXML2D(const XMLNode * n){
+	std::shared_ptr<Primitive2D> buildGeometryFromXML2D(FilePath fp, const XMLNode * n){
 		if (n == nullptr) return std::make_shared<Circle>(Circle({0,0}, 0));
 
 		// for (unsigned int i=0; i<ntab; i++) std::cout << "\t" ;
-		std::cout << n->Value() << ":   " << std::endl ;
+		// std::cout << n->Value() << ":   " << std::endl ;
 
-		if (!strcmp(retrieveXMLString(n),"CSGTree")) return buildGeometryFromXML2D<CSGTree<Primitive2D>>(n);
-		else if (!strcmp(retrieveXMLString(n),"LinearTransformation")) return buildGeometryFromXML2D_LinearTransformation(n);
-		else if (!strcmp(retrieveXMLString(n),"SymmetryTransformation")) return buildGeometryFromXML2D_SymmetryTransformation(n);
-		else if (!strcmp(retrieveXMLString(n),"Circle")) return buildGeometryFromXML2D<Circle>(n);
-		else if (!strcmp(retrieveXMLString(n),"Rectangle")) return buildGeometryFromXML2D<Rectangle>(n);
-		else if (!strcmp(retrieveXMLString(n),"Ellipse")) return buildGeometryFromXML2D<Ellipse>(n);
-		else if (!strcmp(retrieveXMLString(n),"Triangle")) return buildGeometryFromXML2D<Triangle>(n);
-		else if (!strcmp(retrieveXMLString(n),"RegularPolygon")) return buildGeometryFromXML2D<RegularPolygon>(n);
+		if (!strcmp(retrieveXMLString(n),"CSGTree")) return buildGeometryFromXML2D<CSGTree<Primitive2D>>(fp, n);
+		else if (!strcmp(retrieveXMLString(n),"LinearTransformation")) return buildGeometryFromXML2D_LinearTransformation(fp, n);
+		else if (!strcmp(retrieveXMLString(n),"SymmetryTransformation")) return buildGeometryFromXML2D_SymmetryTransformation(fp, n);
+		else if (!strcmp(retrieveXMLString(n),"Circle")) return buildGeometryFromXML2D<Circle>(fp, n);
+		else if (!strcmp(retrieveXMLString(n),"Rectangle")) return buildGeometryFromXML2D<Rectangle>(fp, n);
+		else if (!strcmp(retrieveXMLString(n),"Ellipse")) return buildGeometryFromXML2D<Ellipse>(fp, n);
+		else if (!strcmp(retrieveXMLString(n),"Triangle")) return buildGeometryFromXML2D<Triangle>(fp, n);
+		else if (!strcmp(retrieveXMLString(n),"RegularPolygon")) return buildGeometryFromXML2D<RegularPolygon>(fp, n);
 		else if (!strcmp(retrieveXMLString(n),"XMLFile")){
-			std::cout << "I am an XML file" << std::endl;
-			std::cout << "name: " << retrieveXMLString(retrieveNode(n->FirstChild())) << std::endl;
+			// std::cout << "I am an XML file" << std::endl;
+			// std::cout << "name: " << retrieveXMLString(retrieveNode(n->FirstChild())) << std::endl;
 			XMLDocument doc;
-			doc.LoadFile(retrieveXMLString(retrieveNode(n->FirstChild())));
-			return buildGeometryFromXML2D(retrieveNode(doc.FirstChild()));
+			// doc.LoadFile(retrieveXMLString(retrieveNode(n->FirstChild())));
+			FilePath file(fp.path()+retrieveXMLString(retrieveNode(n->FirstChild())));
+			doc.LoadFile(file.fullname().c_str());
+			return buildGeometryFromXML2D(file, retrieveNode(doc.FirstChild()));
 		} 
 
 		std::cerr << "Unrecognized geometry option: " << n->Value() << std::endl;
@@ -545,7 +566,8 @@ void write(std::string filename, const PrimitiveT & obj){
 	std::shared_ptr<Primitive2D> read2D(std::string filename){
 		XMLDocument doc;
 		doc.LoadFile(filename.c_str());
-		return buildGeometryFromXML2D(retrieveNode(doc.FirstChild()));
+		FilePath file(filename);
+		return buildGeometryFromXML2D(file, retrieveNode(doc.FirstChild()));
 	}
 ///////////////////////// END 2D GEOMETRY ///////////////////////
 
@@ -577,27 +599,27 @@ void write(std::string filename, const PrimitiveT & obj){
 
 
 ////////////////////////// 2D SCENE ///////////////////////////
-void buildSceneFromXML2D_Background(const XMLNode * n, std::shared_ptr<Scene<std::string, Primitive2D>> s){
+void buildSceneFromXML2D_Background(FilePath fp, const XMLNode * n, std::shared_ptr<Scene<std::string, Primitive2D>> s){
 	s->background() = n->Value();
-	std::cout << n->Value() << std::endl;
+	// std::cout << n->Value() << std::endl;
 	return;
 }
 
-void buildSceneFromXML2D_Object(const XMLNode * n, std::shared_ptr<Scene<std::string, Primitive2D>> s){
+void buildSceneFromXML2D_Object(FilePath fp, const XMLNode * n, std::shared_ptr<Scene<std::string, Primitive2D>> s){
 	typedef Scene<std::string, Primitive2D> SceneType;
 	std::string id;
 	std::shared_ptr<Primitive2D> prim;
 
 	while (n != nullptr){
 		// for (unsigned int i=0; i<ntab; i++) std::cout << "\t" ;
-		std::cout << n->Value() << ":   " << std::endl ;
+		// std::cout << n->Value() << ":   " << std::endl ;
 
 		if (!strcmp(retrieveXMLString(n),"Identifier")){
 			id = retrieveNode(n->FirstChild())->Value();
-			std::cout << id << std::endl;
+			// std::cout << id << std::endl;
 		} 
 		else if (!strcmp(retrieveXMLString(n),"Primitive")){
-			prim = buildGeometryFromXML2D(retrieveNode(n->FirstChild()));
+			prim = buildGeometryFromXML2D(fp, retrieveNode(n->FirstChild()));
 			prim->print_summary();
 		}
 		else{
@@ -615,19 +637,21 @@ void buildSceneFromXML2D_Object(const XMLNode * n, std::shared_ptr<Scene<std::st
 
 
 
-void buildSceneFromXML2D(const XMLNode * n, std::shared_ptr<Scene<std::string, Primitive2D>> s){
+void buildSceneFromXML2D(FilePath fp, const XMLNode * n, std::shared_ptr<Scene<std::string, Primitive2D>> s){
 	typedef Scene<std::string, Primitive2D> SceneType;
 
 	while (n != nullptr){
 		// for (unsigned int i=0; i<ntab; i++) std::cout << "\t" ;
-		std::cout << n->Value() << ":   " << std::endl ;
+		// std::cout << n->Value() << ":   " << std::endl ;
 
-		if (!strcmp(retrieveXMLString(n),"Object")) buildSceneFromXML2D_Object(retrieveNode(n->FirstChild()), s);
-		else if (!strcmp(retrieveXMLString(n),"Background")) buildSceneFromXML2D_Background(retrieveNode(n->FirstChild()), s);
+		if (!strcmp(retrieveXMLString(n),"Object")) buildSceneFromXML2D_Object(fp, retrieveNode(n->FirstChild()), s);
+		else if (!strcmp(retrieveXMLString(n),"Background")) buildSceneFromXML2D_Background(fp, retrieveNode(n->FirstChild()), s);
 		else if (!strcmp(retrieveXMLString(n),"XMLFile")){
 			XMLDocument doc;
-			doc.LoadFile(retrieveXMLString(retrieveNode(n->FirstChild())));
-			buildSceneFromXML2D(retrieveNode(doc.FirstChild()), s);
+			// doc.LoadFile(retrieveXMLString(retrieveNode(n->FirstChild())));
+			FilePath file(fp.path()+retrieveXMLString(retrieveNode(n->FirstChild())));
+			doc.LoadFile(file.fullname().c_str());
+			buildSceneFromXML2D(file, retrieveNode(doc.FirstChild()), s);
 			return;
 		} 
 		else{
@@ -647,8 +671,9 @@ std::shared_ptr<Scene<std::string, Primitive2D>> read2DScene(std::string filenam
 	typedef Scene<std::string, Primitive2D> SceneType;
 	XMLDocument doc;
 	doc.LoadFile(filename.c_str());
+	FilePath file(filename);
 	std::shared_ptr<SceneType> s = std::make_shared<SceneType>(SceneType("background"));
-	buildSceneFromXML2D(retrieveNode(doc.FirstChild()), s);
+	buildSceneFromXML2D(file, retrieveNode(doc.FirstChild()), s);
 	return s;
 }
 ///////////////////////// END 2D SCENE ///////////////////////
@@ -675,7 +700,7 @@ std::shared_ptr<Scene<std::string, Primitive2D>> read2DScene(std::string filenam
 
 
 ////////////////////////// 2D FRAME ///////////////////////////
-std::shared_ptr<Frame2<Scene<std::string, Primitive2D>, 2>> buildFrameFromXML2D(const XMLNode * n){
+std::shared_ptr<Frame2<Scene<std::string, Primitive2D>, 2>> buildFrameFromXML2D(FilePath fp, const XMLNode * n){
 	typedef Scene<std::string, Primitive2D> SceneType;
 	typedef Frame2<SceneType, 2> FrameType;
 
@@ -685,31 +710,33 @@ std::shared_ptr<Frame2<Scene<std::string, Primitive2D>, 2>> buildFrameFromXML2D(
 
 	while (n != nullptr){
 		// for (unsigned int i=0; i<ntab; i++) std::cout << "\t" ;
-		std::cout << n->Value() << ":   " << std::endl ;
+		// std::cout << n->Value() << ":   " << std::endl ;
 
 		std::stringstream ss;
 		if (!strcmp(retrieveXMLString(n),"Min")){
 			ss << retrieveXMLString(n->FirstChild());
 			ss >> Start;
-			std::cout << "Min: " << Start << std::endl;
+			// std::cout << "Min: " << Start << std::endl;
 		}
 		else if (!strcmp(retrieveXMLString(n),"Max")){
 			ss << retrieveXMLString(n->FirstChild());
 			ss >> End;
-			std::cout << "Max: " << End << std::endl;
+			// std::cout << "Max: " << End << std::endl;
 		}
 		else if (!strcmp(retrieveXMLString(n),"XVec")){
 			ss << retrieveXMLString(n->FirstChild());
 			ss >> XVec;
-			std::cout << "XVec: " << XVec << std::endl;
+			// std::cout << "XVec: " << XVec << std::endl;
 		}
 		else if (!strcmp(retrieveXMLString(n),"Scene")){
-			buildSceneFromXML2D(retrieveNode(n->FirstChild()), sc);
+			buildSceneFromXML2D(fp, retrieveNode(n->FirstChild()), sc);
 		}
 		else if (!strcmp(retrieveXMLString(n),"XMLFile")){
 			XMLDocument doc;
-			doc.LoadFile(retrieveXMLString(retrieveNode(n->FirstChild())));
-			return buildFrameFromXML2D(retrieveNode(doc.FirstChild()));
+			// doc.LoadFile(retrieveXMLString(retrieveNode(n->FirstChild())));
+			FilePath file(fp.path()+retrieveXMLString(retrieveNode(n->FirstChild())));
+			doc.LoadFile(file.fullname().c_str());
+			return buildFrameFromXML2D(file, retrieveNode(doc.FirstChild()));
 		} 
 		else{
 			std::cerr << "Unrecognized frame option: " << n->Value() << std::endl;
@@ -731,8 +758,9 @@ std::shared_ptr<Frame2<Scene<std::string, Primitive2D>, 2>> read2DFrame(std::str
 	typedef Frame2<SceneType, 2> 			FrameType;
 	XMLDocument doc;
 	doc.LoadFile(filename.c_str());
+	FilePath file(filename);
 	// std::shared_ptr<FrameType> f = std::make_shared<FrameType>(FrameType("background"));
-	std::shared_ptr<FrameType> f = buildFrameFromXML2D(retrieveNode(doc.FirstChild()));
+	std::shared_ptr<FrameType> f = buildFrameFromXML2D(file, retrieveNode(doc.FirstChild()));
 	return f;
 }
 
@@ -765,16 +793,16 @@ std::shared_ptr<Frame2<Scene<std::string, Primitive2D>, 2>> read2DFrame(std::str
 
 //////////////////////// 3D GEOMETRY READ /////////////////////////////
 	// forward declare this
-	std::shared_ptr<Primitive3D> buildGeometryFromXML3D(const XMLNode * n);
+	std::shared_ptr<Primitive3D> buildGeometryFromXML3D(FilePath fp, const XMLNode * n);
 
 	// declare the templatized version
 	template <typename T>
-	std::shared_ptr<Primitive3D> buildGeometryFromXML3D(const XMLNode * n){
+	std::shared_ptr<Primitive3D> buildGeometryFromXML3D(FilePath fp, const XMLNode * n){
 	}
 
 	template <>
-	std::shared_ptr<Primitive3D> buildGeometryFromXML3D<Sphere>(const XMLNode * n){
-		std::cout << "\t output is a Sphere" << std::endl;
+	std::shared_ptr<Primitive3D> buildGeometryFromXML3D<Sphere>(FilePath fp, const XMLNode * n){
+		// std::cout << "\t output is a Sphere" << std::endl;
 		auto c = retrieveNode(n->FirstChild());
 
 		bool hasCenter = false, hasRadius = false;
@@ -811,8 +839,8 @@ std::shared_ptr<Frame2<Scene<std::string, Primitive2D>, 2>> read2DFrame(std::str
 
 
 	template <>
-	std::shared_ptr<Primitive3D> buildGeometryFromXML3D<Cylinder>(const XMLNode * n){
-		std::cout << "\t output is a Cylinder" << std::endl;
+	std::shared_ptr<Primitive3D> buildGeometryFromXML3D<Cylinder>(FilePath fp, const XMLNode * n){
+		// std::cout << "\t output is a Cylinder" << std::endl;
 		auto c = retrieveNode(n->FirstChild());
 
 		bool hasCenter = false, hasNormal = false, hasXDir = false, hasRadius = false, hasHeight = false;
@@ -872,8 +900,8 @@ std::shared_ptr<Frame2<Scene<std::string, Primitive2D>, 2>> read2DFrame(std::str
 
 
 	template <>
-	std::shared_ptr<Primitive3D> buildGeometryFromXML3D<RectangularPrism>(const XMLNode * n){
-		std::cout << "\t output is a RectangularPrism" << std::endl;
+	std::shared_ptr<Primitive3D> buildGeometryFromXML3D<RectangularPrism>(FilePath fp, const XMLNode * n){
+		// std::cout << "\t output is a RectangularPrism" << std::endl;
 		auto c = retrieveNode(n->FirstChild());
 
 		bool hasCenter = false, hasNormal = false, hasXDir = false, hasDims = false, hasHeight = false;
@@ -934,8 +962,8 @@ std::shared_ptr<Frame2<Scene<std::string, Primitive2D>, 2>> read2DFrame(std::str
 
 
 	template <>
-	std::shared_ptr<Primitive3D> buildGeometryFromXML3D<Pyramid>(const XMLNode * n){
-		std::cout << "\t output is a Pyramid" << std::endl;
+	std::shared_ptr<Primitive3D> buildGeometryFromXML3D<Pyramid>(FilePath fp, const XMLNode * n){
+		// std::cout << "\t output is a Pyramid" << std::endl;
 		auto c = retrieveNode(n->FirstChild());
 
 		bool hasCenter = false, hasNormal = false, hasXDir = false, hasBase = false, hasHeight = false;
@@ -963,7 +991,7 @@ std::shared_ptr<Frame2<Scene<std::string, Primitive2D>, 2>> read2DFrame(std::str
 			}
 			else if(!strcmp(retrieveXMLString(c), "Base")){
 				hasBase = true;
-				prim2 = buildGeometryFromXML2D(c->FirstChild());
+				prim2 = buildGeometryFromXML2D(fp, c->FirstChild());
 			}
 			else if(!strcmp(retrieveXMLString(c), "Height")){
 				hasHeight = true;
@@ -993,8 +1021,8 @@ std::shared_ptr<Frame2<Scene<std::string, Primitive2D>, 2>> read2DFrame(std::str
 
 
 	template <>
-	std::shared_ptr<Primitive3D> buildGeometryFromXML3D<Extrusion>(const XMLNode * n){
-		std::cout << "\t output is a Extrusion" << std::endl;
+	std::shared_ptr<Primitive3D> buildGeometryFromXML3D<Extrusion>(FilePath fp, const XMLNode * n){
+		// std::cout << "\t output is a Extrusion" << std::endl;
 		auto c = retrieveNode(n->FirstChild());
 
 		bool hasCenter = false, hasNormal = false, hasXDir = false, hasBase = false, hasHeight = false;
@@ -1022,7 +1050,7 @@ std::shared_ptr<Frame2<Scene<std::string, Primitive2D>, 2>> read2DFrame(std::str
 			}
 			else if(!strcmp(retrieveXMLString(c), "Base")){
 				hasBase = true;
-				prim2 = buildGeometryFromXML2D(c->FirstChild());
+				prim2 = buildGeometryFromXML2D(fp, c->FirstChild());
 			}
 			else if(!strcmp(retrieveXMLString(c), "Height")){
 				hasHeight = true;
@@ -1053,8 +1081,8 @@ std::shared_ptr<Frame2<Scene<std::string, Primitive2D>, 2>> read2DFrame(std::str
 
 
 	template <>
-	std::shared_ptr<Primitive3D> buildGeometryFromXML3D<Sweep>(const XMLNode * n){
-		std::cout << "\t output is a Sweep" << std::endl;
+	std::shared_ptr<Primitive3D> buildGeometryFromXML3D<Sweep>(FilePath fp, const XMLNode * n){
+		// std::cout << "\t output is a Sweep" << std::endl;
 		auto c = retrieveNode(n->FirstChild());
 
 		bool hasCenter = false, hasNormal = false, hasXDir = false, hasBase = false, hasAngle = false, hasLinePoint = false, hasLineDir = false;
@@ -1092,7 +1120,7 @@ std::shared_ptr<Frame2<Scene<std::string, Primitive2D>, 2>> read2DFrame(std::str
 			}
 			else if(!strcmp(retrieveXMLString(c), "Base")){
 				hasBase = true;
-				prim2 = buildGeometryFromXML2D(c->FirstChild());
+				prim2 = buildGeometryFromXML2D(fp, c->FirstChild());
 			}
 			else if(!strcmp(retrieveXMLString(c), "Angle")){
 				hasAngle = true;
@@ -1126,8 +1154,8 @@ std::shared_ptr<Frame2<Scene<std::string, Primitive2D>, 2>> read2DFrame(std::str
 
 
 	template <>
-	std::shared_ptr<Primitive3D> buildGeometryFromXML3D<CSGTree<Primitive3D>>(const XMLNode * n){
-		std::cout << "\t output is a CSGTree" << std::endl;
+	std::shared_ptr<Primitive3D> buildGeometryFromXML3D<CSGTree<Primitive3D>>(FilePath fp, const XMLNode * n){
+		// std::cout << "\t output is a CSGTree" << std::endl;
 		auto c = retrieveNode(n->FirstChild());
 
 		bool hasLeft = false, hasRight = false, hasOperation = false;
@@ -1139,11 +1167,11 @@ std::shared_ptr<Frame2<Scene<std::string, Primitive2D>, 2>> read2DFrame(std::str
 
 			if (!strcmp(retrieveXMLString(c), "Left")){
 				hasLeft = true;
-				left = buildGeometryFromXML3D(retrieveNode(c->FirstChild()));
+				left = buildGeometryFromXML3D(fp, retrieveNode(c->FirstChild()));
 			}
 			else if(!strcmp(retrieveXMLString(c), "Right")){
 				hasRight = true;
-				right = buildGeometryFromXML3D(retrieveNode(c->FirstChild()));
+				right = buildGeometryFromXML3D(fp, retrieveNode(c->FirstChild()));
 			}
 			else if(!strcmp(retrieveXMLString(c), "Operation")){
 				hasOperation = true;
@@ -1179,8 +1207,8 @@ std::shared_ptr<Frame2<Scene<std::string, Primitive2D>, 2>> read2DFrame(std::str
 
 
 
-	std::shared_ptr<Primitive3D> buildGeometryFromXML3D_LinearTransformation(const XMLNode * n){
-		std::cout << "\t output is a LinearTransformation" << std::endl;
+	std::shared_ptr<Primitive3D> buildGeometryFromXML3D_LinearTransformation(FilePath fp, const XMLNode * n){
+		// std::cout << "\t output is a LinearTransformation" << std::endl;
 		auto c = retrieveNode(n->FirstChild());
 
 		bool hasMapping = false, hasPrimitive = false;
@@ -1192,7 +1220,7 @@ std::shared_ptr<Frame2<Scene<std::string, Primitive2D>, 2>> read2DFrame(std::str
 
 			if (!strcmp(retrieveXMLString(c), "Primitive")){
 				hasPrimitive = true;
-				prim = buildGeometryFromXML3D(c->FirstChild());
+				prim = buildGeometryFromXML3D(fp, c->FirstChild());
 			}
 			else if(!strcmp(retrieveXMLString(c), "Mapping")){
 				hasMapping = true;
@@ -1260,8 +1288,8 @@ std::shared_ptr<Frame2<Scene<std::string, Primitive2D>, 2>> read2DFrame(std::str
 
 
 
-	std::shared_ptr<Primitive3D> buildGeometryFromXML3D_SymmetryTransformation(const XMLNode * n){
-		std::cout << "\t output is a SymmetryTransformation" << std::endl;
+	std::shared_ptr<Primitive3D> buildGeometryFromXML3D_SymmetryTransformation(FilePath fp, const XMLNode * n){
+		// std::cout << "\t output is a SymmetryTransformation" << std::endl;
 		auto c = retrieveNode(n->FirstChild());
 
 		bool hasMapping = false, hasPrimitive = false;
@@ -1273,7 +1301,7 @@ std::shared_ptr<Frame2<Scene<std::string, Primitive2D>, 2>> read2DFrame(std::str
 
 			if (!strcmp(retrieveXMLString(c), "Primitive")){
 				hasPrimitive = true;
-				prim = buildGeometryFromXML3D(retrieveNode(c->FirstChild()));
+				prim = buildGeometryFromXML3D(fp, retrieveNode(c->FirstChild()));
 			}
 			else if(!strcmp(retrieveXMLString(c), "Mapping")){
 				hasMapping = true;
@@ -1346,7 +1374,7 @@ std::shared_ptr<Frame2<Scene<std::string, Primitive2D>, 2>> read2DFrame(std::str
 
 
 
-	std::shared_ptr<Primitive3D> buildGeometryFromXML3D(const XMLNode * n){
+	std::shared_ptr<Primitive3D> buildGeometryFromXML3D(FilePath fp, const XMLNode * n){
 		if (n == nullptr){
 			std::cerr << "Failed to complete an XML tag... make sure it is closed" << std::endl;
 			throw -1;
@@ -1354,23 +1382,25 @@ std::shared_ptr<Frame2<Scene<std::string, Primitive2D>, 2>> read2DFrame(std::str
 		}
 
 		// for (unsigned int i=0; i<ntab; i++) std::cout << "\t" ;
-		std::cout << n->Value() << ":   " << std::endl ;
+		// std::cout << n->Value() << ":   " << std::endl ;
 
-		if (!strcmp(retrieveXMLString(n),"CSGTree")) return buildGeometryFromXML3D<CSGTree<Primitive3D>>(n);
-		else if (!strcmp(retrieveXMLString(n),"LinearTransformation")) return buildGeometryFromXML3D_LinearTransformation(n);
-		else if (!strcmp(retrieveXMLString(n),"SymmetryTransformation")) return buildGeometryFromXML3D_SymmetryTransformation(n);
-		else if (!strcmp(retrieveXMLString(n),"Sphere")) return buildGeometryFromXML3D<Sphere>(n);
-		else if (!strcmp(retrieveXMLString(n),"Cylinder")) return buildGeometryFromXML3D<Cylinder>(n);
-		else if (!strcmp(retrieveXMLString(n),"RectangularPrism")) return buildGeometryFromXML3D<RectangularPrism>(n);
-		else if (!strcmp(retrieveXMLString(n),"Pyramid")) return buildGeometryFromXML3D<Pyramid>(n);
-		else if (!strcmp(retrieveXMLString(n),"Extrusion")) return buildGeometryFromXML3D<Extrusion>(n);
-		else if (!strcmp(retrieveXMLString(n),"Sweep")) return buildGeometryFromXML3D<Sweep>(n);
+		if (!strcmp(retrieveXMLString(n),"CSGTree")) return buildGeometryFromXML3D<CSGTree<Primitive3D>>(fp, n);
+		else if (!strcmp(retrieveXMLString(n),"LinearTransformation")) return buildGeometryFromXML3D_LinearTransformation(fp, n);
+		else if (!strcmp(retrieveXMLString(n),"SymmetryTransformation")) return buildGeometryFromXML3D_SymmetryTransformation(fp, n);
+		else if (!strcmp(retrieveXMLString(n),"Sphere")) return buildGeometryFromXML3D<Sphere>(fp, n);
+		else if (!strcmp(retrieveXMLString(n),"Cylinder")) return buildGeometryFromXML3D<Cylinder>(fp, n);
+		else if (!strcmp(retrieveXMLString(n),"RectangularPrism")) return buildGeometryFromXML3D<RectangularPrism>(fp, n);
+		else if (!strcmp(retrieveXMLString(n),"Pyramid")) return buildGeometryFromXML3D<Pyramid>(fp, n);
+		else if (!strcmp(retrieveXMLString(n),"Extrusion")) return buildGeometryFromXML3D<Extrusion>(fp, n);
+		else if (!strcmp(retrieveXMLString(n),"Sweep")) return buildGeometryFromXML3D<Sweep>(fp, n);
 		else if (!strcmp(retrieveXMLString(n),"XMLFile")){
-			std::cout << "I am an XML file" << std::endl;
-			std::cout << "name: " << retrieveXMLString(retrieveNode(n->FirstChild())) << std::endl;
+			// std::cout << "I am an XML file" << std::endl;
+			// std::cout << "name: " << retrieveXMLString(retrieveNode(n->FirstChild())) << std::endl;
 			XMLDocument doc;
-			doc.LoadFile(retrieveXMLString(retrieveNode(n->FirstChild())));
-			return buildGeometryFromXML3D(retrieveNode(doc.FirstChild()));
+			FilePath file(fp.path()+retrieveXMLString(retrieveNode(n->FirstChild())));
+			doc.LoadFile(file.fullname().c_str());
+			// doc.LoadFile(retrieveXMLString(retrieveNode(n->FirstChild())));
+			return buildGeometryFromXML3D(file, retrieveNode(doc.FirstChild()));
 		} 
 
 		std::cerr << "Unrecognized geometry option: " << n->Value() << std::endl;
@@ -1384,7 +1414,9 @@ std::shared_ptr<Frame2<Scene<std::string, Primitive2D>, 2>> read2DFrame(std::str
 	std::shared_ptr<Primitive3D> read3D(std::string filename){
 		XMLDocument doc;
 		doc.LoadFile(filename.c_str());
-		return buildGeometryFromXML3D(retrieveNode(doc.FirstChild()));
+		FilePath file(filename);
+		// std::cout << "PATH: " << file.path() << " NAME: " << file.filename() << std::endl;
+		return buildGeometryFromXML3D(file, retrieveNode(doc.FirstChild()));
 	}
 
 ///////////////////////// END 3D GEOMETRY ///////////////////////
@@ -1405,27 +1437,27 @@ std::shared_ptr<Frame2<Scene<std::string, Primitive2D>, 2>> read2DFrame(std::str
 
 
 ////////////////////////// 3D SCENE ///////////////////////////
-void buildSceneFromXML3D_Background(const XMLNode * n, std::shared_ptr<Scene<std::string, Primitive3D>> s){
+void buildSceneFromXML3D_Background(FilePath fp, const XMLNode * n, std::shared_ptr<Scene<std::string, Primitive3D>> s){
 	s->background() = n->Value();
-	std::cout << n->Value() << std::endl;
+	// std::cout << n->Value() << std::endl;
 	return;
 }
 
-void buildSceneFromXML3D_Object(const XMLNode * n, std::shared_ptr<Scene<std::string, Primitive3D>> s){
+void buildSceneFromXML3D_Object(FilePath fp, const XMLNode * n, std::shared_ptr<Scene<std::string, Primitive3D>> s){
 	typedef Scene<std::string, Primitive3D> SceneType;
 	std::string id;
 	std::shared_ptr<Primitive3D> prim;
 
 	while (n != nullptr){
 		// for (unsigned int i=0; i<ntab; i++) std::cout << "\t" ;
-		std::cout << n->Value() << ":   " << std::endl ;
+		// std::cout << n->Value() << ":   " << std::endl ;
 
 		if (!strcmp(retrieveXMLString(n),"Identifier")){
 			id = retrieveNode(n->FirstChild())->Value();
-			std::cout << id << std::endl;
+			// std::cout << id << std::endl;
 		} 
 		else if (!strcmp(retrieveXMLString(n),"Primitive")){
-			prim = buildGeometryFromXML3D(retrieveNode(n->FirstChild()));
+			prim = buildGeometryFromXML3D(fp, retrieveNode(n->FirstChild()));
 			prim->print_summary();
 		}
 		else{
@@ -1443,19 +1475,21 @@ void buildSceneFromXML3D_Object(const XMLNode * n, std::shared_ptr<Scene<std::st
 
 
 
-void buildSceneFromXML3D(const XMLNode * n, std::shared_ptr<Scene<std::string, Primitive3D>> s){
+void buildSceneFromXML3D(FilePath fp, const XMLNode * n, std::shared_ptr<Scene<std::string, Primitive3D>> s){
 	typedef Scene<std::string, Primitive3D> SceneType;
 
 	while (n != nullptr){
 		// for (unsigned int i=0; i<ntab; i++) std::cout << "\t" ;
-		std::cout << n->Value() << ":   " << std::endl ;
+		// std::cout << n->Value() << ":   " << std::endl ;
 
-		if (!strcmp(retrieveXMLString(n),"Object")) buildSceneFromXML3D_Object(retrieveNode(n->FirstChild()), s);
-		else if (!strcmp(retrieveXMLString(n),"Background")) buildSceneFromXML3D_Background(retrieveNode(n->FirstChild()), s);
+		if (!strcmp(retrieveXMLString(n),"Object")) buildSceneFromXML3D_Object(fp, retrieveNode(n->FirstChild()), s);
+		else if (!strcmp(retrieveXMLString(n),"Background")) buildSceneFromXML3D_Background(fp, retrieveNode(n->FirstChild()), s);
 		else if (!strcmp(retrieveXMLString(n),"XMLFile")){
 			XMLDocument doc;
-			doc.LoadFile(retrieveXMLString(retrieveNode(n->FirstChild())));
-			buildSceneFromXML3D(retrieveNode(doc.FirstChild()), s);
+			FilePath file(fp.path()+retrieveXMLString(retrieveNode(n->FirstChild())));
+			doc.LoadFile(file.fullname().c_str());
+			// doc.LoadFile(retrieveXMLString(retrieveNode(n->FirstChild())));
+			buildSceneFromXML3D(file, retrieveNode(doc.FirstChild()), s);
 			return;
 		} 
 		else{
@@ -1475,8 +1509,9 @@ std::shared_ptr<Scene<std::string, Primitive3D>> read3DScene(std::string filenam
 	typedef Scene<std::string, Primitive3D> SceneType;
 	XMLDocument doc;
 	doc.LoadFile(filename.c_str());
+	FilePath file(filename);
 	std::shared_ptr<SceneType> s = std::make_shared<SceneType>(SceneType("background"));
-	buildSceneFromXML3D(retrieveNode(doc.FirstChild()), s);
+	buildSceneFromXML3D(file, retrieveNode(doc.FirstChild()), s);
 	return s;
 }
 ///////////////////////// END 3D SCENE ///////////////////////
@@ -1503,7 +1538,7 @@ std::shared_ptr<Scene<std::string, Primitive3D>> read3DScene(std::string filenam
 
 
 ////////////////////////// 3D FRAME ///////////////////////////
-std::shared_ptr<Frame3<Scene<std::string, Primitive3D>, 3>> buildFrameFromXML3D(const XMLNode * n){
+std::shared_ptr<Frame3<Scene<std::string, Primitive3D>, 3>> buildFrameFromXML3D(FilePath fp, const XMLNode * n){
 	typedef Scene<std::string, Primitive3D> SceneType;
 	typedef Frame3<SceneType, 3> FrameType;
 
@@ -1513,36 +1548,37 @@ std::shared_ptr<Frame3<Scene<std::string, Primitive3D>, 3>> buildFrameFromXML3D(
 
 	while (n != nullptr){
 		// for (unsigned int i=0; i<ntab; i++) std::cout << "\t" ;
-		std::cout << n->Value() << ":   " << std::endl ;
+		// std::cout << n->Value() << ":   " << std::endl ;
 
 		std::stringstream ss;
 		if (!strcmp(retrieveXMLString(n),"Min")){
 			ss << retrieveXMLString(n->FirstChild());
 			ss >> Start;
-			std::cout << "Min: " << Start << std::endl;
+			// std::cout << "Min: " << Start << std::endl;
 		}
 		else if (!strcmp(retrieveXMLString(n),"Max")){
 			ss << retrieveXMLString(n->FirstChild());
 			ss >> End;
-			std::cout << "Max: " << End << std::endl;
+			// std::cout << "Max: " << End << std::endl;
 		}
 		else if (!strcmp(retrieveXMLString(n),"XVec")){
 			ss << retrieveXMLString(n->FirstChild());
 			ss >> XVec;
-			std::cout << "XVec: " << XVec << std::endl;
+			// std::cout << "XVec: " << XVec << std::endl;
 		}
 		else if (!strcmp(retrieveXMLString(n),"YVec")){
 			ss << retrieveXMLString(n->FirstChild());
 			ss >> YVec;
-			std::cout << "YVec: " << YVec << std::endl;
+			// std::cout << "YVec: " << YVec << std::endl;
 		}
 		else if (!strcmp(retrieveXMLString(n),"Scene")){
-			buildSceneFromXML3D(retrieveNode(n->FirstChild()), sc);
+			buildSceneFromXML3D(fp, retrieveNode(n->FirstChild()), sc);
 		}
 		else if (!strcmp(retrieveXMLString(n),"XMLFile")){
 			XMLDocument doc;
-			doc.LoadFile(retrieveXMLString(retrieveNode(n->FirstChild())));
-			return buildFrameFromXML3D(retrieveNode(doc.FirstChild()));
+			FilePath file(fp.path()+retrieveXMLString(retrieveNode(n->FirstChild())));
+			doc.LoadFile(file.fullname().c_str());
+			return buildFrameFromXML3D(file, retrieveNode(doc.FirstChild()));
 		} 
 		else{
 			std::cerr << "Unrecognized frame option: " << n->Value() << std::endl;
@@ -1565,7 +1601,9 @@ std::shared_ptr<Frame3<Scene<std::string, Primitive3D>, 3>> read3DFrame(std::str
 	XMLDocument doc;
 	doc.LoadFile(filename.c_str());
 	// std::shared_ptr<FrameType> f = std::make_shared<FrameType>(FrameType("background"));
-	std::shared_ptr<FrameType> f = buildFrameFromXML3D(retrieveNode(doc.FirstChild()));
+	FilePath file(filename);
+	// std::cout << "PATH: " << file.path() << " PREFIX: " << file.prefix() << " NAME: " << file.filename() << " EXT: " << file.ext() << std::endl;
+	std::shared_ptr<FrameType> f = buildFrameFromXML3D(file, retrieveNode(doc.FirstChild()));
 	return f;
 }
 
