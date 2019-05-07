@@ -175,13 +175,36 @@ std::istream & operator>>(std::istream & is, GeneralPoint<dim, T> & p){
 }
 
 
-template<std::size_t dim, class T>
-GeneralPoint<dim, T> operator*(T val, const GeneralPoint<dim, T> & p){
-	GeneralPoint<dim, T> out(p);
+// template<std::size_t dim, class T>
+// GeneralPoint<dim, T> operator*(T val, const GeneralPoint<dim, T> & p){
+// 	GeneralPoint<dim, T> out(p);
+// 	for (auto i=0; i<dim; i++) out.x[i] = val*p.x[i];
+// 	return out;
+// 
+
+template<std::size_t dim, class T1, class T2>
+GeneralPoint<dim, decltype(std::declval<T1>()*std::declval<T2>())> 
+operator*(T1 val, const GeneralPoint<dim, T2> & p){
+	GeneralPoint<dim, decltype(std::declval<T1>()*std::declval<T2>())> out(p);
 	for (auto i=0; i<dim; i++) out.x[i] = val*p.x[i];
 	return out;
 }
 
+template<std::size_t dim, class T1, class T2>
+GeneralPoint<dim, decltype(std::declval<T1>()%std::declval<T2>())> 
+operator%(const GeneralPoint<dim, T1> & p, T2 val){
+	GeneralPoint<dim, decltype(std::declval<T1>()%std::declval<T2>())>  out(p);
+	for (auto i=0; i<dim; i++) out.x[i] = p.x[i]%val;
+	return out;
+}
+
+template<std::size_t dim, class T1, class T2> 
+GeneralPoint<dim, decltype(std::declval<T1>()*std::declval<T2>())> 
+operator*(const GeneralPoint<dim, T1> & pd, const GeneralPoint<dim, T2> & pi){
+	GeneralPoint<dim, decltype(std::declval<T1>()*std::declval<T2>())> out;
+	for (auto i=0; i<dim; i++) out.x[i] = pd.x[i]*pi.x[i];
+	return out;
+}
 
 
 
@@ -206,27 +229,27 @@ template<> GeneralPoint<3,int>::GeneralPoint(int x0, int x1, int x2){
 	x[0] = x0; x[1] = x1; x[2] = x2;
 }
 
-// return double when double arithmetic is performed on int
-template<std::size_t dim> 
-GeneralPoint<dim, double> operator*(double val, const GeneralPoint<dim, int> & p){
-	GeneralPoint<dim, double> out;
-	for (auto i=0; i<dim; i++) out.x[i] = val*p.x[i];
-	return out;
-}
+// // return double when double arithmetic is performed on int
+// template<std::size_t dim> 
+// GeneralPoint<dim, double> operator*(double val, const GeneralPoint<dim, int> & p){
+// 	GeneralPoint<dim, double> out;
+// 	for (auto i=0; i<dim; i++) out.x[i] = val*p.x[i];
+// 	return out;
+// }
 
-template<std::size_t dim> 
-GeneralPoint<dim, double> operator*(const GeneralPoint<dim, double> & pd, const GeneralPoint<dim, int> & pi){
-	GeneralPoint<dim, double> out;
-	for (auto i=0; i<dim; i++) out.x[i] = pd.x[i]*pi.x[i];
-	return out;
-}
+// template<std::size_t dim> 
+// GeneralPoint<dim, double> operator*(const GeneralPoint<dim, double> & pd, const GeneralPoint<dim, int> & pi){
+// 	GeneralPoint<dim, double> out;
+// 	for (auto i=0; i<dim; i++) out.x[i] = pd.x[i]*pi.x[i];
+// 	return out;
+// }
 
-template<std::size_t dim> 
-GeneralPoint<dim, int> operator%(const GeneralPoint<dim, int> & p, std::size_t m){
-	GeneralPoint<dim, int> out;
-	for (auto i=0; i<dim; i++) out.x[i] = p.x[i]%m;
-	return out;
-}
+// template<std::size_t dim> 
+// GeneralPoint<dim, int> operator%(const GeneralPoint<dim, int> & p, std::size_t m){
+// 	GeneralPoint<dim, int> out;
+// 	for (auto i=0; i<dim; i++) out.x[i] = p.x[i]%m;
+// 	return out;
+// }
 
 
 // add template typedefs for special GeneralPoint types
@@ -235,6 +258,9 @@ using Point = GeneralPoint<dim, double>;
 
 template<std::size_t dim>
 using IntPoint = GeneralPoint<dim, int>;
+
+template <std::size_t dim>
+using IndexPoint = GeneralPoint<dim, std::size_t>;
 
 using Point2 = Point<2>;
 using Point3 = Point<3>;

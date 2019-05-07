@@ -9,6 +9,8 @@
 #include <utility>
 #include <tuple>
 
+#include <cmath>
+#include <cstdlib>
 
 #include "GeomUtils.hpp"
 
@@ -235,6 +237,19 @@ public:
 	constexpr std::size_t getSiblingIndex(KeyT key) const {return (key-1)%sSize;};
 
 
+	// get the neighboring key to 'key' on the minimum side
+	// along a dimension specified by 'd'
+	constexpr KeyT getCityBlockDistance(KeyT key1, KeyT key2) const {
+		// get the level offset of these keys
+		IndexPoint<dim> loff1 = getLevelOffset(key1);
+		IndexPoint<dim> loff2 = getLevelOffset(key2);
+		std::size_t dist = 0;
+		for (std::size_t i=0; i<dim; i++){
+			dist += (loff1.x[i] > loff2.x[i] ? loff1.x[i]-loff2.x[i] : loff2.x[i]-loff1.x[i]);
+		}
+		return dist;
+	}
+
 
 	// get the neighboring key to 'key' on the maximum side
 	// along a dimension specified by 'd'
@@ -242,7 +257,7 @@ public:
 		// get the level of this key
 		std::size_t lvl = getLevel(key);
 		// get the level offset of this key
-		IntPoint<dim> loff = getOffsetWithinLevel(key);
+		IndexPoint<dim> loff = getOffsetWithinLevel(key);
 		// add 1 in the chosen dimension
 		loff.x[d]++;
 		// get the key from level offset
@@ -255,16 +270,16 @@ public:
 		// get the level of this key
 		std::size_t lvl = getLevel(key);
 		// get the level offset of this key
-		IntPoint<dim> loff = getLevelOffset(key);
+		IndexPoint<dim> loff = getLevelOffset(key);
 		// subtract 1 in the chosen dimension
 		loff.x[d]--;
 		// get the key from level offset
-		return getKeyFromLevelOffset(lvl, loff);;
+		return getKeyFromLevelOffset(lvl, loff);
 	}
 
 
 	constexpr bool isBoundary(KeyT key) const {
-		IntPoint<dim> off = getLevelOffset(key);
+		IndexPoint<dim> off = getLevelOffset(key);
 		std::size_t lvl = getLevel(key);
 		std::size_t imax = pow(rfactor,lvl)-1;
 		for (auto d=0; d<dim; d++) if (off.x[d]==0) return true;
@@ -275,9 +290,9 @@ public:
 // protected:
 
 
-	constexpr IntPoint<dim> getLevelOffset(KeyT key) const {
+	constexpr IndexPoint<dim> getLevelOffset(KeyT key) const {
 
-		IntPoint<dim> off;
+		IndexPoint<dim> off;
 		// key -= getLevelStartingKey(getLevel(key));
 		for (auto i=0; i<dim; i++) off.x[i] = 0;
 		std::size_t mult = 1;
@@ -296,8 +311,8 @@ public:
 	}
 
 
-	constexpr IntPoint<dim> getOffsetWithinParent(KeyT key) const {
-		IntPoint<dim> off;
+	constexpr IndexPoint<dim> getOffsetWithinParent(KeyT key) const {
+		IndexPoint<dim> off;
 		std::size_t k = getSiblingIndex(key);
 		for (auto i=0; i<dim; i++) off.x[i] = 0;
 		for (auto i=0; i<dim; i++) {
@@ -309,9 +324,9 @@ public:
 	}
 
 
-	constexpr IntPoint<dim> getOffsetWithinLevel(KeyT key) const{
+	constexpr IndexPoint<dim> getOffsetWithinLevel(KeyT key) const{
 
-		IntPoint<dim> off;
+		IndexPoint<dim> off;
 		// key -= getLevelStartingIndex(getLevel(key));
 		for (auto i=0; i<dim; i++) off.x[i] = 0;
 		std::size_t mult = 1;
@@ -335,7 +350,7 @@ public:
 
 
 	// get a key from a offset on a given level
-	constexpr KeyT getKeyFromLevelOffset(std::size_t lvl, IntPoint<dim> off) const{
+	constexpr KeyT getKeyFromLevelOffset(std::size_t lvl, IndexPoint<dim> off) const{
 		// get starting key for the level
 		// std::size_t keystart = mLvlStartInds[lvl];
 		std::size_t keystart = getLevelStartingIndex(lvl);
@@ -343,8 +358,8 @@ public:
 
 		std::size_t ct = 1;
 		std::size_t tot =0;
-		IntPoint<dim> mult;
-		IntPoint<dim> dotter;
+		IndexPoint<dim> mult;
+		IndexPoint<dim> dotter;
 		std::size_t rval = 1;
 		for (auto i=0; i<dim; i++){
 			mult.x[i] = rval;
@@ -352,7 +367,7 @@ public:
 		}
 		
 		dotter = off%rfactor;
-		tot += ct*IntPoint<dim>::dot(mult, dotter);
+		tot += ct*IndexPoint<dim>::dot(mult, dotter);
 
 		for (auto l=lvl-1; l>0; l--){
 			// increase ct
@@ -362,7 +377,7 @@ public:
 			// take modulus
 			dotter = off%rfactor;
 			// accumulate dot products
-			tot += ct*IntPoint<dim>::dot(mult, dotter);
+			tot += ct*IndexPoint<dim>::dot(mult, dotter);
 		}
 
 		// add the start key and return;
@@ -379,7 +394,7 @@ public:
 
 	constexpr Box<dim> getOffset(KeyT key){
 		Box<dim> bx;
-		IntPoint<dim> off = getOffsetWithinLevel(key);
+		IndexPoint<dim> off = getOffsetWithinLevel(key);
 
 		double dx = pow(1.0/static_cast<double>(rfactor), getLevel(key));
 
@@ -404,7 +419,7 @@ public:
 			// Point<dim> boxsize = 1.0/rf;
 			Point<dim> boxsize;
 			for (int i=0; i<dim; i++) boxsize.x[i] = 1.0/rf;
-			IntPoint<dim> off = getOffsetWithinLevel(key);
+			IndexPoint<dim> off = getOffsetWithinLevel(key);
 			// std::cout << " got offset " << off << " for key " << key << std::endl;
 			Point<dim> newlo = boxsize*off;
 			Box<dim> rbox(newlo, newlo+boxsize);
@@ -1276,7 +1291,7 @@ public:
 		// depth-first seach for leaf
 		while (!it->second.isLeaf()){
 			Point<dim> off_d = p*KeyDecoder::levelSize(lvl);
-			IntPoint<dim> off;
+			IndexPoint<dim> off;
 			for (auto i=0; i<dim; i++) off.x[i] = floor(off_d.x[i]);
 			// std::cout << "level: " << lvl << " off_d: " << off_d << " offset: " << off <<std::endl;
 			k = KeyDecoder::getKeyFromLevelOffset(lvl, off);
